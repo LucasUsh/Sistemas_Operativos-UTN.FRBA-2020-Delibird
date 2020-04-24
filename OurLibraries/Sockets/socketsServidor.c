@@ -36,8 +36,8 @@ void iniciar_servidor(void)
 
     freeaddrinfo(servinfo);
 
-    while(1)
-    	esperar_cliente(socket_servidor);
+    //while(1)
+    	//esperar_cliente(socket_servidor);
 }
 
 //void esperar_cliente(int socket_servidor)
