@@ -21,7 +21,7 @@ int main(void)
     printf("Conectado al socket %d \n ",socket);
 
 
-    close(socket);
+    liberar_conexion(socket);
     config_destroy(config);
     log_destroy(logger);
     return 0;
