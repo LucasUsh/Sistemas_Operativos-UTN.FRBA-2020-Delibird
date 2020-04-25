@@ -36,22 +36,22 @@ void iniciar_servidor(void)
 
     freeaddrinfo(servinfo);
 
-    while(1)
-    	esperar_cliente(socket_servidor);
+    //while(1)
+    	//esperar_cliente(socket_servidor);
 }
 
-void esperar_cliente(int socket_servidor)
-{
-	struct sockaddr_in dir_cliente;
-
-	int tam_direccion = sizeof(struct sockaddr_in);
-
-	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
-
-	pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-	pthread_detach(thread);
-
-}
+//void esperar_cliente(int socket_servidor)
+//{
+//	struct sockaddr_in dir_cliente;
+//
+//	int tam_direccion = sizeof(struct sockaddr_in);
+//
+//	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
+//
+//	pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+//	pthread_detach(thread);
+//
+//}
 
 void serve_client(int* socket)
 {

@@ -37,6 +37,7 @@
 *.hex
 
 # Debug files
+Debug
 *.dSYM/
 *.su
 *.idb
@@ -51,6 +52,12 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-.project
-.cproject
-.settings
+#Eclipse
+*.project
+*.cproject
+*.settings
+
+#Logs
+*.log
+
+*.mk
