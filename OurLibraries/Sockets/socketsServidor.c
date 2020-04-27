@@ -65,7 +65,7 @@ void process_request(int cod_op, int cliente_fd) {
 	int size;
 	void* msg;
 		switch (cod_op) {
-		case MENSAJE:
+		case MENSAJE_SERVIDOR:
 			msg = recibir_mensaje_servidor(cliente_fd, &size);
 			devolver_mensaje(msg, size, cliente_fd);
 			free(msg);
@@ -107,7 +107,7 @@ void devolver_mensaje(void* payload, int size, int socket_cliente)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
-	paquete->codigo_operacion = MENSAJE;
+	paquete->codigo_operacion = MENSAJE_SERVIDOR;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = size;
 	paquete->buffer->stream = malloc(paquete->buffer->size);

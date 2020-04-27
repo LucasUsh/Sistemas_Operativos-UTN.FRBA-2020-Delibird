@@ -37,7 +37,6 @@
 *.hex
 
 # Debug files
-Debug
 *.dSYM/
 *.su
 *.idb
@@ -53,11 +52,7 @@ Mkfile.old
 dkms.conf
 
 #Eclipse
-*.project
-*.cproject
 *.settings
 
 #Logs
 *.log
-
-*.mk

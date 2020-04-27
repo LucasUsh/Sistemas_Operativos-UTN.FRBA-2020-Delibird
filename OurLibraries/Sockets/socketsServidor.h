@@ -23,7 +23,7 @@
 
 typedef enum
 {
-	MENSAJE=1
+	MENSAJE_SERVIDOR=1
 }op_code;
 
 typedef struct

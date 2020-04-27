@@ -7,8 +7,8 @@ int main(void)
     t_config* config;
     t_log* logger;
 
-    logger = log_create("/home/utnso/Documentos/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
-    config = config_create("/home/utnso/Documentos/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+    logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
+    config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 
     ip_broker = config_get_string_value(config,"IP_BROKER");
     log_info(logger, ip_broker);

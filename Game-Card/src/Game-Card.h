@@ -4,7 +4,7 @@
 #include<commons/config.h>
 #include<commons/log.h>
 #include<commons/string.h>
-#include</home/utnso/Documentos/tp-2020-1c-5rona/OurLibraries/Sockets/socketsCliente.h>
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/socketsCliente.c"
 #include<stdio.h>
 #include<stdlib.h>
 #include<readline/readline.h>
