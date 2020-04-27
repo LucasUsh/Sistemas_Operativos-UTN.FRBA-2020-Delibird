@@ -17,7 +17,8 @@
 typedef enum {
 	RR = 1,
 	SJFSD = 2,
-	SJFCD = 3
+	SJFCD = 3,
+	FIFO = 4
 } algoritmo_code;
 
 typedef enum {
@@ -28,15 +29,13 @@ typedef enum {
 	EXIT = 5
 } estado_code;
 
-typedef struct
-{
-	char* position;
-	t_list* pokemones;
-	t_list* objetivo;
-	estado_code estado;
-	algoritmo_code algoritmo;
 
-} t_trainer;
+typedef struct {
+	int algoritmo_code;
+	char* algoritmo_string;
+	int quantum;
+	int retardo;
+} t_algoritmo;
 
 typedef struct {
 	char* nombre;
@@ -44,8 +43,23 @@ typedef struct {
 } t_pokemon;
 
 typedef struct {
+	int X;
+	int Y;
+}t_posicion;
+
+typedef struct {
 	t_pokemon* pokemones;
 } t_objetivo;
+
+typedef struct {
+	t_posicion* posicion;
+	t_list* pokemones; //list of t_pokemon
+	t_list* objetivo; //list of t_pokemon
+	t_algoritmo* algoritmo;
+	estado_code estado;
+
+
+} t_entrenador;
 
 
 #define TEAM_H_
