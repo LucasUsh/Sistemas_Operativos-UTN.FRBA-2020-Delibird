@@ -7,9 +7,9 @@
 
 #include "socketsCliente.h"
 
-void* serializar_paquete(t_paquete* paquete, int* bytes)
-{
-	void * stream = malloc(bytes);
+void* serializar_paquete(t_paquete* paquete, int* bytes){
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	void * stream = malloc(*bytes);
 	int desplazamiento = 0;
 
 	memcpy(stream + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
@@ -17,7 +17,6 @@ void* serializar_paquete(t_paquete* paquete, int* bytes)
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(int));
 	desplazamiento+= sizeof(int);
 	memcpy(stream + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	//desplazamiento+= paquete->buffer->size;
 
 	return stream;
 }
@@ -52,15 +51,13 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	paquete->buffer->size = strlen(mensaje)+1;
-
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size); //paquete->buffer->stream = mensaje;
 
-	int* bytes = paquete->buffer->size + sizeof(int)+ sizeof(int); // sizeof(int) es por el codigo de operacion
+	int bytes_a_enviar;
+	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
 
-	void * paqueteSerializado = serializar_paquete(paquete, &bytes);
-
-	send(socket_cliente, paqueteSerializado, bytes, 0);
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
 
 	free (paqueteSerializado);
 	free (paquete->buffer->stream);
@@ -71,25 +68,22 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 
 char* recibir_mensaje(int socket_cliente)
 {
-	t_paquete* paquete = malloc(sizeof(paquete));
+	op_code operacion;
+	int buffer_size;
+	void * buffer = malloc(buffer_size);
 
-	recv(socket_cliente, &(paquete->codigo_operacion), sizeof(int), 0);
+	recv(socket_cliente, &(operacion), sizeof(operacion), 0);
 
-	paquete->buffer = malloc(sizeof(t_buffer));
-	recv(socket_cliente, &(paquete->buffer->size), sizeof(int), 0 );
+	/*switch (operacion) {
+	case MENSAJE:
+		break;
+	case 0:
+		exit(2);
+	}*/
 
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-
-	recv(socket_cliente, &(paquete->buffer->stream), paquete->buffer->size, 0 );
-
-	void * stream =  malloc(paquete->buffer->size);
-	memcpy (stream, &(paquete->buffer->stream), paquete->buffer->size);
-
-	return stream;
-
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
+	recv(socket_cliente, &(buffer_size), sizeof(buffer_size), 0);
+	recv(socket_cliente, buffer, buffer_size, 0);
+	return buffer;
 }
 
 void liberar_conexion(int socket_cliente)
