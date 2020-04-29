@@ -58,7 +58,7 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 
 	int* bytes = paquete->buffer->size + sizeof(int)+ sizeof(int); // sizeof(int) es por el codigo de operacion
 
-	void * paqueteSerializado = serializar_paquete(paquete, *bytes);
+	void * paqueteSerializado = serializar_paquete(paquete, &bytes);
 
 	send(socket_cliente, paqueteSerializado, bytes, 0);
 
