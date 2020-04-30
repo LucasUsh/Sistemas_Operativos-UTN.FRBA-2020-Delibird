@@ -25,7 +25,13 @@
 
 typedef enum
 {
-	MENSAJE = 1,
+	MENSAJE = 99,
+	NEW_POKEMON=1,
+	APPEARED_POKEMON=2,
+	CATCH_POKEMON=3,
+	CAUGHT_POKEMON=4,
+	GET_POKEMON=5,
+	LOCALIZED_POKEMON=6
 }op_code;
 
 typedef struct

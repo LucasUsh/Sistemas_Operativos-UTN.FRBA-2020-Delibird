@@ -147,6 +147,7 @@ void process_request(int cod_op, int cliente_fd) {
 		switch (cod_op) {
 		case MENSAJE:
 			msg = recibir_mensaje_servidor(cliente_fd, &size);
+			printf("Recibi el siguiente mensaje: %s", msg);
 			devolver_mensaje(msg, size, cliente_fd);
 			free(msg);
 			break;
