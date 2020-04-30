@@ -4,16 +4,13 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../socketsCliente.c \
-../socketsServidor.c 
+../socketsUnificado.c 
 
 OBJS += \
-./socketsCliente.o \
-./socketsServidor.o 
+./socketsUnificado.o 
 
 C_DEPS += \
-./socketsCliente.d \
-./socketsServidor.d 
+./socketsUnificado.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
