@@ -56,7 +56,7 @@ typedef struct {
 	t_posicion* posicion;
 	t_list* pokemones; //list of t_pokemon
 	t_list* objetivo; //list of t_pokemon
-	t_algoritmo* algoritmo;
+	//t_algoritmo* algoritmo;
 	estado_code estado;
 
 

@@ -22,12 +22,10 @@ t_config* get_config(char* name){
 }
 
 
-int get_cantidad_entrenadores(char* pokemones){
-
-	char** lsPokemones = string_split(pokemones, ",");
+int array_length(char** value_array){
 	int i = 0;
 
-	while(lsPokemones[i] != NULL){
+	while(value_array[i] != NULL){
 		i++;
 	}
 
@@ -45,6 +43,8 @@ int get_algoritmo_code(char* algoritmo){
 	} else if (string_equals_ignore_case(algoritmo, "FIFO")){
 		return FIFO;
 	}
+
+	return 0;
 }
 
 t_algoritmo* get_algoritmo(t_config* config){
@@ -61,14 +61,66 @@ t_algoritmo* get_algoritmo(t_config* config){
 		algoritmo->quantum = atoi(config_get_string_value(config, "QUANTUM"));
 	}
 
+	/*
+	int i = 247593;
+	  char str[10];
+
+	  sprintf(str, "%d", i);
+	  */
+
 	return algoritmo;
 }
 
 
-t_list* get_pokemones(char* pokemones_string, int index){
-	t_list* pokemones = list_create();
 
-	return pokemones;
+char** get_array_by_index(char** array_from_config, int index){
+
+	 /* EJEMPLO CON POKEMONES
+	  * array_from_config:
+	  *  0 -> Pikachu|Squirtle|Pidgey
+	  *  1 -> Squirtle|Charmander
+	  *  2 -> Bulbasaur
+	  */
+
+	//value_string = Pikachu|Squirtle|Pidgey
+	char* value_string = array_from_config[index];
+	/*
+	  * value_array:
+	  *  0 -> Pikachu
+	  *  1 -> Squirtle
+	  *  2 -> Pidgey
+	  */
+	char** value_array = string_split(value_string, "|");
+
+	return value_array;
+}
+
+t_pokemon* get_pokemon(char* pokemon_name){
+	t_pokemon* pokemon = malloc(sizeof(t_pokemon));
+
+	pokemon->cantidad = 1;
+	pokemon->nombre = pokemon_name;
+
+	return pokemon;
+}
+
+t_list* get_pokemones(t_config* config, int index){
+	t_list* pokemones_list = list_create();
+
+	char** pokemon_entrenadores = config_get_array_value(config, "POKEMON_ENTRENADORES");
+	char** pokemones = get_array_by_index(pokemon_entrenadores,index);
+
+	int i = 0;
+
+	while(pokemones[i] != NULL){
+		t_pokemon* pokemon = get_pokemon(pokemones[i]);
+		list_add_in_index(pokemones_list, i, pokemon);
+		i++;
+	}
+
+	//foreach pokemon in pokemon pokemones_list.add(pokemon)
+
+	return pokemones_list;
 }
 
 t_list* get_objetivos(char* objetivos_string, int index){
@@ -77,9 +129,14 @@ t_list* get_objetivos(char* objetivos_string, int index){
 	return objetivos;
 }
 
-t_posicion* get_posicion(char* posicion_string, int index){
+t_posicion* get_posicion(t_config* config, int index){
 	t_posicion* posicion = (t_posicion*)malloc(sizeof(t_posicion));
 
+	char** posiciones = get_array_by_index(config_get_array_value(config, "POSICIONES_ENTRENADORES"),
+			index);
+
+	posicion->X = atoi(posiciones[0]);
+	posicion->Y = atoi(posiciones[1]);
 
 	return posicion;
 }
@@ -87,26 +144,26 @@ t_posicion* get_posicion(char* posicion_string, int index){
 t_entrenador* get_entrenador(t_config* config, int index){
 	t_entrenador* entrenador = (t_entrenador*)malloc(sizeof(t_entrenador));
 
-	entrenador->algoritmo = get_algoritmo(config);
 	entrenador->estado = NEW;
-	//entrenador->pokemones = get_pokemones(config_get_string_value(config, "POKEMON_ENTRENADORES"), index);
-	//entrenador->posicion = get_posicion(config_get_string_value(config, "POSICIONES_ENTRENADORES"), index);
+	entrenador->posicion = get_posicion(config, index);
+	entrenador->pokemones = get_pokemones(config, index);
 	//entrenador->objetivo = get_objetivos(config_get_string_value(config, "OBJETIVOS_ENTRENADORES"), index);
 
 	return entrenador;
 }
 
 t_list* get_entrenadores(t_config* config, int cantidadEntrenadores){
-	t_list* entrenadores = list_create();
+	t_list* entrenadores_list = list_create();
 
 	int i;
 	for(i=0 ; i < cantidadEntrenadores; i++){
+
 		t_entrenador* entrenador = malloc(sizeof(t_entrenador));
 		entrenador = get_entrenador(config, i);
-		list_add_in_index(entrenadores, i, entrenador);
+		list_add_in_index(entrenadores_list, i, entrenador);
 	}
 
-	return entrenadores;
+	return entrenadores_list;
 
 }
 
@@ -122,18 +179,38 @@ int main(int argc, char** argv)
     t_config* entrenador_config = config_create("/home/utnso/tp-2020-1c-5rona/team/config/entrenador1.config");
 
 
-    int cantidadEntrenadores = get_cantidad_entrenadores(config_get_string_value(entrenador_config, "POKEMON_ENTRENADORES"));
+    int cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
     printf("En este team hay %d entrenadores\n", cantidadEntrenadores);
 
 
+    t_algoritmo* algoritmo = get_algoritmo(entrenador_config);
     t_list* entrenadores = get_entrenadores(entrenador_config, cantidadEntrenadores);
 
 
+    printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
+    printf("********************\n");
+
     for(int i = 0; i < cantidadEntrenadores; i++){
     	t_entrenador* entrenador_actual = list_get(entrenadores, i);
-    	printf("entrenador %d planificacion: %s, quantum: %d\n", i, entrenador_actual->algoritmo->algoritmo_string, entrenador_actual->algoritmo->algoritmo_code);
+    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
+    			i + 1,
+				entrenador_actual->posicion->X,
+				entrenador_actual->posicion->Y);
+
+
+    	printf("|POKEMONES:\n");
+    	int j = 0;
+    	for(j=0; j < entrenador_actual->pokemones->elements_count; j++){
+    		t_pokemon* pokemon_actual = list_get(entrenador_actual->pokemones, j);
+    		printf("| 	nombre: %s, cantidad: %d\n",
+					pokemon_actual->nombre,
+					pokemon_actual->cantidad );
+    	}
+
+    printf("********************\n");
     }
 
+    printf("End");
 
 	return EXIT_SUCCESS;
 }
