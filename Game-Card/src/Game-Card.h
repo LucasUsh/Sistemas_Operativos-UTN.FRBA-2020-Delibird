@@ -9,6 +9,8 @@
 #include<stdlib.h>
 #include<readline/readline.h>
 #include<netdb.h>
+#include<pthread.h>
 
+int conexionBroker(void *arg);
 
 #endif
