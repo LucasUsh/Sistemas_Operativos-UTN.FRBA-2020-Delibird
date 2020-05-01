@@ -25,15 +25,83 @@
 
 typedef enum
 {
-	MENSAJE = 99,
 	NEW_POKEMON=1,
 	APPEARED_POKEMON=2,
 	CATCH_POKEMON=3,
 	CAUGHT_POKEMON=4,
 	GET_POKEMON=5,
-	LOCALIZED_POKEMON=6
+	LOCALIZED_POKEMON=6,
+	MENSAJE = 99
 }op_code;
+/*
+typedef struct {
+	int op_code;
+	int id_Mensaje;
+	int id_Correlacional;
+} t_mensaje;*/
 
+typedef struct {
+	int size_Nombre;
+	char * nombre;
+} t_pokemon;
+
+typedef struct {
+	//op_code codigo_operacion= 1;
+	int id_Mensaje;
+	int id_Correlacional;
+	t_pokemon pokemon;
+	int posX;
+	int posY;
+	int cant;
+} t_New;
+
+typedef struct {
+	//op_code codigo_operacion= 2;
+	int id_Mensaje;
+	int id_Correlacional;
+	t_pokemon pokemon;
+	int cantUbicaciones;
+	int posX;
+	int posY;
+/*				Como definir un struct con multiples ubicaciones?
+ * 				PREGUNTAR EN SABADO DE SOPORTE
+*/
+} t_Localized;
+
+typedef struct {
+	//op_code codigo_operacion= 3;
+	int id_Mensaje;
+	int id_Correlacional;
+	t_pokemon pokemon;
+} t_Get;
+
+typedef struct {
+	//op_code codigo_operacion= 4;
+	int id_Mensaje;
+	int id_Correlacional;
+	t_pokemon pokemon;
+	int posX;
+	int posY;
+} t_Appeared;
+
+typedef struct {
+	//op_code codigo_operacion= 5;
+	int id_Mensaje;
+	int id_Correlacional;
+	t_pokemon pokemon;
+	int posX;
+	int posy;
+} t_Catch;
+
+typedef struct {
+	//op_code codigo_operacion= 6;
+	int id_Mensaje;
+	int id_Correlacional;
+	int fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
+} t_Caught;
+
+
+// SERIALIZACION
 typedef struct
 {
 	int size;
