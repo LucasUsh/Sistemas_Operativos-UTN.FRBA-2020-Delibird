@@ -11,6 +11,6 @@
 #include<netdb.h>
 #include<pthread.h>
 
-int conexionBroker(void *arg);
+void conexionBroker(int *socket);
 
 #endif

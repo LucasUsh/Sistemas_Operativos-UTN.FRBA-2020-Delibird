@@ -10,7 +10,8 @@ int main(void)
     logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
 
     printf("GAME CARD iniciando ... \n");
-    int r = pthread_create(&h1, NULL, conexionBroker, NULL);
+    pthread_create(&h1, NULL, conexionBroker, &socket);
+
 
     pthread_join(h1,NULL);
     liberar_conexion(socket);
@@ -19,21 +20,22 @@ int main(void)
     return 0;
 }
 
-int conexionBroker(void *arg)
+void conexionBroker(int *socket)
 {
 	char* ip_broker;
 	char* puerto_broker;
+	char* timer;
 	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config,"IP_BROKER");
 	puerto_broker = config_get_string_value(config,"PUERTO_BROKER");
-	int socket = crear_conexion(ip_broker,puerto_broker);
-	while(socket == 0)
+	timer = config_get_string_value(config,"TIEMPO_DE_REINTENTO_CONEXION");
+
+	*socket = crear_conexion(ip_broker,puerto_broker);
+	while(*socket == 0)
 	{
-		socket = crear_conexion(ip_broker,puerto_broker);
 		sleep(1);
+		*socket = crear_conexion(ip_broker,puerto_broker);
 	}
 	printf("\n");
 	log_info(logger,"Conectado al Broker");
-
-	return socket;
 }
