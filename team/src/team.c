@@ -171,7 +171,7 @@ int main(int argc, char** argv)
     //char* config_name = argv[1];
 
     //t_config* entrenador_config = config_create(argv[1]);
-    t_config* entrenador_config = config_create("/home/utnso/tp-2020-1c-5rona/team/config/entrenador2.config");
+    t_config* entrenador_config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/team/config/entrenador2.config");
 
 
     int cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
