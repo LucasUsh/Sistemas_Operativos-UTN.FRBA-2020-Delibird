@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef SOCKETSUNIFICADO_H_
-#define SOCKETSUNIFICADO_H_
+#ifndef SOCKETS_H_
+#define SOCKETS_H_
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -29,6 +29,7 @@ char * PUERTO_SERVIDOR;
 
 typedef enum
 {
+	SUSCRIPCION=0,
 	NEW_POKEMON=1,
 	APPEARED_POKEMON=2,
 	CATCH_POKEMON=3,
@@ -40,10 +41,8 @@ typedef enum
 
 typedef struct
 {
-	int id_Mensaje;
-	int id_Correlacional;
 	int size;
-	void* stream;
+	void* stream; //en el stream debe ir la estructura administrativa: id_Mensaje + Mensaje
 } t_buffer;
 
 typedef struct
@@ -72,4 +71,4 @@ void serve_client(int *socket);
 void devolver_mensaje(void* payload, int size, int socket_cliente);
 
 
-#endif /* SOCKETSUNIFICADO_H_ */
+#endif /* SOCKETS_H_ */

@@ -5,7 +5,7 @@
  *      Author: utnso
  */
 
-#include "socketsUnificado.h"
+#include "sockets.h"
 
 
 int crear_conexion(char *ip, char* puerto){

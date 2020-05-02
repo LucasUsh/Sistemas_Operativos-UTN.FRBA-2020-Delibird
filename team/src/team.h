@@ -12,7 +12,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
-#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/socketsUnificado.c"
+#include "../../OurLibraries/Sockets/sockets.c"
 
 typedef enum {
 	RR = 1,
