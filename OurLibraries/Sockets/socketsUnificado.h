@@ -19,10 +19,13 @@
 #include<commons/collections/list.h> // Cliente
 #include<signal.h> // Cliente
 #include<unistd.h> // Cliente
-#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 
-#define IP_SERVIDOR "127.0.0.1"
-#define PUERTO_SERVIDOR "4444"
+//#define IP_SERVIDOR "127.0.0.1"
+//#define PUERTO_SERVIDOR "4444"
+
+char * IP_SERVIDOR;
+char * PUERTO_SERVIDOR;
+
 
 typedef enum
 {
@@ -49,9 +52,7 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
-
-
-pthread_t thread;
+pthread_t thread_socket_global;
 
 int crear_conexion(char* ip, char* puerto);
 void enviar_mensaje(char* mensaje, int socket_cliente);

@@ -18,6 +18,12 @@ int main(void) {
 	logger = iniciar_logger();
 	config = leer_config();
 
+	IP_SERVIDOR = config_get_string_value(config, "IP_BROKER");
+	PUERTO_SERVIDOR = config_get_string_value(config, "PUERTO_BROKER");
+
+	log_info(logger,"Lei la IP Broker %s ",IP_SERVIDOR);
+	log_info(logger,"Lei la PUERTO Broker %s ",PUERTO_SERVIDOR);
+
 	iniciar_servidor();
 	return EXIT_SUCCESS;
 
@@ -83,7 +89,7 @@ t_log* iniciar_logger(void){
 
 t_config * leer_config(void){
 	t_config * config;
-	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/Broker.config");
+	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/config/Broker.config");
 	if(config== NULL){
 		printf("No pude leer la config\n");
 		exit(2);
