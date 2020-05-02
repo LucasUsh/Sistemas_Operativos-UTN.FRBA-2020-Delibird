@@ -19,6 +19,7 @@
 #include<commons/collections/list.h> // Cliente
 #include<signal.h> // Cliente
 #include<unistd.h> // Cliente
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 
 #define IP_SERVIDOR "127.0.0.1"
 #define PUERTO_SERVIDOR "4444"
@@ -48,49 +49,7 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
-typedef struct {
-	int size_Nombre;
-	char * nombre;
-} t_pokemon;
 
-typedef struct {
-	// codigo_operacion= 1;
-	t_pokemon pokemon;
-	int posX;
-	int posY;
-	int cant;
-} t_New;
-
-typedef struct {
-	// codigo_operacion= 2;
-	t_pokemon pokemon;
-	int cantUbicaciones;
-	t_list * listaPosiciones;
-} t_Localized;
-
-typedef struct {
-	// codigo_operacion= 3;
-	t_pokemon pokemon;
-} t_Get;
-
-typedef struct {
-	// codigo_operacion= 4;
-	t_pokemon pokemon;
-	int posX;
-	int posY;
-} t_Appeared;
-
-typedef struct {
-	// codigo_operacion= 5;
-	t_pokemon pokemon;
-	int posX;
-	int posy;
-} t_Catch;
-
-typedef struct {
-	// codigo_operacion= 6;
-	int fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
-} t_Caught;
 
 pthread_t thread;
 
