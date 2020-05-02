@@ -59,14 +59,9 @@ t_algoritmo* get_algoritmo(t_config* config){
 
 	if(algoritmo->algoritmo_code == RR){
 		algoritmo->quantum = atoi(config_get_string_value(config, "QUANTUM"));
+	} else {
+		algoritmo->quantum = 0;
 	}
-
-	/*
-	int i = 247593;
-	  char str[10];
-
-	  sprintf(str, "%d", i);
-	  */
 
 	return algoritmo;
 }
@@ -176,7 +171,7 @@ int main(int argc, char** argv)
     //char* config_name = argv[1];
 
     //t_config* entrenador_config = config_create(argv[1]);
-    t_config* entrenador_config = config_create("/home/utnso/tp-2020-1c-5rona/team/config/entrenador1.config");
+    t_config* entrenador_config = config_create("/home/utnso/tp-2020-1c-5rona/team/config/entrenador2.config");
 
 
     int cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));

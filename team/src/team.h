@@ -14,7 +14,6 @@
 #include <commons/collections/list.h>
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/socketsUnificado.c"
 
-
 typedef enum {
 	RR = 1,
 	SJFSD = 2,
@@ -30,6 +29,13 @@ typedef enum {
 	EXIT = 5
 } estado_code;
 
+typedef struct {
+	t_posicion* posicion;
+	t_list* pokemones; //list of t_pokemon
+	t_list* objetivo; //list of t_pokemon
+	estado_code estado;
+
+} t_entrenador;
 
 typedef struct {
 	int algoritmo_code;
@@ -37,30 +43,6 @@ typedef struct {
 	int quantum;
 	int retardo;
 } t_algoritmo;
-
-typedef struct {
-	char* nombre;
-	int cantidad;
-} t_pokemon;
-
-typedef struct {
-	int X;
-	int Y;
-}t_posicion;
-
-typedef struct {
-	t_pokemon* pokemones;
-} t_objetivo;
-
-typedef struct {
-	t_posicion* posicion;
-	t_list* pokemones; //list of t_pokemon
-	t_list* objetivo; //list of t_pokemon
-	//t_algoritmo* algoritmo;
-	estado_code estado;
-
-
-} t_entrenador;
 
 
 #define TEAM_H_
