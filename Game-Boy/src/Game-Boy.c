@@ -3,7 +3,7 @@
 t_log* logger;
 t_config* config;
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	int socketBroker;
 	int socketTeam;
@@ -11,9 +11,21 @@ int main(void)
 	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.log", "Game-Boy", 1, LOG_LEVEL_INFO);
 	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.config");
 
-	printf("GAME BOY iniciando ... \n");
-	socketBroker = conexionBroker();
-	socketTeam = conexionTeam();
+	printf("GAME BOY iniciando ... \n",argv[1]);
+	switch(*argv[1]){
+		case 'B': //Broker
+			socketBroker = conexionBroker();
+		break;
+		case 'T': //Team
+			socketTeam = conexionTeam();
+		break;
+		case 'G': //Game-Card
+
+		break;
+		default:
+			printf("Sin proceso \n");
+		break;
+	}
 
 
 
