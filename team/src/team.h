@@ -13,6 +13,7 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.c"
+#include "../../OurLibraries/UniversoPokemon/universo.c"
 
 typedef enum {
 	RR = 1,
