@@ -133,6 +133,7 @@ t_posicion* get_posicion(t_config* config, int index){
 	posicion->X = atoi(posiciones[0]);
 	posicion->Y = atoi(posiciones[1]);
 
+
 	return posicion;
 }
 
@@ -163,11 +164,48 @@ t_list* get_entrenadores(t_config* config, int cantidadEntrenadores){
 }
 
 
+int get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
+	//raiz de (x2-x1)^2 + (y2-y1)^2
+
+	int distX = pos2.X - pos1.X;
+	int distY = pos2.Y - pos1.Y;
+
+	return sqrt(pow(distX,2) + pow(distY,2));
+
+}
+
+t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
+
+	t_entrenador* entrenador_cercano;
+	t_entrenador* entrenador;
+	int distancia_mas_chica = 0;
+
+	for(int i = 0; i < entrenadores->elements_count; i++){
+
+		entrenador = list_get(entrenadores, i);
+
+		int distancia_entrenador = get_distancia_entre_puntos(*entrenador->posicion, posicion_pokemon);
+
+
+		if(distancia_mas_chica == 0){
+			distancia_mas_chica = distancia_entrenador;
+			entrenador_cercano= entrenador;
+		} else if (distancia_entrenador < distancia_mas_chica) {
+			distancia_mas_chica = distancia_entrenador;
+			entrenador_cercano = entrenador;
+		}
+	}
+
+
+	return entrenador_cercano;
+}
+
+
+
 
 int main(int argc, char** argv)
 {
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
-
     //char* config_name = argv[1];
 
     //t_config* entrenador_config = config_create(argv[1]);
