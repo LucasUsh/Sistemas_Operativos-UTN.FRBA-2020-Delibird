@@ -110,13 +110,22 @@ t_list* get_pokemones(t_config* config, int index){
 		i++;
 	}
 
-	//foreach pokemon in pokemon pokemones_list.add(pokemon)
-
 	return pokemones_list;
 }
 
-t_list* get_objetivos(char* objetivos_string, int index){
+t_list* get_objetivos(t_config* config, int index){
 	t_list* objetivos = list_create();
+
+	char** pokemon_entrenadores = config_get_array_value(config, "OBJETIVOS_ENTRENADORES");
+	char** pokemones = get_array_by_index(pokemon_entrenadores,index);
+
+	int i = 0;
+
+	while(pokemones[i] != NULL){
+		t_pokemon* pokemon = get_pokemon(pokemones[i]);
+		list_add_in_index(objetivos, i, pokemon);
+		i++;
+	}
 
 	return objetivos;
 }
@@ -170,7 +179,7 @@ t_entrenador* get_entrenador(t_config* config, int index){
 	entrenador->posicion = get_posicion(config, index);
 
 	entrenador->pokemones = sumarizar_pokemones(get_pokemones(config, index));
-	//entrenador->objetivo = get_objetivos(config_get_string_value(config, "OBJETIVOS_ENTRENADORES"), index);
+	entrenador->objetivo = sumarizar_pokemones(get_objetivos(config, index));
 
 	return entrenador;
 }
@@ -287,6 +296,15 @@ int main(int argc, char** argv)
 					pokemon_actual->nombre,
 					pokemon_actual->cantidad );
     	}
+
+    	printf("|OBJETIVOS:\n");
+    	    	int y = 0;
+    	    	for(y=0; y < entrenador_actual->objetivo->elements_count; y++){
+    	    		t_pokemon* pokemon_actual = list_get(entrenador_actual->objetivo, y);
+    	    		printf("| 	nombre: %s, cantidad: %d\n",
+    						pokemon_actual->nombre,
+    						pokemon_actual->cantidad );
+    	    	}
 
     printf("********************\n");
     }
