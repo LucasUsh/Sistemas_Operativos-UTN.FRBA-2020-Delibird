@@ -15,11 +15,6 @@
 /* UNIVERSO POKEMON*/
 /****************************************/
 
-typedef struct {
-	int size_Nombre;
-	char * nombre;
-	int cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
-} t_pokemon;
 
 typedef struct {
 	int X;
@@ -27,7 +22,16 @@ typedef struct {
 }t_posicion;
 
 typedef struct {
-	t_pokemon * pokemones;/* aca iria un t_list * listaPokemones y cuando haces list_add le pasas
+	int size_Nombre;
+	char * nombre;
+	int cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
+	t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
+} t_pokemon;
+
+
+
+typedef struct {
+	t_list pokemones;/* aca iria un t_list * listaPokemones y cuando haces list_add le pasas
 								como parametro el tipo t_pokemon*/
 } t_objetivo;
 
