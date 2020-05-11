@@ -12,6 +12,7 @@
 
 
 int cantidadEntrenadores = 0;
+t_list* cola_ready;
 
 t_config* get_config(char* name){
 	char* cfg_path = string_new();
@@ -20,7 +21,6 @@ t_config* get_config(char* name){
 
 	return config_create(cfg_path);
 }
-
 
 int array_length(char** value_array){
 	int i = 0;
@@ -31,7 +31,6 @@ int array_length(char** value_array){
 
 	return i;
 }
-
 
 int get_algoritmo_code(char* algoritmo){
 	if(string_equals_ignore_case(algoritmo, "RR")){
@@ -65,8 +64,6 @@ t_algoritmo* get_algoritmo(t_config* config){
 
 	return algoritmo;
 }
-
-
 
 char** get_array_by_index(char** array_from_config, int index){
 
@@ -154,15 +151,23 @@ t_list* get_entrenadores(t_config* config, int cantidadEntrenadores){
 	int i;
 	for(i=0 ; i < cantidadEntrenadores; i++){
 
+		//cada entrenador es un hilo
 		t_entrenador* entrenador = malloc(sizeof(t_entrenador));
 		entrenador = get_entrenador(config, i);
+
+
+		////////////// SECCION CRITICA////////////////////
+		list_add(cola_ready, entrenador);
+		//////////////////////////////////////////////////
+
+
 		list_add_in_index(entrenadores_list, i, entrenador);
+
 	}
 
 	return entrenadores_list;
 
 }
-
 
 int get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 	//raiz de (x2-x1)^2 + (y2-y1)^2
@@ -200,11 +205,19 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posici
 	return entrenador_cercano;
 }
 
+t_entrenador* avanzar(t_entrenador* entrenador, int posX, int posY){
+	int nuevaPosicionX = entrenador->posicion->X + posX;
+	int nuevaPosicionY = entrenador->posicion->Y + posY;
 
+	entrenador->posicion->X = nuevaPosicionX;
+	entrenador->posicion->Y = nuevaPosicionY;
 
+	return entrenador;
+}
 
 int main(int argc, char** argv)
 {
+	cola_ready = list_create();
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
     //char* config_name = argv[1];
 
@@ -248,8 +261,45 @@ int main(int argc, char** argv)
 	return EXIT_SUCCESS;
 }
 
+void planificar_fifo(t_pokemon* pokemon_a_capturar){
 
+	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
+	t_entrenador* entrenador = list_get(cola_ready, 0);
 
+	return;
+}
+
+void planificar_rr(t_pokemon* pokemon_a_capturar){
+	return;
+}
+
+void planificar_sjfsd(t_pokemon* pokemon_a_capturar){
+	return;
+}
+
+void planificar_sjfcd(t_pokemon* pokemon_a_capturar){
+	return;
+}
+
+void planificar(t_algoritmo* algoritmo, t_pokemon* pokemon_a_capturar){
+	switch(algoritmo->algoritmo_code){
+	case FIFO:
+		planificar_fifo(pokemon_a_capturar);
+		break;
+	case RR:
+		planificar_rr(pokemon_a_capturar);
+		break;
+	case SJFSD:
+		planificar_sjfsd(pokemon_a_capturar);
+		break;
+	case SJFCD:
+		planificar_sjfcd(pokemon_a_capturar);
+		break;
+	default:
+		return;
+	}
+
+}
 
 
 
