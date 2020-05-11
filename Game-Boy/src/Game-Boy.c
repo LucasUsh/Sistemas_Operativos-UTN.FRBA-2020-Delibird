@@ -79,19 +79,30 @@ int conexionTeam()
 
 void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int socket_cliente)
 {
-	t_pokemon *p_pokemon = (t_pokemon*) malloc(sizeof(t_pokemon));
-	p_pokemon -> nombre = pokemon;
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = NEW_POKEMON;
 
-	t_posicion *p_posicion = (t_posicion*) malloc(sizeof(t_posicion));
-	p_posicion -> X = (int)x;
-	p_posicion -> Y = (int)y;
+	t_posicion * posicion;
+	posicion->X = (int)x;
+	posicion->Y = (int)y;
+	t_pokemon * p_pokemon;
+	p_pokemon->nombre = pokemon;
 
-	t_New *p_New = (t_New*) malloc(sizeof(t_New));
-	p_New -> cant = (int)cantidad;
-	//p_New -> pokemon = p_pokemon;
-	//p_New -> posicion = p_posicion;
+	t_New * new;
+	new->cant = (int) cantidad;
+	new->posicion = *posicion;
+	new->pokemon = *p_pokemon;
+
+	paquete ->buffer->size = sizeof(new);
+	memcpy(paquete->buffer->stream, new, paquete->buffer->size);
+
+	int bytes_a_enviar;
+	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
 
 	printf("Envio pokemon \n");
-
+	free(paquete);
 }
+
 
