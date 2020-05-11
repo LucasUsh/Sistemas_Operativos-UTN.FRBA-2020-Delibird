@@ -134,16 +134,48 @@ t_posicion* get_posicion(t_config* config, int index){
 	return posicion;
 }
 
+t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
+	t_list* lista_sumarizada = list_create();
+	for(int i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
+		t_pokemon* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
+		int pokemon_encontrado = 0;
+
+		if(lista_sumarizada->elements_count == 0){
+			list_add(lista_sumarizada, pokemon);
+		} else {
+
+			for(int j = 0; j < lista_sumarizada->elements_count; j++){
+				t_pokemon* pokemon_sumarizado = list_get(lista_sumarizada, j);
+
+				if(string_equals_ignore_case(pokemon_sumarizado->nombre, pokemon->nombre)){
+					pokemon_sumarizado->cantidad++;
+					pokemon_encontrado = 1;
+				}
+			}
+
+			if(!pokemon_encontrado){
+				list_add(lista_sumarizada, pokemon);
+			}
+		}
+	}
+
+	return lista_sumarizada;
+
+}
+
 t_entrenador* get_entrenador(t_config* config, int index){
 	t_entrenador* entrenador = (t_entrenador*)malloc(sizeof(t_entrenador));
 
 	entrenador->estado = NEW;
 	entrenador->posicion = get_posicion(config, index);
-	entrenador->pokemones = get_pokemones(config, index);
+
+	entrenador->pokemones = sumarizar_pokemones(get_pokemones(config, index));
 	//entrenador->objetivo = get_objetivos(config_get_string_value(config, "OBJETIVOS_ENTRENADORES"), index);
 
 	return entrenador;
 }
+
+
 
 t_list* get_entrenadores(t_config* config, int cantidadEntrenadores){
 	t_list* entrenadores_list = list_create();
@@ -204,6 +236,9 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posici
 
 	return entrenador_cercano;
 }
+
+
+
 
 t_entrenador* avanzar(t_entrenador* entrenador, int posX, int posY){
 	int nuevaPosicionX = entrenador->posicion->X + posX;
