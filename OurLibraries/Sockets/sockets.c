@@ -129,32 +129,40 @@ void esperar_cliente(int socket_servidor){
 	socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
 	int socket_cliente = accept(socket_servidor, (struct sockaddr*) &dir_cliente, &tam_direccion);
+	//     ^ accept crea un nuevo socket para el cliente
 
-	pthread_create(&thread_socket_global,NULL,(void*)serve_client,&socket_cliente);
-	pthread_detach(thread_socket_global);
+	pthread_create(&thread_socket_global, NULL, (void*)serve_client, &socket_cliente);
+	pthread_detach(thread_socket_global); //lo desasocio aunque sigue su curso
 
 }
 
 void serve_client(int* socket){
-	int cod_op;
-	if(recv(*socket, &cod_op, sizeof(int), MSG_WAITALL) == -1)
-		cod_op = -1;
-	process_request(cod_op, *socket);
+	int codigo_operacion;
+
+	if(recv(*socket, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
+		codigo_operacion = -1;
+
+	process_request(codigo_operacion, *socket);
 }
 
-void process_request(int cod_op, int cliente_fd) {
+void process_request(int codigo_operacion, int socket_cliente) {
+	//para esta funcion hay que agregar mas codigos de operacion,
+	//ya que para un mismo mensaje se puede manejar de distintas
+	//maneras segun que proceso lo esté enviando y hacia qué otro
+	//por ejemplo no es lo mismo un GET_POKEMON que manda el game boy
+	//al broker que un GET_POKEMON que manda el broker al game card,
+	//es el mismo mensaje pero lo van a tratar distento
 	int size;
 	void* msg;
-		switch (cod_op) {
+		switch (codigo_operacion) {
 		case MENSAJE:
-			msg = recibir_mensaje_servidor(cliente_fd, &size);
+			msg = recibir_mensaje_servidor(socket_cliente, &size);
 			printf("Recibi el siguiente mensaje: %s", (char*) msg);
-			devolver_mensaje(msg, size, cliente_fd);
+			devolver_mensaje(msg, size, socket_cliente);
 			free(msg);
 			break;
-		case 0:
-			pthread_exit(NULL);
 		case -1:
+			printf ("Error al recibir paquete en serve__client");
 			pthread_exit(NULL);
 		}
 }
