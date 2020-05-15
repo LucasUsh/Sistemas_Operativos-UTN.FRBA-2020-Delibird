@@ -3,13 +3,14 @@
 int main(void)
 {
 	pthread_t hilo_servidor_GC;
-	pthread_create (&hilo_servidor_GC, NULL, crear_servidor_GC, NULL);
+	pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL);
+
 
 	pthread_t h1;
 	int socket;
 	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
 
-    pthread_create(&h1, NULL, conexionBroker, &socket);
+    pthread_create(&h1, NULL, (void*) &conexionBroker, &socket);
 
 
     pthread_join(h1,NULL);
@@ -29,11 +30,11 @@ void conexionBroker(int *socket)
 {
 	char* ip_broker;
 	char* puerto_broker;
-	char* timer;
+
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
 	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
-	timer = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
+	//char* timer = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
 
 	*socket = crear_conexion(ip_broker,puerto_broker);
 	while(*socket == 0)

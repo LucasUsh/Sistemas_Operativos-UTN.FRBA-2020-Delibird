@@ -18,7 +18,7 @@
 t_log* logger_GC;
 t_config* config_GC;
 
-void crear_servidor_GC(pthread_t*);
+void crear_servidor_GC();
 void conexionBroker(int *socket);
 
 #endif
