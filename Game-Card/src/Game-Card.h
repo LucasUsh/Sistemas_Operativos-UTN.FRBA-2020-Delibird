@@ -15,10 +15,10 @@
 #define PUERTO_GAME_CARD "5001"
 
 
-t_log* logger_game_card;
-t_config* config_game_card;
+t_log* logger_GC;
+t_config* config_GC;
 
-crear_servidor_game_card(pthread_t*);
+void crear_servidor_GC(pthread_t*);
 void conexionBroker(int *socket);
 
 #endif
