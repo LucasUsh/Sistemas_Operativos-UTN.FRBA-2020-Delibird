@@ -20,36 +20,9 @@ int main(void)
 }
 
 void crear_servidor_GC() {
-	int socket_servidor_GC;
+	iniciar_servidor(IP_GAME_CARD, PUERTO_GAME_CARD);
 
-	struct addrinfo protocolos, *info_servidor_GC, *aux;
 
-	    memset(&protocolos, 0, sizeof(protocolos));
-	    protocolos.ai_family = AF_UNSPEC;
-	    protocolos.ai_socktype = SOCK_STREAM;
-	    protocolos.ai_flags = AI_PASSIVE;
-
-	    getaddrinfo(IP_GAME_CARD, PUERTO_GAME_CARD, &protocolos, &info_servidor_GC);
-
-	    for (aux = info_servidor_GC; aux != NULL; aux = aux->ai_next)
-	    {
-	        if ((socket_servidor_GC = socket(aux->ai_family, aux->ai_socktype, aux->ai_protocol)) == -1)
-	            continue;
-
-	        if (bind(socket_servidor_GC, aux->ai_addr, aux->ai_addrlen) == -1) {
-	            close(socket_servidor_GC);
-	            continue;
-	        }
-	        break;
-	    }
-
-		listen(socket_servidor_GC, SOMAXCONN);
-
-	    freeaddrinfo(info_servidor_GC);
-
-	    while(1)
-	    	esperar_cliente(socket_servidor_GC);
-	}
 }
 
 void conexionBroker(int *socket)

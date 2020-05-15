@@ -54,8 +54,10 @@ void enviar_mensaje(char* mensaje, int socket_cliente){
 
 char* recibir_mensaje(int socket_cliente){
 	op_code operacion;
-	int buffer_size;
+	int buffer_size = 0;
+
 	void * buffer = malloc(buffer_size);
+
 
 	recv(socket_cliente, &(operacion), sizeof(operacion), 0);
 
@@ -75,7 +77,7 @@ void liberar_conexion(int socket_cliente){
 	close(socket_cliente);
 }
 
-void* serializar_paquete(t_paquete* paquete, int* bytes){
+void* serializar_paquete(t_paquete* paquete, int *bytes){
 	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
 	void * stream = malloc(*bytes);
 	int desplazamiento = 0;
@@ -89,7 +91,7 @@ void* serializar_paquete(t_paquete* paquete, int* bytes){
 	return stream;
 }
 
-void iniciar_servidor(void){
+void iniciar_servidor(char *ip_servidor, char* puerto_servidor){
 	int socket_servidor;
 
     struct addrinfo hints, *servinfo, *p;
@@ -99,7 +101,7 @@ void iniciar_servidor(void){
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    getaddrinfo(IP_SERVIDOR, PUERTO_SERVIDOR, &hints, &servinfo);
+    getaddrinfo(ip_servidor, puerto_servidor, &hints, &servinfo);
 
     for (p=servinfo; p != NULL; p = p->ai_next)
     {
@@ -124,9 +126,9 @@ void iniciar_servidor(void){
 void esperar_cliente(int socket_servidor){
 	struct sockaddr_in dir_cliente;
 
-	int tam_direccion = sizeof(struct sockaddr_in);
+	socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
-	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
+	int socket_cliente = accept(socket_servidor, (struct sockaddr*) &dir_cliente, &tam_direccion);
 
 	pthread_create(&thread_socket_global,NULL,(void*)serve_client,&socket_cliente);
 	pthread_detach(thread_socket_global);
@@ -146,7 +148,7 @@ void process_request(int cod_op, int cliente_fd) {
 		switch (cod_op) {
 		case MENSAJE:
 			msg = recibir_mensaje_servidor(cliente_fd, &size);
-			printf("Recibi el siguiente mensaje: %s", msg);
+			printf("Recibi el siguiente mensaje: %s", (char*) msg);
 			devolver_mensaje(msg, size, cliente_fd);
 			free(msg);
 			break;
@@ -178,7 +180,7 @@ void devolver_mensaje(void* payload, int size, int socket_cliente){
 
 	int bytes = paquete->buffer->size + 2*sizeof(int);
 
-	void* a_enviar = serializar_paquete(paquete, bytes);
+	void* a_enviar = serializar_paquete(paquete, &bytes);
 
 	send(socket_cliente, a_enviar, bytes, 0);
 
