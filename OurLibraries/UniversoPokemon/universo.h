@@ -9,6 +9,7 @@
 #define UNIVERSO_H_
 
 #include<commons/collections/list.h>
+#include<stdint.h>
 
 
 /****************************************/
@@ -17,14 +18,14 @@
 
 
 typedef struct {
-	int X;
-	int Y;
+	uint32_t X;
+	uint32_t Y;
 }t_posicion;
 
 typedef struct {
-	int size_Nombre;
+	uint32_t size_Nombre;
 	char * nombre;
-	int cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
+	uint32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
 	t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
 } t_pokemon;
 
@@ -42,35 +43,41 @@ typedef struct {
 /****************************************/
 
 typedef struct {
+	uint32_t id_mensaje;
 	t_pokemon pokemon;
 	t_posicion posicion;
-	int cant;
+	uint32_t cant;
 } t_New; // codigo_operacion= 1
 
 typedef struct {
+	uint32_t id_mensaje;
 	t_pokemon pokemon;
-	int cantUbicaciones;
+	uint32_t cantUbicaciones;
 	t_list * listaPosiciones;
 } t_Localized; // codigo_operacion= 2
 
 typedef struct {
+	uint32_t id_mensaje;
 	t_pokemon pokemon;
 } t_Get; // codigo_operacion= 3
 
 typedef struct {
+	uint32_t id_mensaje;
 	t_pokemon pokemon;
 	t_posicion posicion;
 } t_Appeared; // codigo_operacion= 4
 
 typedef struct {
+	uint32_t id_mensaje;
 	t_pokemon pokemon;
 	t_posicion posicion;
 } t_Catch; // codigo_operacion= 5
 
 typedef struct {
-	int fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
+	uint32_t id_mensaje;
+	uint32_t fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
 } t_Caught; // codigo_operacion= 6
 
-int universo_init();
+uint32_t universo_init();
 
 #endif /* UNIVERSO_H_ */

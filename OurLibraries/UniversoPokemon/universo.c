@@ -8,6 +8,6 @@
 
 #include "universo.h"
 
-int universo_init(){
+uint32_t universo_init(){
 	return 0;
 }
