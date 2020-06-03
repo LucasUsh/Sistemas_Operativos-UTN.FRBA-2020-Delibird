@@ -260,6 +260,12 @@ t_entrenador* avanzar(t_entrenador* entrenador, int posX, int posY){
 	return entrenador;
 }
 
+void mostrar_pokemon(t_pokemon* pokemon_actual, t_list* objetivo_global){
+	printf("| 	nombre: %s, cantidad: %d\n",
+			pokemon_actual->nombre,
+			pokemon_actual->cantidad );
+}
+
 int main(int argc, char** argv)
 {
 	cola_ready = list_create();
@@ -283,6 +289,12 @@ int main(int argc, char** argv)
     printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
     printf("********************\n");
 
+
+    void _mostrar_pokemon(void* elemento){
+    	return mostrar_pokemon((t_pokemon*)elemento, objetivo_global);
+    }
+
+
     for(int i = 0; i < cantidadEntrenadores; i++){
     	t_entrenador* entrenador_actual = list_get(entrenadores, i);
     	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
@@ -292,42 +304,26 @@ int main(int argc, char** argv)
 
 
     	printf("|POKEMONES:\n");
-    	int j = 0;
-    	for(j=0; j < entrenador_actual->pokemones->elements_count; j++){
-    		t_pokemon* pokemon_actual = list_get(entrenador_actual->pokemones, j);
-    		printf("| 	nombre: %s, cantidad: %d\n",
-					pokemon_actual->nombre,
-					pokemon_actual->cantidad );
-    	}
+    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
 
     	printf("|OBJETIVOS:\n");
-    	    	int y = 0;
-    	    	for(y=0; y < entrenador_actual->objetivo->elements_count; y++){
-    	    		t_pokemon* pokemon_actual = list_get(entrenador_actual->objetivo, y);
-    	    		list_add(objetivo_global, pokemon_actual);
-    	    		printf("| 	nombre: %s, cantidad: %d\n",
-    						pokemon_actual->nombre,
-    						pokemon_actual->cantidad );
-    	    	}
+    	list_iterate(entrenador_actual->objetivo, _mostrar_pokemon);
 
-    printf("********************\n");
+		printf("********************\n");
 
+		int j = 0;
+		for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
+			t_pokemon* objetivo_actual = list_get(entrenador_actual->objetivo, j);
+			list_add(objetivo_global, objetivo_actual);
+		}
 
 
-
-    }
-
+	}
 
     objetivo_global = sumarizar_pokemones(objetivo_global);
 
 	printf("|OBJETIVO GLOBAL:\n");
-			int b = 0;
-			for(b=0; b < objetivo_global->elements_count; b++){
-				t_pokemon* pokemon_actual = list_get(objetivo_global, b);
-				printf("| 	nombre: %s, cantidad: %d\n",
-						pokemon_actual->nombre,
-						pokemon_actual->cantidad );
-			}
+	list_iterate(objetivo_global, _mostrar_pokemon);
 
 	printf("********************\n");
 
@@ -375,9 +371,5 @@ void planificar(t_algoritmo* algoritmo, t_pokemon* pokemon_a_capturar){
 	}
 
 }
-
-
-
-
 
 
