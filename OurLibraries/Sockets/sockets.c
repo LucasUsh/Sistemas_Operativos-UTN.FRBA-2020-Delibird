@@ -54,8 +54,10 @@ void enviar_mensaje(char* mensaje, int socket_cliente){
 
 char* recibir_mensaje(int socket_cliente){
 	op_code operacion;
-	int buffer_size;
+	int buffer_size = 0;
+
 	void * buffer = malloc(buffer_size);
+
 
 	recv(socket_cliente, &(operacion), sizeof(operacion), 0);
 
@@ -75,7 +77,7 @@ void liberar_conexion(int socket_cliente){
 	close(socket_cliente);
 }
 
-void* serializar_paquete(t_paquete* paquete, int* bytes){
+void* serializar_paquete(t_paquete* paquete, int *bytes){
 	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
 	void * stream = malloc(*bytes);
 	int desplazamiento = 0;
@@ -89,7 +91,7 @@ void* serializar_paquete(t_paquete* paquete, int* bytes){
 	return stream;
 }
 
-void iniciar_servidor(void){
+void iniciar_servidor(char *ip_servidor, char* puerto_servidor){
 	int socket_servidor;
 
     struct addrinfo hints, *servinfo, *p;
@@ -99,7 +101,7 @@ void iniciar_servidor(void){
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    getaddrinfo(IP_SERVIDOR, PUERTO_SERVIDOR, &hints, &servinfo);
+    getaddrinfo(ip_servidor, puerto_servidor, &hints, &servinfo);
 
     for (p=servinfo; p != NULL; p = p->ai_next)
     {
@@ -124,35 +126,43 @@ void iniciar_servidor(void){
 void esperar_cliente(int socket_servidor){
 	struct sockaddr_in dir_cliente;
 
-	int tam_direccion = sizeof(struct sockaddr_in);
+	socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
-	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
+	int socket_cliente = accept(socket_servidor, (struct sockaddr*) &dir_cliente, &tam_direccion);
+	//     ^ accept crea un nuevo socket para el cliente
 
-	pthread_create(&thread_socket_global,NULL,(void*)serve_client,&socket_cliente);
-	pthread_detach(thread_socket_global);
+	pthread_create(&thread_socket_global, NULL, (void*)serve_client, &socket_cliente);
+	pthread_detach(thread_socket_global); //lo desasocio aunque sigue su curso
 
 }
 
 void serve_client(int* socket){
-	int cod_op;
-	if(recv(*socket, &cod_op, sizeof(int), MSG_WAITALL) == -1)
-		cod_op = -1;
-	process_request(cod_op, *socket);
+	int codigo_operacion;
+
+	if(recv(*socket, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
+		codigo_operacion = -1;
+
+	process_request(codigo_operacion, *socket);
 }
 
-void process_request(int cod_op, int cliente_fd) {
+void process_request(int codigo_operacion, int socket_cliente) {
+	//para esta funcion hay que agregar mas codigos de operacion,
+	//ya que para un mismo mensaje se puede manejar de distintas
+	//maneras segun que proceso lo esté enviando y hacia qué otro
+	//por ejemplo no es lo mismo un GET_POKEMON que manda el game boy
+	//al broker que un GET_POKEMON que manda el broker al game card,
+	//es el mismo mensaje pero lo van a tratar distento
 	int size;
 	void* msg;
-		switch (cod_op) {
+		switch (codigo_operacion) {
 		case MENSAJE:
-			msg = recibir_mensaje_servidor(cliente_fd, &size);
-			printf("Recibi el siguiente mensaje: %s", msg);
-			devolver_mensaje(msg, size, cliente_fd);
+			msg = recibir_mensaje_servidor(socket_cliente, &size);
+			printf("Recibi el siguiente mensaje: %s", (char*) msg);
+			devolver_mensaje(msg, size, socket_cliente);
 			free(msg);
 			break;
-		case 0:
-			pthread_exit(NULL);
 		case -1:
+			printf ("Error al recibir paquete en serve__client");
 			pthread_exit(NULL);
 		}
 }
@@ -178,7 +188,7 @@ void devolver_mensaje(void* payload, int size, int socket_cliente){
 
 	int bytes = paquete->buffer->size + 2*sizeof(int);
 
-	void* a_enviar = serializar_paquete(paquete, bytes);
+	void* a_enviar = serializar_paquete(paquete, &bytes);
 
 	send(socket_cliente, a_enviar, bytes, 0);
 

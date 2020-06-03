@@ -7,7 +7,8 @@
 
 
 #include "universo.h"
+#include<stdint.h>
 
-int universo_init(){
+uint32_t universo_init(){
 	return 0;
 }

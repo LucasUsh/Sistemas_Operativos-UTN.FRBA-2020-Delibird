@@ -23,9 +23,6 @@
 //#define IP_SERVIDOR "127.0.0.1"
 //#define PUERTO_SERVIDOR "4444"
 
-char * IP_SERVIDOR;
-char * PUERTO_SERVIDOR;
-
 
 typedef enum
 {
@@ -59,10 +56,10 @@ char* recibir_mensaje(int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 void liberar_conexion(int socket_cliente);
 
-void* serializar_paquete(t_paquete* paquete, int* bytes);
+void* serializar_paquete(t_paquete* paquete, int *bytes);
 
 void* recibir_buffer(int*, int);
-void iniciar_servidor(void);
+void iniciar_servidor(char *ip_servidor, char* puerto_servidor);
 void esperar_cliente(int);
 void* recibir_mensaje_servidor(int socket_cliente, int* size);
 int recibir_operacion(int);
