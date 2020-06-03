@@ -224,24 +224,25 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posici
 
 	t_entrenador* entrenador_cercano;
 	t_entrenador* entrenador;
-	int distancia_mas_chica = 0;
+	int distancia_mas_chica = -1;
 
 	for(int i = 0; i < entrenadores->elements_count; i++){
 
 		entrenador = list_get(entrenadores, i);
 
-		int distancia_entrenador = get_distancia_entre_puntos(*entrenador->posicion, posicion_pokemon);
+		if(entrenador->estado == BLOCKED || entrenador->estado == NEW ){
+			int distancia_entrenador = get_distancia_entre_puntos(*entrenador->posicion, posicion_pokemon);
 
-
-		if(distancia_mas_chica == 0){
-			distancia_mas_chica = distancia_entrenador;
-			entrenador_cercano= entrenador;
-		} else if (distancia_entrenador < distancia_mas_chica) {
-			distancia_mas_chica = distancia_entrenador;
-			entrenador_cercano = entrenador;
+			if(distancia_mas_chica == -1){
+				distancia_mas_chica = distancia_entrenador;
+				entrenador_cercano= entrenador;
+			} else if (distancia_entrenador < distancia_mas_chica) {
+				distancia_mas_chica = distancia_entrenador;
+				entrenador_cercano = entrenador;
+			}
+			entrenador_cercano->estado = READY;
 		}
 	}
-
 
 	return entrenador_cercano;
 }
