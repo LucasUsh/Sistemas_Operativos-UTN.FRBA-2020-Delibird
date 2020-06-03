@@ -262,6 +262,8 @@ t_entrenador* avanzar(t_entrenador* entrenador, int posX, int posY){
 int main(int argc, char** argv)
 {
 	cola_ready = list_create();
+	t_list* objetivo_global = list_create();
+
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
     //char* config_name = argv[1];
 
@@ -301,13 +303,32 @@ int main(int argc, char** argv)
     	    	int y = 0;
     	    	for(y=0; y < entrenador_actual->objetivo->elements_count; y++){
     	    		t_pokemon* pokemon_actual = list_get(entrenador_actual->objetivo, y);
+    	    		list_add(objetivo_global, pokemon_actual);
     	    		printf("| 	nombre: %s, cantidad: %d\n",
     						pokemon_actual->nombre,
     						pokemon_actual->cantidad );
     	    	}
 
     printf("********************\n");
+
+
+
+
     }
+
+
+    objetivo_global = sumarizar_pokemones(objetivo_global);
+
+	printf("|OBJETIVO GLOBAL:\n");
+			int b = 0;
+			for(b=0; b < objetivo_global->elements_count; b++){
+				t_pokemon* pokemon_actual = list_get(objetivo_global, b);
+				printf("| 	nombre: %s, cantidad: %d\n",
+						pokemon_actual->nombre,
+						pokemon_actual->cantidad );
+			}
+
+	printf("********************\n");
 
     printf("End");
 
