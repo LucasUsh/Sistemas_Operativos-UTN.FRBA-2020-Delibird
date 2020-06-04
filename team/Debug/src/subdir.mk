@@ -4,13 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/team.c 
+../src/pokemon_utils.c \
+../src/team.c \
+../src/utils.c 
 
 OBJS += \
-./src/team.o 
+./src/pokemon_utils.o \
+./src/team.o \
+./src/utils.o 
 
 C_DEPS += \
-./src/team.d 
+./src/pokemon_utils.d \
+./src/team.d \
+./src/utils.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
