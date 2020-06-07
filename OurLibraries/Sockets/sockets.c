@@ -146,25 +146,21 @@ void serve_client(int* socket){
 }
 
 void process_request(int codigo_operacion, int socket_cliente) {
-	//para esta funcion hay que agregar mas codigos de operacion,
-	//ya que para un mismo mensaje se puede manejar de distintas
-	//maneras segun que proceso lo esté enviando y hacia qué otro
-	//por ejemplo no es lo mismo un GET_POKEMON que manda el game boy
-	//al broker que un GET_POKEMON que manda el broker al game card,
-	//es el mismo mensaje pero lo van a tratar distento
 	int size;
 	void* msg;
-		switch (codigo_operacion) {
+	switch (codigo_operacion) {
+
 		case MENSAJE:
 			msg = recibir_mensaje_servidor(socket_cliente, &size);
 			printf("Recibi el siguiente mensaje: %s", (char*) msg);
 			devolver_mensaje(msg, size, socket_cliente);
 			free(msg);
 			break;
+
 		case -1:
-			printf ("Error al recibir paquete en serve__client");
+			printf ("Error al recibir paquete en serve_client. Hilo finalizado.");
 			pthread_exit(NULL);
-		}
+	}
 }
 
 void* recibir_mensaje_servidor(int socket_cliente, int* size){
