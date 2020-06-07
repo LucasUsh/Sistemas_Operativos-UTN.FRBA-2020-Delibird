@@ -33,7 +33,7 @@ int crear_conexion(char *ip, char* puerto){
 
 void enviar_mensaje(char* mensaje, int socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = MENSAJE;
+	paquete->codigo_operacion = 99999999;
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	paquete->buffer->size = strlen(mensaje)+1;
@@ -80,7 +80,7 @@ void liberar_conexion(int socket_cliente){
 void* serializar_paquete(t_paquete* paquete, int *bytes){
 
 	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
-	void *stream = malloc(bytes);
+	void *stream = malloc(*bytes);
 	int desplazamiento = 0;
 
 	memcpy(stream + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
@@ -151,7 +151,7 @@ void process_request(int codigo_operacion, int socket_cliente) {
 	void* msg;
 	switch (codigo_operacion) {
 
-		case MENSAJE:
+		case 99999999:
 			msg = recibir_mensaje_servidor(socket_cliente, &size);
 			printf("Recibi el siguiente mensaje: %s", (char*) msg);
 			devolver_mensaje(msg, size, socket_cliente);
@@ -177,7 +177,7 @@ void* recibir_mensaje_servidor(int socket_cliente, int* size){
 void devolver_mensaje(void* payload, int size, int socket_cliente){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
-	paquete->codigo_operacion = MENSAJE;
+	paquete->codigo_operacion = 99999999;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = size;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
