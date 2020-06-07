@@ -79,8 +79,8 @@ void liberar_conexion(int socket_cliente){
 
 void* serializar_paquete(t_paquete* paquete, int *bytes){
 
-	int byte = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
-	void * stream = malloc(byte);
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	void *stream = malloc(bytes);
 	int desplazamiento = 0;
 
 	memcpy(stream + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
