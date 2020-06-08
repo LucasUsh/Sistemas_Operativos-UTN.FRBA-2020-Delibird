@@ -19,6 +19,7 @@
 #include<commons/collections/list.h> // Cliente
 #include<signal.h> // Cliente
 #include<unistd.h> // Cliente
+#include<stdint.h>
 
 //#define IP_SERVIDOR "127.0.0.1"
 //#define PUERTO_SERVIDOR "4444"
@@ -39,7 +40,8 @@ typedef enum
 
 typedef struct
 {
-	int size;
+	uint32_t size;
+	uint32_t id_Mensaje;
 	void* stream; //en el stream debe ir la estructura administrativa: id_Mensaje + Mensaje
 } t_buffer;
 
@@ -49,19 +51,19 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
-int crear_conexion(char* ip, char* puerto);
-void enviar_mensaje(char* mensaje, int socket_cliente);
-char* recibir_mensaje(int socket_cliente);
+uint32_t crear_conexion(char* ip, char* puerto);
+void enviar_mensaje(char* mensaje, uint32_t socket_cliente);
+char* recibir_mensaje(uint32_t socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
-void liberar_conexion(int socket_cliente);
+void liberar_conexion(uint32_t socket_cliente);
 
-void* serializar_paquete(t_paquete* paquete, int *bytes);
+void* serializar_paquete(t_paquete* paquete, uint32_t *bytes);
 
-int crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
-int recibir_cliente(int);
-void servir_cliente(int *socket);
-void devolver_mensaje(void* payload, int size, int socket_cliente);
+uint32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
+uint32_t recibir_cliente(uint32_t);
+void servir_cliente(uint32_t *socket);
+void devolver_mensaje(void* payload, uint32_t size, uint32_t socket_cliente);
 
-void* recibir_mensaje_servidor(int socket_cliente, int* size);
+void* recibir_mensaje_servidor(uint32_t socket_cliente, uint32_t* size);
 
 #endif /* SOCKETS_H_ */
