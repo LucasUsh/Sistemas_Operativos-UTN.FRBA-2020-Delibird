@@ -92,7 +92,8 @@ void* serializar_paquete(t_paquete* paquete, int *bytes){
 	return stream;
 }
 
-void iniciar_servidor(char *ip_servidor, char* puerto_servidor){
+// retorna el socket del servidor
+int crear_socket_escucha(char *ip_servidor, char* puerto_servidor){
 	int socket_servidor;
 
     struct addrinfo hints, *servinfo, *p;
@@ -120,48 +121,17 @@ void iniciar_servidor(char *ip_servidor, char* puerto_servidor){
 
     freeaddrinfo(servinfo);
 
-    while(1)
-    	esperar_cliente(socket_servidor);
+    return socket_servidor;
 }
 
-void esperar_cliente(int socket_servidor){
+int recibir_cliente(int socket_servidor){
 	struct sockaddr_in dir_cliente;
 
 	socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
-	int socket_cliente = accept(socket_servidor, (struct sockaddr*) &dir_cliente, &tam_direccion);
-	//     ^ accept crea un nuevo socket para el cliente
+	return accept(socket_servidor, (struct sockaddr*) &dir_cliente, &tam_direccion);
+	//       ^ accept crea un nuevo socket para el cliente
 
-	pthread_create(&thread_socket_global, NULL, (void*)serve_client, &socket_cliente);
-	pthread_detach(thread_socket_global); //lo desasocio aunque sigue su curso
-
-}
-
-void serve_client(int* socket){
-	int codigo_operacion;
-
-	if(recv(*socket, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
-		codigo_operacion = -1;
-
-	process_request(codigo_operacion, *socket);
-}
-
-void process_request(int codigo_operacion, int socket_cliente) {
-	int size;
-	void* msg;
-	switch (codigo_operacion) {
-
-		case 99999999:
-			msg = recibir_mensaje_servidor(socket_cliente, &size);
-			printf("Recibi el siguiente mensaje: %s", (char*) msg);
-			devolver_mensaje(msg, size, socket_cliente);
-			free(msg);
-			break;
-
-		case -1:
-			printf ("Error al recibir paquete en serve_client. Hilo finalizado.");
-			pthread_exit(NULL);
-	}
 }
 
 void* recibir_mensaje_servidor(int socket_cliente, int* size){

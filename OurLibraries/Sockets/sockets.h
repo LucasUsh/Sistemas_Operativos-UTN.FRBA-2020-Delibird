@@ -49,8 +49,6 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
-pthread_t thread_socket_global;
-
 int crear_conexion(char* ip, char* puerto);
 void enviar_mensaje(char* mensaje, int socket_cliente);
 char* recibir_mensaje(int socket_cliente);
@@ -59,14 +57,11 @@ void liberar_conexion(int socket_cliente);
 
 void* serializar_paquete(t_paquete* paquete, int *bytes);
 
-void* recibir_buffer(int*, int);
-void iniciar_servidor(char *ip_servidor, char* puerto_servidor);
-void esperar_cliente(int);
-void* recibir_mensaje_servidor(int socket_cliente, int* size);
-int recibir_operacion(int);
-void process_request(int cod_op, int cliente_fd);
-void serve_client(int *socket);
+int crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
+int recibir_cliente(int);
+void servir_cliente(int *socket);
 void devolver_mensaje(void* payload, int size, int socket_cliente);
 
+void* recibir_mensaje_servidor(int socket_cliente, int* size);
 
 #endif /* SOCKETS_H_ */

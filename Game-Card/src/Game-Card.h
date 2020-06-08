@@ -10,15 +10,20 @@
 #include<netdb.h>
 #include<pthread.h>
 #include "../../OurLibraries/Sockets/sockets.c"
+#include "../../OurLibraries/Sockets/sockets.h"
 
 #define IP_GAME_CARD "127.0.0.3"
 #define PUERTO_GAME_CARD "5001"
 
 
 t_log* logger_GC;
+
 t_config* config_GC;
 
+pthread_t hilo_global_cliente_GC;
+
 void crear_servidor_GC();
+void responder_mensaje(int* socket_cliente);
 void conexionBroker(int *socket);
 
 #endif

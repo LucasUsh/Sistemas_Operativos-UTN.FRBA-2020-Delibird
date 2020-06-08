@@ -21,9 +21,40 @@ int main(void)
 }
 
 void crear_servidor_GC() {
-	iniciar_servidor(IP_GAME_CARD, PUERTO_GAME_CARD);
+	int socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
+	int socket_cliente_entrante;
 
+    while(1) {
+    	// quizás para Broker no conviene sobrepisar tod0 el tiempo el valor de este socket:
+    	socket_cliente_entrante = recibir_cliente(socket_servidor_GC);
 
+    	pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante);
+    	pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
+    }
+}
+
+void responder_mensaje(int* socket_cliente) {
+
+	int codigo_operacion;
+
+	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
+			codigo_operacion = -1;
+
+	//int size;
+	//void* msg;
+	switch (codigo_operacion) {
+
+		case 0:
+			//msg = recibir_mensaje_servidor(socket_cliente, &size);
+			//printf("Recibi el siguiente mensaje: %s", (char*) msg);
+			//devolver_mensaje(msg, size, socket_cliente);
+			//free(msg);
+			break;
+
+		case -1:
+			printf ("Error al recibir paquete en serve_client. Hilo finalizado.");
+			pthread_exit(NULL);
+	}
 }
 
 void conexionBroker(int *socket)
