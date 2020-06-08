@@ -18,10 +18,35 @@
 #include <commons/collections/queue.h>
 #include "../../OurLibraries/Sockets/sockets.c"
 
+typedef struct {
+	uint32_t id_Mensaje;
+	void * mensaje;
+	uint32_t PID; // ID del proceso que mando el mensaje
+} info_Mensaje;
+
 t_log* logger;
 t_config* config;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
+
+void crearColasDeSuscriptores();
+void suscribirProcesoACola(op_code operacion, uint32_t * PID);
+void crearColasDeMensajes();
+void agregarMensaje(op_code operacion, info_Mensaje infoMensaje);
+uint32_t asignarID();
+
+t_queue * queue_Suscriptores_New;
+t_queue * queue_Mensajes_New;
+t_queue * queue_Suscriptores_Appeared;
+t_queue * queue_Mensajes_Appeared;
+t_queue * queue_Suscriptores_Catch;
+t_queue * queue_Mensajes_Catch;
+t_queue * queue_Suscriptores_Caught;
+t_queue * queue_Mensajes_Caught;
+t_queue * queue_Suscriptores_Get;
+t_queue * queue_Mensajes_Get;
+t_queue * queue_Suscriptores_Localized;
+t_queue * queue_Mensajes_Localized;
 
 #endif /* BROKER_H_ */

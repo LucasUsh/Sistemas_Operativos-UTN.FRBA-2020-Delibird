@@ -10,9 +10,9 @@
 
 #include "Broker.h"
 
-bool existe_New, existe_Appeared, existe_Catch, existe_Caught, existe_Get, existe_Localized = false;
+uint32_t id_Mensaje = 0;
 
-int main(void) {
+uint32_t main(void) {
 	malloc(sizeof(bool)*6);
 
 	logger = iniciar_logger();
@@ -24,56 +24,85 @@ int main(void) {
 	log_info(logger,"Lei IP_BROKER %s ",IP_BROKER);
 	log_info(logger,"Lei PUERTO_BROKER %s ",PUERTO_BROKER);
 
-	iniciar_servidor(IP_BROKER, PUERTO_BROKER);
+	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
+	crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 	return EXIT_SUCCESS;
 
 }
 
-void suscribirACola(op_code operacion, int * PID){
+void crearColasDeSuscriptores(){
+	malloc(sizeof(t_queue) *6);
+	t_queue * queue_Suscriptores_New = queue_create();
+	t_queue * queue_Suscriptores_Appeared = queue_create();
+	t_queue * queue_Suscriptores_Catch = queue_create();
+	t_queue * queue_Suscriptores_Caught = queue_create();
+	t_queue * queue_Suscriptores_Get = queue_create();
+	t_queue * queue_Suscriptores_Localized = queue_create();
+}
+
+void suscribirProcesoACola(op_code operacion, uint32_t * PID){
 	switch(operacion) {
 	case 1: // NEW_POKEMON = 1
-		while(existe_New == false){
-			t_queue * queue_New = queue_create();
-			existe_New = true;
-		}
-		//queue_push(queue_New_Pokemon, PID);
+		queue_push(queue_Suscriptores_New, PID);
 		break;
 	case 2: // 	APPEARED_POKEMON=2
-		while(existe_Appeared == false){
-			t_queue * queue_Appeared = queue_create();
-			existe_Appeared = true;
-		}
-		//queue_push(queue_Appeared, PID);
+		queue_push(queue_Suscriptores_Appeared, PID);
 		break;
 	case 3: // 	CATCH_POKEMON=3
-		while(existe_Catch == false){
-			t_queue * queue_Catch = queue_create();
-			existe_Catch = true;
-		}
-		//queue_push(queue_Catch, PID);
+		queue_push(queue_Suscriptores_Catch, PID);
 		break;
 	case 4: // CAUGHT_POKEMON=4
-		while(existe_Caught == false){
-			t_queue * queue_Caught = queue_create();
-			existe_Caught = true;
-		}
-		//queue_push(queue_Caught, PID);
+		queue_push(queue_Suscriptores_Caught, PID);
 		break;
 	case 5: // GET_POKEMON=5
-		while(existe_Get == false){
-			t_queue * queue_Get = queue_create();
-			existe_Get = true;
-		}
-		//queue_push(queue_Get, PID);
+		queue_push(queue_Suscriptores_Get, PID);
 		break;
 	case 6: // LOCALIZED_POKEMON=6
-		while(existe_Localized == false){
-			t_queue * queue_Localized = queue_create();
-			existe_Localized = true;
-		}
-		//queue_push(queue_Localized, PID);
+		queue_push(queue_Suscriptores_Localized, PID);
 		break;
 	}
+}
+
+void crearColasDeMensajes(){
+	malloc(sizeof(t_queue) *6);
+	t_queue * queue_Mensajes_New = queue_create();
+	t_queue * queue_Mensajes_Appeared = queue_create();
+	t_queue * queue_Mensajes_Catch = queue_create();
+	t_queue * queue_Mensajes_Caught = queue_create();
+	t_queue * queue_Mensajes_Get = queue_create();
+	t_queue * queue_Mensajes_Localized = queue_create();
+}
+
+void agregarMensaje(op_code operacion, info_Mensaje infoMensaje){
+/*
+ * CHEQUEAR EL SEGUNDO ARGUMENTO DEL QUEUE_PUSH EN CADA CASE;
+ * SERIA LA FORMA CORRECTA DE GUARDAR EL STRUCT INFO_MENSAJE EN UNA COLA?
+ */
+	switch(operacion) {
+	case 1: // NEW_POKEMON = 1
+		queue_push(queue_Mensajes_New, &infoMensaje);
+		break;
+	case 2: // 	APPEARED_POKEMON=2
+		queue_push(queue_Mensajes_Appeared, &infoMensaje);
+		break;
+	case 3: // 	CATCH_POKEMON=3
+		queue_push(queue_Mensajes_Catch, &infoMensaje);
+		break;
+	case 4: // CAUGHT_POKEMON=4
+		queue_push(queue_Mensajes_Caught, &infoMensaje);
+		break;
+	case 5: // GET_POKEMON=5
+		queue_push(queue_Mensajes_Get, &infoMensaje);
+		break;
+	case 6: // LOCALIZED_POKEMON=6
+		queue_push(queue_Mensajes_Localized, &infoMensaje);
+		break;
+	}
+}
+
+uint32_t asignarID(){
+	id_Mensaje =+1;
+	return id_Mensaje;
 }
 
 t_log* iniciar_logger(void){
