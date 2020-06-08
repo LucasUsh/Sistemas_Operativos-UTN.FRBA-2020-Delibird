@@ -52,7 +52,29 @@ void enviar_mensaje(char* mensaje, uint32_t socket_cliente){
 
 }
 
-char* recibir_mensaje(int socket_cliente){
+void enviar_mensaje_con_opCode(op_code codOperacion, uint32_t idMensaje, void* mensaje, uint32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = codOperacion;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	paquete->buffer->size = sizeof(*mensaje);// + sizeof(idMensaje);
+	paquete->buffer->id_Mensaje = idMensaje;
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size); //paquete->buffer->stream = mensaje;
+
+	uint32_t bytes_a_enviar;
+	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free (paqueteSerializado);
+	free (paquete->buffer->stream);
+	free (paquete->buffer);
+	free (paquete);
+
+}
+
+char* recibir_mensaje(uint32_t socket_cliente){
 	op_code operacion;
 	uint32_t buffer_size = 0;
 

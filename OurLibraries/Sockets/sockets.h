@@ -65,5 +65,6 @@ void servir_cliente(uint32_t *socket);
 void devolver_mensaje(void* payload, uint32_t size, uint32_t socket_cliente);
 
 void* recibir_mensaje_servidor(uint32_t socket_cliente, uint32_t* size);
+void enviar_mensaje_con_opCode(op_code codOperacion, uint32_t idMensaje, void* mensaje, uint32_t socket_cliente);
 
 #endif /* SOCKETS_H_ */
