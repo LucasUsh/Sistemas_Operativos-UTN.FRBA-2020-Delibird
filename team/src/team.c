@@ -18,7 +18,19 @@ t_list* mensajes_localized_parseados;
 
 
 
+int get_cantidad_pokemon_capturables(t_entrenador* entrenador){
 
+	int total_pokemon = 0 ;
+
+	int _sumar_pokemon(void* element){
+		total_pokemon += ((t_pokemon*)element)->cantidad;
+		return total_pokemon;
+	}
+
+	list_iterate(entrenador->objetivo, _sumar_pokemon);
+
+	return total_pokemon;
+}
 
 int get_algoritmo_code(char* algoritmo){
 	if(string_equals_ignore_case(algoritmo, "RR")){
@@ -244,8 +256,6 @@ int main(int argc, char** argv)
 			t_pokemon* objetivo_actual = list_get(entrenador_actual->objetivo, j);
 			list_add(objetivo_global, objetivo_actual);
 		}
-
-
 	}
 
     objetivo_global = sumarizar_pokemones(objetivo_global);
@@ -255,11 +265,7 @@ int main(int argc, char** argv)
 
 	printf("********************\n");
 
-
 	//simular_fifo(entrenadores);
-
-
-
 
     printf("End");
 
@@ -298,6 +304,7 @@ void simular_fifo(t_list* entrenadores){
 
 	t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, posPok);
 
+
 	entrenador_mas_cercano->estado = READY;
 	entrenador_mas_cercano->posicion_destino = posPok;
 
@@ -314,6 +321,21 @@ void simular_fifo(t_list* entrenadores){
 
 
 void planificar_rr(t_pokemon* pokemon_a_capturar){
+	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
+	t_entrenador* entrenador = list_remove(cola_ready, 0);
+	entrenador->estado = EXEC;
+
+	int posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
+	int posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
+
+	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
+
+	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
+
+	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
+
+	//una vez que lo muevo llamo al broker y hago el catch
+
 	return;
 }
 
