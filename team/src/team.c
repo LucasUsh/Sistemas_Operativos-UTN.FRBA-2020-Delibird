@@ -18,7 +18,7 @@ t_list* mensajes_localized_parseados;
 
 
 
-int get_cantidad_pokemon_capturables(t_entrenador* entrenador){
+int get_cantidad_pokemon(t_list* list_pokemones){
 
 	int total_pokemon = 0 ;
 
@@ -27,10 +27,16 @@ int get_cantidad_pokemon_capturables(t_entrenador* entrenador){
 		return total_pokemon;
 	}
 
-	list_iterate(entrenador->objetivo, _sumar_pokemon);
+	list_iterate(list_pokemones, (void*)_sumar_pokemon);
 
 	return total_pokemon;
 }
+
+bool puede_capturar_pokemones(t_entrenador* entrenador){
+	return get_cantidad_pokemon(entrenador->pokemones) < get_cantidad_pokemon(entrenador->objetivo);
+}
+
+
 
 int get_algoritmo_code(char* algoritmo){
 	if(string_equals_ignore_case(algoritmo, "RR")){
@@ -246,6 +252,7 @@ int main(int argc, char** argv)
 
     	printf("|OBJETIVOS:\n");
     	list_iterate(entrenador_actual->objetivo, _mostrar_pokemon);
+
 
 		printf("********************\n");
 
