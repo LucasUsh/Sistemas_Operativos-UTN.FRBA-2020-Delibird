@@ -15,7 +15,7 @@
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.h"
 #include "../../OurLibraries/UniversoPokemon/universo.h"
-#include "pthread.h"
+#include <pthread.h>
 #include <math.h>
 
 typedef enum {

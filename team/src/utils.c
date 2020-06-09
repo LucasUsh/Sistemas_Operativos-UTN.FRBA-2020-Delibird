@@ -32,3 +32,11 @@ int array_length(char** value_array){
 
 	return i;
 }
+
+t_config* get_config(char* name){
+	char* cfg_path = string_new();
+	string_append(&cfg_path, "../config/");
+	string_append(&cfg_path, name);
+
+	return config_create(cfg_path);
+}

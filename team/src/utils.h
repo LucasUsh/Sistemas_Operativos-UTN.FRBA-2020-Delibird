@@ -11,8 +11,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <commons/string.h>
+#include <commons/config.h>
 
 char** get_array_by_index(char** array_from_config, int index);
 int array_length(char** value_array);
+t_config* get_config(char* name);
 
 #endif /* UTILS_H_ */
