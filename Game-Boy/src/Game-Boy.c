@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 	if(string_contains(argv[1], "BROKER")){
 		socket = conexionBroker();
 		if(socket == 0){
+			log_info(logger,"Error al conectar al Broker");
 			return 0;
 		}
 		if(string_contains(argv[2], "NEW_POKEMON")){
@@ -29,12 +30,17 @@ int main(int argc, char *argv[])
 		if(string_contains(argv[2], "CAUGHT_POKEMON")){
 			printf("Caught Pokemon \n");
 		}
-	}
+	}else{
 
-	if(strcmp(argv[1], "TEAM")== 0){
-		socket = conexionTeam();
+		if(string_contains(argv[1], "TEAM")){
+			socket = conexionTeam();
+			if(socket == 0)
+			{
+				log_info(logger,"Error al conectar al Team");
+				return 0;
+			}
+		}
 	}
-
 
 
 
@@ -44,38 +50,6 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int conexionBroker()
-{
-	char* ip_broker = config_get_string_value(config,"IP_BROKER​");
-	char* puerto_broker = config_get_string_value(config,"PUERTO_BROKER");
-
-	int socket = crear_conexion(ip_broker,puerto_broker);
-	if(socket != 0)
-	{
-		log_info(logger,"Conectado al Broker");
-	}else
-	{
-		log_info(logger,"Error al conectar al Broker");
-	}
-
-	return socket;
-}
-
-int conexionTeam()
-{
-	char* ip_team = config_get_string_value(config,"IP_TEAM");
-	char* puerto_team = config_get_string_value(config,"PUERTO_TEAM​");
-
-	int socket = crear_conexion(ip_team, puerto_team);
-	if(socket != 0)
-	{
-		log_info(logger,"Conectado al Team");
-	}else
-	{
-		log_info(logger,"Error al conectar al Team");
-	}
-	return socket;
-}
 
 void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int socket_cliente)
 {
