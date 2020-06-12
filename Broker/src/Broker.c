@@ -11,9 +11,11 @@
 #include "Broker.h"
 
 uint32_t id_Mensaje = 0;
+bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
+bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
 
 uint32_t main(void) {
-	malloc(sizeof(bool)*6);
+	malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
 
 	logger = iniciar_logger();
 	config = leer_config();
@@ -30,72 +32,132 @@ uint32_t main(void) {
 
 }
 
-void crearColasDeSuscriptores(){
-	malloc(sizeof(t_queue) *6);
-	t_queue * queue_Suscriptores_New = queue_create();
-	t_queue * queue_Suscriptores_Appeared = queue_create();
-	t_queue * queue_Suscriptores_Catch = queue_create();
-	t_queue * queue_Suscriptores_Caught = queue_create();
-	t_queue * queue_Suscriptores_Get = queue_create();
-	t_queue * queue_Suscriptores_Localized = queue_create();
-}
-
-void suscribirProcesoACola(op_code operacion, uint32_t * PID){
+void suscribirProceso(op_code operacion, uint32_t * PID){
 	switch(operacion) {
 	case 1: // NEW_POKEMON = 1
+		// Si no existe la cola, la creamos
+		if (flag_Suscriptores_New == false){
+			malloc(sizeof(t_queue));
+			t_queue * queue_Suscriptores_New = queue_create();
+			flag_Suscriptores_New= true;
+		}else {}
 		queue_push(queue_Suscriptores_New, PID);
 		break;
+
 	case 2: // 	APPEARED_POKEMON=2
+		// Si no existe la cola, la creamos
+		if (flag_Suscriptores_Appeared == false){
+			malloc(sizeof(t_queue));
+			t_queue * queue_Suscriptores_Appeared = queue_create();
+			flag_Suscriptores_Appeared= true;
+		}else {}
 		queue_push(queue_Suscriptores_Appeared, PID);
 		break;
+
 	case 3: // 	CATCH_POKEMON=3
+		// Si no existe la cola, la creamos
+		if (flag_Suscriptores_Catch == false){
+			malloc(sizeof(t_queue));
+			t_queue * queue_Suscriptores_Catch = queue_create();
+			flag_Suscriptores_Catch=true;
+		}else {}
 		queue_push(queue_Suscriptores_Catch, PID);
 		break;
+
 	case 4: // CAUGHT_POKEMON=4
+		// Si no existe la cola, la creamos
+		if (flag_Suscriptores_Caught == false){
+			malloc(sizeof(t_queue));
+			t_queue * queue_Suscriptores_Caught = queue_create();
+			flag_Suscriptores_Caught= true;
+		}else {}
 		queue_push(queue_Suscriptores_Caught, PID);
 		break;
+
 	case 5: // GET_POKEMON=5
+		// Si no existe la cola, la creamos
+		if (flag_Suscriptores_Get == false){
+			malloc(sizeof(t_queue));
+			t_queue * queue_Suscriptores_Get = queue_create();
+			flag_Suscriptores_Get= true;
+		}else {}
 		queue_push(queue_Suscriptores_Get, PID);
 		break;
+
 	case 6: // LOCALIZED_POKEMON=6
+		// Si no existe la cola, la creamos
+		if (flag_Suscriptores_Localized == false){
+			malloc(sizeof(t_queue));
+			t_queue * queue_Suscriptores_Localized = queue_create();
+			flag_Suscriptores_Localized=true;
+		}else {}
 		queue_push(queue_Suscriptores_Localized, PID);
 		break;
 	}
 }
 
-void crearColasDeMensajes(){
-	malloc(sizeof(t_queue) *6);
-	t_queue * queue_Mensajes_New = queue_create();
-	t_queue * queue_Mensajes_Appeared = queue_create();
-	t_queue * queue_Mensajes_Catch = queue_create();
-	t_queue * queue_Mensajes_Caught = queue_create();
-	t_queue * queue_Mensajes_Get = queue_create();
-	t_queue * queue_Mensajes_Localized = queue_create();
-}
+void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
+	//void queue_push(t_queue *, void *element);
 
-void agregarMensaje(op_code operacion, info_Mensaje infoMensaje){
-/*
- * CHEQUEAR EL SEGUNDO ARGUMENTO DEL QUEUE_PUSH EN CADA CASE;
- * SERIA LA FORMA CORRECTA DE GUARDAR EL STRUCT INFO_MENSAJE EN UNA COLA?
- */
 	switch(operacion) {
 	case 1: // NEW_POKEMON = 1
-		queue_push(queue_Mensajes_New, &infoMensaje);
+		// Si no existe la cola, la creamos
+		if(flag_Mensajes_New== false){
+			malloc(sizeof(t_queue));
+			t_queue * mensajes_New = queue_create();
+			flag_Mensajes_New = true;
+		} else{}
+		//queue_push(mensajes_New, infoMensaje);
 		break;
+
 	case 2: // 	APPEARED_POKEMON=2
-		queue_push(queue_Mensajes_Appeared, &infoMensaje);
+		// Si no existe la cola, la creamos
+		if(flag_Mensajes_Appeared==false){
+			malloc(sizeof(t_queue));
+			t_queue * mensajes_Appeared = queue_create();
+			flag_Mensajes_Appeared = true;
+		} else{}
+		//queue_push(mensajes_Appeared, infoMensaje);
 		break;
+
 	case 3: // 	CATCH_POKEMON=3
-		queue_push(queue_Mensajes_Catch, &infoMensaje);
+		// Si no existe la cola, la creamos
+		if(flag_Mensajes_Catch==false){
+			malloc(sizeof(t_queue));
+			t_queue * mensajes_Catch = queue_create();
+			flag_Mensajes_Catch = true;
+		} else{}
+		//queue_push(mensajes_Catch, infoMensaje);
 		break;
+
 	case 4: // CAUGHT_POKEMON=4
-		queue_push(queue_Mensajes_Caught, &infoMensaje);
+		// Si no existe la cola, la creamos
+		if(flag_Mensajes_Caught==false){
+			malloc(sizeof(t_queue));
+			t_queue * mensajes_Caught = queue_create();
+			flag_Mensajes_Caught = true;
+		} else{}
+		//queue_push(mensajes_Caught, infoMensaje);
 		break;
+
 	case 5: // GET_POKEMON=5
-		queue_push(queue_Mensajes_Get, &infoMensaje);
+		// Si no existe la cola, la creamos
+		if(flag_Mensajes_Get==false){
+			malloc(sizeof(t_queue));
+			t_queue * mensajes_Get = queue_create();
+			flag_Mensajes_Get = true;
+		} else{}
+		//queue_push(mensajes_Get, infoMensaje);
 		break;
+
 	case 6: // LOCALIZED_POKEMON=6
-		queue_push(queue_Mensajes_Localized, &infoMensaje);
+		// Si no existe la cola, la creamos
+		if(flag_Mensajes_Localized==false){
+			malloc(sizeof(t_queue));
+			t_queue * mensajes_Localized = queue_create();
+			flag_Mensajes_Localized = true;
+		} else{}
+		//queue_push(mensajes_Localized, infoMensaje);
 		break;
 	}
 }

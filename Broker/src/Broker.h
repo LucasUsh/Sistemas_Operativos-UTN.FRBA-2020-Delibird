@@ -22,6 +22,8 @@ typedef struct {
 	uint32_t id_Mensaje;
 	void * mensaje;
 	uint32_t PID; // ID del proceso que mando el mensaje
+	t_list * suscriptoresALosQueSeEnvio;
+	t_list * suscriptoresQueRecibieron; // estos serian los que devolvieron el ACK
 } info_Mensaje;
 
 t_log* logger;
@@ -33,7 +35,7 @@ t_config* leer_config(void);
 void crearColasDeSuscriptores();
 void suscribirProcesoACola(op_code operacion, uint32_t * PID);
 void crearColasDeMensajes();
-void agregarMensaje(op_code operacion, info_Mensaje infoMensaje);
+void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
 uint32_t asignarID();
 
 t_queue * queue_Suscriptores_New;
