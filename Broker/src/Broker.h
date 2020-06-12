@@ -15,7 +15,7 @@
 #include<commons/string.h>
 #include<commons/config.h>
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
-#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.c"
 
 typedef struct {
@@ -32,23 +32,21 @@ t_config* config;
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
 
-void crearColasDeSuscriptores();
-void suscribirProcesoACola(op_code operacion, uint32_t * PID);
-void crearColasDeMensajes();
+void suscribirProceso(op_code operacion, uint32_t * PID);
 void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
 uint32_t asignarID();
 
-t_queue * queue_Suscriptores_New;
-t_queue * queue_Mensajes_New;
-t_queue * queue_Suscriptores_Appeared;
-t_queue * queue_Mensajes_Appeared;
-t_queue * queue_Suscriptores_Catch;
-t_queue * queue_Mensajes_Catch;
-t_queue * queue_Suscriptores_Caught;
-t_queue * queue_Mensajes_Caught;
-t_queue * queue_Suscriptores_Get;
-t_queue * queue_Mensajes_Get;
-t_queue * queue_Suscriptores_Localized;
-t_queue * queue_Mensajes_Localized;
+t_list * suscriptores_New;
+t_list * suscriptores_Appeared;
+t_list * suscriptores_Catch;
+t_list * suscriptores_Caught;
+t_list * suscriptores_Get;
+t_list * suscriptores_Localized;
+t_list * mensajes_New;
+t_list * mensajes_Appeared;
+t_list * mensajes_Catch;
+t_list * mensajes_Caught;
+t_list * mensajes_Get;
+t_list * mensajes_Localized;
 
 #endif /* BROKER_H_ */
