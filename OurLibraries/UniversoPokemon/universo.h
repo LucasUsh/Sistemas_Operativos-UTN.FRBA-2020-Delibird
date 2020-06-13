@@ -20,14 +20,14 @@
 typedef struct {
 	uint32_t X;
 	uint32_t Y;
-}t_posicion; // ocupa 8 bytes
+} __attribute__((packed)) t_posicion; // ocupa 8 bytes
 
 typedef struct {
 	uint32_t size_Nombre;
 	char * nombre;
-	uint32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
-	t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
-} t_pokemon;
+	//uint32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
+	//t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
+} __attribute__((packed)) t_pokemon;
 // con esta estructura ocupa maximo 26 bytes, minimo 19 bytes
 // nombre mas corto: Mew/Muk (3 bytes); nombre mas largo: Feraligatr (10 bytes)
 
@@ -48,7 +48,7 @@ typedef struct {
 	t_pokemon pokemon;
 	t_posicion posicion;
 	uint32_t cant;
-} t_New; // codigo_operacion= 1
+} __attribute__((packed)) t_New; // codigo_operacion= 1
 // ocupa entre 35 y 42 bytes
 
 typedef struct {
