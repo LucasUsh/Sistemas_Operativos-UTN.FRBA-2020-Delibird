@@ -22,15 +22,76 @@ uint32_t main(void) {
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
-
 	log_info(logger,"Lei IP_BROKER %s ",IP_BROKER);
 	log_info(logger,"Lei PUERTO_BROKER %s ",PUERTO_BROKER);
 
+	/*
+	* Creamos un hilo que debe estar constantemente escuchando con IP_BROKER y PUERTO_BROKER.
+	* El resto de los procesos se conectan a ese hilo, de a uno.
+	*
+	* Se les asigna un nuevo socket para que envien o reciban mensajes, se agrega el proceso a la
+	* lista de suscriptores a la que solicito unirse, Se verifica si hay mensajes sin ACK en la lista
+	* a la que suscribio un proceso, en caso de que si haya se envia por el nuevo socket y se
+	* los saca del socket de suscripciones para poder seguir atendiendo otras suscripciones.
+	*
+	* Luego, debera haber un hilo por cada proceso suscripto a una cola especficia.
+	* Ejemplo: Team1 se suscribe a mensajes_Appeared, a mensajes_Get y a mensajes_Localized
+	* entonces tiene que tener 3 hilos que manejaran los distintos mensajes que se envien o reciban
+	* por cada socket.
+	* Tenemos que implementar semaforos para asignar los ID de mensajes, agregar, enviar y recibir
+	* mensajes, ya que habra concurrencia entre los distintos hilos
+	*
+	*/
+
+	while (1){
 	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
-	crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	uint32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	uint32_t socketCliente = recibir_cliente(socketSuscripciones);
+
+
+	}
 	return EXIT_SUCCESS;
 
 }
+
+/*void recibir_Suscripciones(char* IP_BROKER, char* PUERTO_BROKER) {
+	int socket_servidor_GC = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	int socket_cliente_entrante;
+
+	while(1) {
+    	socket_cliente_entrante = recibir_cliente(uint32_t socket_servidor);
+
+
+
+    	pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante);
+    	pthread_detach(hilo_global_cliente_GC);
+    }
+}
+
+void responder_mensaje(int* socket_cliente) {
+
+	int codigo_operacion;
+
+	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
+			codigo_operacion = -1;
+
+	//int size;
+	//void* msg;
+	switch (codigo_operacion) {
+
+		case 0:
+			//msg = recibir_mensaje_servidor(socket_cliente, &size);
+			//printf("Recibi el siguiente mensaje: %s", (char*) msg);
+			//devolver_mensaje(msg, size, socket_cliente);
+			//free(msg);
+			break;
+
+		case -1:
+			printf ("Error al recibir paquete en serve_client. Hilo finalizado.");
+			pthread_exit(NULL);
+	}
+}
+*/
 
 void suscribirProceso(op_code operacion, uint32_t * PID){
 	switch(operacion) {
