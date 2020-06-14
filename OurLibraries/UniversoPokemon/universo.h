@@ -27,7 +27,7 @@ typedef struct {
 	char * nombre;
 	//uint32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
 	//t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
-} __attribute__((packed)) t_pokemon;
+} t_pokemon;
 // con esta estructura ocupa maximo 26 bytes, minimo 19 bytes
 // nombre mas corto: Mew/Muk (3 bytes); nombre mas largo: Feraligatr (10 bytes)
 

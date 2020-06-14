@@ -23,7 +23,7 @@ int get_cantidad_pokemon(t_list* list_pokemones){
 	int total_pokemon = 0 ;
 
 	int _sumar_pokemon(void* element){
-		total_pokemon += ((t_pokemon*)element)->cantidad;
+		total_pokemon += ((t_pokemon_team*)element)->cantidad;
 		return total_pokemon;
 	}
 
@@ -52,7 +52,8 @@ int get_algoritmo_code(char* algoritmo){
 	return 0;
 }
 
-t_algoritmo* get_algoritmo(t_config* config){
+t_algoritmo* get_algoritmo(t_config* config)
+{
 	t_algoritmo* algoritmo = (t_algoritmo*)malloc(sizeof(t_algoritmo));
 
 	char* algoritmo_string = config_get_string_value(config, "ALGORITMO_PLANIFICACION");
@@ -80,7 +81,7 @@ t_list* get_objetivos(t_config* config, int index){
 	int i = 0;
 
 	while(pokemones[i] != NULL){
-		t_pokemon* pokemon = get_pokemon(pokemones[i]);
+		t_pokemon_team* pokemon = get_pokemon(pokemones[i]);
 		list_add_in_index(objetivos, i, pokemon);
 		i++;
 	}
@@ -104,7 +105,7 @@ t_posicion* get_posicion(t_config* config, int index){
 t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 	t_list* lista_sumarizada = list_create();
 	for(int i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
-		t_pokemon* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
+		t_pokemon_team* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
 		int pokemon_encontrado = 0;
 
 		if(lista_sumarizada->elements_count == 0){
@@ -112,7 +113,7 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 		} else {
 
 			for(int j = 0; j < lista_sumarizada->elements_count; j++){
-				t_pokemon* pokemon_sumarizado = list_get(lista_sumarizada, j);
+				t_pokemon_team* pokemon_sumarizado = list_get(lista_sumarizada, j);
 
 				if(string_equals_ignore_case(pokemon_sumarizado->nombre, pokemon->nombre)){
 					pokemon_sumarizado->cantidad++;
@@ -194,7 +195,6 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posic
 			}
 		}
 	}
-
 	return entrenador_cercano;
 }
 
@@ -225,9 +225,9 @@ int main(int argc, char** argv)
     int cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
     printf("En este team hay %d entrenadores\n", cantidadEntrenadores);
 
-
     t_algoritmo* algoritmo = get_algoritmo(entrenador_config);
     t_list* entrenadores = get_entrenadores(entrenador_config, cantidadEntrenadores);
+
 
 
     printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
@@ -235,7 +235,7 @@ int main(int argc, char** argv)
 
 
     void _mostrar_pokemon(void* elemento){
-    	return mostrar_pokemon((t_pokemon*)elemento, objetivo_global);
+    	return mostrar_pokemon((t_pokemon_team*)elemento, objetivo_global);
     }
 
 
@@ -260,7 +260,7 @@ int main(int argc, char** argv)
 		//ver si se puede reemplazar por iterate
 		int j = 0;
 		for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
-			t_pokemon* objetivo_actual = list_get(entrenador_actual->objetivo, j);
+			t_pokemon_team* objetivo_actual = list_get(entrenador_actual->objetivo, j);
 			list_add(objetivo_global, objetivo_actual);
 		}
 	}
@@ -301,16 +301,15 @@ void planificar_fifo(){
 }
 
 
-void simular_fifo(t_list* entrenadores){
+void simular_fifo(t_list* entrenadores)
+{
 	printf("simulando fifo... \n");
-
-
 	t_posicion* posPok = (t_posicion*)malloc(sizeof(t_posicion));
+
 	posPok->X = 3;
 	posPok->Y = 5;
 
 	t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, posPok);
-
 
 	entrenador_mas_cercano->estado = READY;
 	entrenador_mas_cercano->posicion_destino = posPok;
@@ -327,7 +326,7 @@ void simular_fifo(t_list* entrenadores){
 }
 
 
-void planificar_rr(t_pokemon* pokemon_a_capturar){
+void planificar_rr(t_pokemon_team* pokemon_a_capturar){
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	entrenador->estado = EXEC;
@@ -346,15 +345,16 @@ void planificar_rr(t_pokemon* pokemon_a_capturar){
 	return;
 }
 
-void planificar_sjfsd(t_pokemon* pokemon_a_capturar){
+void planificar_sjfsd(t_pokemon_team* pokemon_a_capturar){
 	return;
 }
 
-void planificar_sjfcd(t_pokemon* pokemon_a_capturar){
+void planificar_sjfcd(t_pokemon_team* pokemon_a_capturar){
 	return;
 }
 
-void planificar(t_algoritmo* algoritmo, t_pokemon* pokemon_a_capturar){
+void planificar(t_algoritmo* algoritmo, t_pokemon_team* pokemon_a_capturar)
+{
 	switch(algoritmo->algoritmo_code){
 	case FIFO:
 		planificar_fifo(pokemon_a_capturar);

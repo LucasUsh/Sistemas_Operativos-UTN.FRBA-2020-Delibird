@@ -19,37 +19,42 @@
 #include <math.h>
 
 typedef enum {
-	RR = 1,
+	RR    = 1,
 	SJFSD = 2,
 	SJFCD = 3,
-	FIFO = 4
+	FIFO  = 4
 } algoritmo_code;
 
 typedef enum {
-	NEW = 1,
-	READY = 2,
+	NEW     = 1,
+	READY   = 2,
 	BLOCKED = 3,
-	EXEC = 4,
-	EXIT = 5
+	EXEC 	= 4,
+	EXIT 	= 5
 } estado_code;
 
 typedef struct {
 	t_posicion* posicion;
 	t_posicion* posicion_destino;
-	t_list* pokemones; //list of t_pokemon
-	t_list* objetivo; //list of t_pokemon
+	t_list* 	pokemones; //list of t_pokemon
+	t_list* 	objetivo; //list of t_pokemon
 	estado_code estado;
 
 } t_entrenador;
 
 typedef struct {
-	int algoritmo_code;
-	char* algoritmo_string;
-	int quantum;
-	int retardo;
-} t_algoritmo;
+	int 	algoritmo_code;
+	char* 	algoritmo_string;
+	int 	quantum;
+	int 	retardo;
+}t_algoritmo;
 
-
+typedef struct {
+	//uint32_t size_Nombre;
+	char * 	 	nombre;
+	uint32_t 	cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
+	t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
+}t_pokemon_team;
 
 
 

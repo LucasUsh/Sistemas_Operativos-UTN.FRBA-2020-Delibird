@@ -16,8 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
-t_pokemon* get_pokemon(char* pokemon_name);
-t_list* get_pokemones(t_config* config, int index);
-void mostrar_pokemon(t_pokemon* pokemon_actual, t_list* objetivo_global);
+#include "team.h"
+t_pokemon_team* get_pokemon(char* pokemon_name);
+t_list* 		get_pokemones(t_config* config, int index);
+void 			mostrar_pokemon(t_pokemon_team* pokemon_actual, t_list* objetivo_global);
 
 #endif /* POKEMON_UTILS_H_ */

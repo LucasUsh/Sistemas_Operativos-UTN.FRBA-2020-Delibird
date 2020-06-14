@@ -6,8 +6,9 @@
  */
 #include "pokemon_utils.h"
 
-t_pokemon* get_pokemon(char* pokemon_name){
-	t_pokemon* pokemon = malloc(sizeof(t_pokemon));
+
+t_pokemon_team* get_pokemon(char* pokemon_name){
+	t_pokemon_team* pokemon = malloc(sizeof(t_pokemon_team));
 
 	pokemon->cantidad = 1;
 	pokemon->nombre = pokemon_name;
@@ -25,7 +26,7 @@ t_list* get_pokemones(t_config* config, int index){
 	int i = 0;
 
 	while(pokemones[i] != NULL){
-		t_pokemon* pokemon = get_pokemon(pokemones[i]);
+		t_pokemon_team* pokemon = get_pokemon(pokemones[i]);
 		list_add_in_index(pokemones_list, i, pokemon);
 		i++;
 	}
@@ -33,7 +34,7 @@ t_list* get_pokemones(t_config* config, int index){
 	return pokemones_list;
 }
 
-void mostrar_pokemon(t_pokemon* pokemon_actual, t_list* objetivo_global){
+void mostrar_pokemon(t_pokemon_team* pokemon_actual, t_list* objetivo_global){
 	printf("| 	nombre: %s, cantidad: %d\n",
 			pokemon_actual->nombre,
 			pokemon_actual->cantidad );
