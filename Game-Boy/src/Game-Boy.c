@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 	}
 	// Ejemplo./gameboy GAMECARD NEW_POKEMON Pikachu 2 5 10 9
 	else if(string_contains(argv[1], "GAMECARD")) {
+		log_info(logger,"If de GAMECARD");
 		socket = conexionGameCard();
 		if(socket == 0){
 			log_info(logger,"Error al conectar con Game-Card");
@@ -82,12 +83,13 @@ void validar_Argc(t_log* logger, int arg)
 
 void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int socket_cliente)
 {
+	log_info(logger,"Entro a enviar new_pokemon");
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = 1; //NEW_POKEMON
 
 	t_posicion * posicion = malloc(sizeof(t_posicion));
-	posicion->X = (int32_t)*x;
-	posicion->Y = (int32_t)*y;
+	posicion->X = (int32_t) atoi (x);
+	posicion->Y = (int32_t) atoi (y);
 
 	t_pokemon * p_pokemon = malloc(sizeof(t_pokemon));
 	p_pokemon->size_Nombre = strlen(pokemon) +1;

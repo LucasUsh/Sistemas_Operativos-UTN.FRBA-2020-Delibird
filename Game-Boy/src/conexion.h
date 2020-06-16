@@ -4,9 +4,10 @@
 
 #include<commons/config.h>
 #include<stdint.h>
+#include<commons/log.h>
 
 int conexionBroker();
 int conexionTeam();
-uint32_t conexionGameCard();
+int conexionGameCard();
 
 #endif
