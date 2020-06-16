@@ -51,7 +51,7 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
-uint32_t crear_conexion(char* ip, char* puerto);
+int32_t crear_conexion(char* ip, char* puerto);
 void enviar_mensaje(char* mensaje, int32_t socket_cliente);
 char* recibir_mensaje(int32_t socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
@@ -59,8 +59,8 @@ void liberar_conexion(int32_t socket_cliente);
 
 void* serializar_paquete(t_paquete* paquete, int32_t *bytes);
 
-uint32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
-uint32_t recibir_cliente(int32_t);
+int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
+int32_t recibir_cliente(int32_t);
 void servir_cliente(int32_t *socket);
 void devolver_mensaje(void* payload, int32_t size, int32_t socket_cliente);
 

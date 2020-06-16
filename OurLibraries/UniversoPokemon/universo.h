@@ -48,7 +48,7 @@ typedef struct {
 	t_pokemon pokemon;
 	t_posicion posicion;
 	uint32_t cant;
-} __attribute__((packed)) t_New; // codigo_operacion= 1
+} t_New; // codigo_operacion= 1
 // ocupa entre 35 y 42 bytes
 
 typedef struct {
@@ -77,4 +77,4 @@ typedef struct {
 
 uint32_t universo_init();
 
-#endif /* UNIVERSO_H_ */
+#endif UNIVERSO_H_
