@@ -8,7 +8,7 @@
 #include "sockets.h"
 
 
-uint32_t crear_conexion(char *ip, char* puerto){
+int32_t crear_conexion(char *ip, char* puerto){
 	struct addrinfo hints;
 	struct addrinfo *server_info;
 
@@ -19,7 +19,7 @@ uint32_t crear_conexion(char *ip, char* puerto){
 
 	getaddrinfo(ip, puerto, &hints, &server_info);
 
-	uint32_t socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
+	int32_t socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
 	if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1){
 		freeaddrinfo(server_info);
@@ -31,7 +31,7 @@ uint32_t crear_conexion(char *ip, char* puerto){
 	return socket_cliente;
 }
 
-void enviar_mensaje(char* mensaje, uint32_t socket_cliente){
+void enviar_mensaje(char* mensaje, int32_t socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = 99999999;
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -40,7 +40,7 @@ void enviar_mensaje(char* mensaje, uint32_t socket_cliente){
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size); //paquete->buffer->stream = mensaje;
 
-	uint32_t bytes_a_enviar;
+	int32_t bytes_a_enviar;
 	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
 
 	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
@@ -52,7 +52,7 @@ void enviar_mensaje(char* mensaje, uint32_t socket_cliente){
 
 }
 
-void enviar_mensaje_con_opCode(op_code codOperacion, uint32_t idMensaje, void* mensaje, uint32_t socket_cliente){
+void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = codOperacion;
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -62,7 +62,7 @@ void enviar_mensaje_con_opCode(op_code codOperacion, uint32_t idMensaje, void* m
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size); //paquete->buffer->stream = mensaje;
 
-	uint32_t bytes_a_enviar;
+	int32_t bytes_a_enviar;
 	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
 
 	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
@@ -74,9 +74,9 @@ void enviar_mensaje_con_opCode(op_code codOperacion, uint32_t idMensaje, void* m
 
 }
 
-char* recibir_mensaje(uint32_t socket_cliente){
+char* recibir_mensaje(int32_t socket_cliente){
 	op_code operacion;
-	uint32_t buffer_size = 0;
+	int32_t buffer_size = 0;
 
 	void * buffer = malloc(buffer_size);
 
@@ -95,28 +95,28 @@ char* recibir_mensaje(uint32_t socket_cliente){
 	return buffer;
 }
 
-void liberar_conexion(uint32_t socket_cliente){
+void liberar_conexion(int32_t socket_cliente){
 	close(socket_cliente);
 }
 
-void* serializar_paquete(t_paquete* paquete, uint32_t *bytes){
+void* serializar_paquete(t_paquete* paquete, int32_t *bytes){
 
 	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
 	void *stream = malloc(*bytes);
-	uint32_t desplazamiento = 0;
+	int32_t desplazamiento = 0;
 
-	memcpy(stream + desplazamiento, &(paquete->codigo_operacion), sizeof(uint32_t));
-	desplazamiento+= sizeof(uint32_t);
-	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(uint32_t));
-	desplazamiento+= sizeof(uint32_t);
+	memcpy(stream + desplazamiento, &(paquete->codigo_operacion), sizeof(int32_t));
+	desplazamiento+= sizeof(int32_t);
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(int32_t));
+	desplazamiento+= sizeof(int32_t);
 	memcpy(stream + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
 
 	return stream;
 }
 
 // retorna el socket del servidor
-uint32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor){
-	uint32_t socket_servidor;
+int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor){
+	int32_t socket_servidor;
 
     struct addrinfo hints, *servinfo, *p;
 
@@ -146,7 +146,7 @@ uint32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor){
     return socket_servidor;
 }
 
-uint32_t recibir_cliente(uint32_t socket_servidor){
+int32_t recibir_cliente(int32_t socket_servidor){
 	struct sockaddr_in dir_cliente;
 
 	socklen_t tam_direccion = sizeof(struct sockaddr_in);
@@ -156,17 +156,17 @@ uint32_t recibir_cliente(uint32_t socket_servidor){
 
 }
 
-void* recibir_mensaje_servidor(uint32_t socket_cliente, uint32_t* size){
+void* recibir_mensaje_servidor(int32_t socket_cliente, int32_t* size){
 	void * buffer;
 
-	recv(socket_cliente, size, sizeof(uint32_t), MSG_WAITALL);
+	recv(socket_cliente, size, sizeof(int32_t), MSG_WAITALL);
 	buffer = malloc(*size);
 	recv(socket_cliente, buffer, *size, MSG_WAITALL);
 
 	return buffer;
 }
 
-void devolver_mensaje(void* payload, uint32_t size, uint32_t socket_cliente){
+void devolver_mensaje(void* payload, int32_t size, int32_t socket_cliente){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
 	paquete->codigo_operacion = 99999999;
@@ -175,7 +175,7 @@ void devolver_mensaje(void* payload, uint32_t size, uint32_t socket_cliente){
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	memcpy(paquete->buffer->stream, payload, paquete->buffer->size);
 
-	uint32_t bytes = paquete->buffer->size + 2*sizeof(uint32_t);
+	int32_t bytes = paquete->buffer->size + 2*sizeof(int32_t);
 
 	void* a_enviar = serializar_paquete(paquete, &bytes);
 

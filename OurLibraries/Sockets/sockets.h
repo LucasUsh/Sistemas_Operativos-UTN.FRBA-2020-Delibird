@@ -40,8 +40,8 @@ typedef enum
 
 typedef struct
 {
-	uint32_t size;
-	uint32_t id_Mensaje;
+	int32_t size;
+	int32_t id_Mensaje;
 	void* stream;
 } t_buffer;
 
@@ -52,19 +52,19 @@ typedef struct
 } t_paquete;
 
 uint32_t crear_conexion(char* ip, char* puerto);
-void enviar_mensaje(char* mensaje, uint32_t socket_cliente);
-char* recibir_mensaje(uint32_t socket_cliente);
+void enviar_mensaje(char* mensaje, int32_t socket_cliente);
+char* recibir_mensaje(int32_t socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
-void liberar_conexion(uint32_t socket_cliente);
+void liberar_conexion(int32_t socket_cliente);
 
-void* serializar_paquete(t_paquete* paquete, uint32_t *bytes);
+void* serializar_paquete(t_paquete* paquete, int32_t *bytes);
 
 uint32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
-uint32_t recibir_cliente(uint32_t);
-void servir_cliente(uint32_t *socket);
-void devolver_mensaje(void* payload, uint32_t size, uint32_t socket_cliente);
+uint32_t recibir_cliente(int32_t);
+void servir_cliente(int32_t *socket);
+void devolver_mensaje(void* payload, int32_t size, int32_t socket_cliente);
 
-void* recibir_mensaje_servidor(uint32_t socket_cliente, uint32_t* size);
-void enviar_mensaje_con_opCode(op_code codOperacion, uint32_t idMensaje, void* mensaje, uint32_t socket_cliente);
+void* recibir_mensaje_servidor(int32_t socket_cliente, int32_t* size);
+void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente);
 
 #endif /* SOCKETS_H_ */
