@@ -85,7 +85,8 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int soc
 {
 	log_info(logger,"Entro a enviar new_pokemon");
 	t_paquete * paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = 1; //NEW_POKEMON
+	paquete->codigo_operacion = NEW_POKEMON; //NEW_POKEMON
+	paquete->buffer = malloc(sizeof(t_buffer));
 
 	t_posicion * posicion = malloc(sizeof(t_posicion));
 	posicion->X = (int32_t) atoi (x);
@@ -101,6 +102,7 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int soc
 	new->pokemon = *p_pokemon;
 
 	paquete->buffer->size = sizeof(new)*3;
+	paquete->buffer->id_Mensaje =0;
 	paquete->buffer->stream = new;
 	//memcpy(paquete->buffer->stream, new, paquete->buffer->size);
 
