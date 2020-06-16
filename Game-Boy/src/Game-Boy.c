@@ -85,8 +85,8 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int soc
 	free(p_pokemon);
 	free(posicion);
 
-	int bytes_a_enviar;
-	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
+	uint32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
 
 	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
 

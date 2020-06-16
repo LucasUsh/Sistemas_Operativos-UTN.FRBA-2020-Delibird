@@ -15,7 +15,6 @@
 #define IP_GAME_CARD "127.0.0.3"
 #define PUERTO_GAME_CARD "5001"
 
-
 t_log* logger_GC;
 
 t_config* config_GC;

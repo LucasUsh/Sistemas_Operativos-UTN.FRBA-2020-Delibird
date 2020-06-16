@@ -5,7 +5,7 @@ int main(void)
 	pthread_t hilo_servidor_GC;
 	pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL);
 
-
+/*
 	pthread_t h1;
 	int socket;
 	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
@@ -17,6 +17,7 @@ int main(void)
     liberar_conexion(socket);
     config_destroy(config_GC);
     log_destroy(logger_GC);
+ */
     return 0;
 }
 
