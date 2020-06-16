@@ -2,8 +2,10 @@
 
 int main(void)
 {
+	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
-	pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL);
+	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
+		log_debug (debug, "Hilo servidor creado correctamente.");
 
 /*
 	pthread_t h1;
@@ -18,34 +20,39 @@ int main(void)
     config_destroy(config_GC);
     log_destroy(logger_GC);
  */
+	pthread_join(hilo_servidor_GC, NULL);
     return 0;
 }
 
 void crear_servidor_GC() {
 	int socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
+	log_debug (debug, "Se creo el socket en escucha.");
 	int socket_cliente_entrante;
 
     while(1) {
     	// quizás para Broker no conviene sobrepisar tod0 el tiempo el valor de este socket:
     	socket_cliente_entrante = recibir_cliente(socket_servidor_GC);
 
-    	pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante);
+    	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)
+    		log_debug (debug, "Hilo para responder al cliente creado correctamente.");
     	pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
     }
 }
 
 void responder_mensaje(int* socket_cliente) {
-
+	log_debug (debug, "Se ingreso a responder_mensaje().");
 	int codigo_operacion;
 
 	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
 			codigo_operacion = -1;
 
+	log_debug (debug, "Código de operación %d", codigo_operacion);
+
 	//int size;
 	//void* msg;
 	switch (codigo_operacion) {
 
-		case 0:
+		case 1:
 			//msg = recibir_mensaje_servidor(socket_cliente, &size);
 			//printf("Recibi el siguiente mensaje: %s", (char*) msg);
 			//devolver_mensaje(msg, size, socket_cliente);
