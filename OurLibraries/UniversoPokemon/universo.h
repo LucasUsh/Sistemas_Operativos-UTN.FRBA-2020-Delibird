@@ -77,4 +77,4 @@ typedef struct {
 
 uint32_t universo_init();
 
-#endif UNIVERSO_H_
+#endif /*UNIVERSO_H_*/
