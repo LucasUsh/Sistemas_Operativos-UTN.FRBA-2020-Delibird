@@ -17,6 +17,7 @@
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.c"
+#include<pthread.h>
 
 typedef struct {
 	uint32_t id_Mensaje;

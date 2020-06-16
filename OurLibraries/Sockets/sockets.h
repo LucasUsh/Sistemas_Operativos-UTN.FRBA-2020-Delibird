@@ -42,7 +42,7 @@ typedef struct
 {
 	uint32_t size;
 	uint32_t id_Mensaje;
-	void* stream; //en el stream debe ir la estructura administrativa: id_Mensaje + Mensaje
+	void* stream;
 } t_buffer;
 
 typedef struct
