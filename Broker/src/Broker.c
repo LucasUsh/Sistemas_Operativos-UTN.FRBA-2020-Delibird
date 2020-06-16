@@ -48,11 +48,11 @@ uint32_t main(void) {
 	printf("Estoy escuchando suscripciones\n");
 	uint32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 
-	while(socketSuscripciones =! -1){
-		printf("Se conecto un cliente\n");
+	while(socketSuscripciones != -1){
 		struct sockaddr_in dir_cliente;
 		int tam_direccion = sizeof(struct sockaddr_in);
 		int socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
+		printf("Se conecto un cliente\n");
 
 		int operacion;
 		if(recv(socketCliente, &operacion, sizeof(int), MSG_WAITALL) == -1){
