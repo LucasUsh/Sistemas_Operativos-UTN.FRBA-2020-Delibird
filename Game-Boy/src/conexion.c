@@ -20,19 +20,14 @@ int conexionTeam()
 	return socket;
 }
 
-int conexionGameCard(){
-	t_log* logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.log", "Game-Boy", 1, LOG_LEVEL_INFO);
+int conexionGameCard()
+{
 	t_config* config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.config");
-	char* ip_broker = config_get_string_value(config,"IP_GAMECARD");
-	char* puerto_broker = config_get_string_value(config,"PUERTO_GAMECARD");
-
-	log_info (logger, "Todo bien hasta crear_conexion");
-
-	int socket = crear_conexion(ip_broker, puerto_broker);
-
-	log_info (logger, "Sali de crear_conexion");
-	log_destroy (logger);
-
+	//char* ip_game_card = config_get_string_value(config,"IP_GAMECARD");
+	char* ip_game_card = &"127.0.0.3";
+	//char* puerto_game_card = config_get_string_value(config,"PUERTO_GAMECARD");
+	char* puerto_game_card = &"5001";
+	int socket = crear_conexion(ip_game_card, puerto_game_card);
 	config_destroy(config);
 	return socket;
 }

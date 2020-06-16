@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	}
 	// Ejemplo./gameboy GAMECARD NEW_POKEMON Pikachu 2 5 10 9
 	else if(string_contains(argv[1], "GAMECARD")) {
-		log_info(logger,"If de GAMECARD");
+		//log_info(logger,"If de GAMECARD");
 		socket = conexionGameCard();
 		if(socket == 0){
 			log_info(logger,"Error al conectar con Game-Card");
