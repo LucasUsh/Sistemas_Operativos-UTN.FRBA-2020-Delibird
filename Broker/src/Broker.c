@@ -14,6 +14,17 @@ uint32_t id_Mensaje = 0;
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
 
+double get_id(){
+	//para obtener id usamos el timestamp
+
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	double id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec) / 1000;
+	printf("el id es: %d\n", id);
+
+	return id;
+}
+
 uint32_t main(void) {
 	malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
 
