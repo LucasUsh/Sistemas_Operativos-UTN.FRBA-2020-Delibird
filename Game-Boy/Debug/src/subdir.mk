@@ -5,15 +5,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/Game-Boy.c \
-../src/conexion.c 
+../src/conexion.c \
+../src/mensajes.c 
 
 OBJS += \
 ./src/Game-Boy.o \
-./src/conexion.o 
+./src/conexion.o \
+./src/mensajes.o 
 
 C_DEPS += \
 ./src/Game-Boy.d \
-./src/conexion.d 
+./src/conexion.d \
+./src/mensajes.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
