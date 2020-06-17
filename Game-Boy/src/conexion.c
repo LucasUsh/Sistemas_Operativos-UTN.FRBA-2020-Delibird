@@ -23,10 +23,8 @@ int32_t conexionTeam()
 int32_t conexionGameCard()
 {
 	t_config* config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.config");
-	//char* ip_game_card = config_get_string_value(config,"IP_GAMECARD");
-	char* ip_game_card = &"127.0.0.3";
-	//char* puerto_game_card = config_get_string_value(config,"PUERTO_GAMECARD");
-	char* puerto_game_card = &"5001";
+	char* ip_game_card = config_get_string_value(config,"IP_GAMECARD");
+	char* puerto_game_card = config_get_string_value(config,"PUERTO_GAMECARD");
 	int32_t socket = crear_conexion(ip_game_card, puerto_game_card);
 	config_destroy(config);
 	return socket;
