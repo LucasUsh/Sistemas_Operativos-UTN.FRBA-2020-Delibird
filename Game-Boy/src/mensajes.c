@@ -2,7 +2,6 @@
 
 void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t socket_cliente)
 {
-	//log_info(logger,"Entro a enviar new_pokemon");
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = NEW_POKEMON;
 	paquete->buffer = malloc(sizeof(t_buffer));
