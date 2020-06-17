@@ -156,7 +156,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case APPEARED_POKEMON: // 	APPEARED_POKEMON=2
+	case SUSCRIPCION_APPEARED: // 	APPEARED_POKEMON=2
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Appeared == false){
 			suscriptores_Appeared = list_create();
@@ -167,7 +167,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case CATCH_POKEMON: // 	CATCH_POKEMON=3
+	case SUSCRIPCION_CATCH: // 	CATCH_POKEMON=3
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Catch == false){
 			suscriptores_Catch = list_create();
@@ -178,7 +178,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case CAUGHT_POKEMON: // CAUGHT_POKEMON=4
+	case SUSCRIPCION_CAUGHT: // CAUGHT_POKEMON=4
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Caught == false){
 			suscriptores_Caught = list_create();
@@ -189,7 +189,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case GET_POKEMON: // GET_POKEMON=5
+	case SUSCRIPCION_GET: // GET_POKEMON=5
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Get == false){
 			suscriptores_Get = list_create();
@@ -200,7 +200,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case LOCALIZED_POKEMON: // LOCALIZED_POKEMON=6
+	case SUSCRIPCION_LOCALIZED: // LOCALIZED_POKEMON=6
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Localized == false){
 			suscriptores_Localized = list_create();
