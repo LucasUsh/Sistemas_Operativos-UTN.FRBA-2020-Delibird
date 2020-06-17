@@ -1,6 +1,6 @@
 #include "utils.h"
 
-char** get_array_by_index(char** array_from_config, int index){
+char** get_array_by_index(char** array_from_config, int32_t index){
 
 	 /* EJEMPLO CON POKEMONES
 	  * array_from_config:
@@ -23,8 +23,8 @@ char** get_array_by_index(char** array_from_config, int index){
 }
 
 
-int array_length(char** value_array){
-	int i = 0;
+int32_t array_length(char** value_array){
+	int32_t i = 0;
 
 	while(value_array[i] != NULL){
 		i++;

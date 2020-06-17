@@ -21,9 +21,9 @@
 #include <sys/time.h>
 
 typedef struct {
-	uint32_t id_Mensaje;
+	int32_t id_Mensaje;
 	void * mensaje;
-	uint32_t PID; // ID del proceso que mando el mensaje
+	int32_t PID; // ID del proceso que mando el mensaje
 	t_list * suscriptoresALosQueSeEnvio;
 	t_list * suscriptoresQueRecibieron; // estos serian los que devolvieron el ACK
 } info_Mensaje;
@@ -39,7 +39,7 @@ t_config* config;
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
 
-void suscribirProceso(op_code operacion, uint32_t * PID);
+void suscribirProceso(op_code operacion, int32_t* PID);
 void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
 double get_id();
 

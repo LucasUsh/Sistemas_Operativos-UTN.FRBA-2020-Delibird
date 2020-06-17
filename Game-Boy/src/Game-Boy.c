@@ -3,12 +3,12 @@
 t_log* logger;
 t_config* config;
 
-int main(int argc, char *argv[])
+int32_t main(int32_t argc, char *argv[])
 {
 	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.log", "Game-Boy", 1, LOG_LEVEL_INFO);
 	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.config");
 	validar_Argc(logger,argc);
-	int socket;
+	int32_t socket;
 
 	printf("GAME BOY iniciando ... \n");
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void validar_Argc(t_log* logger, int arg)
+void validar_Argc(t_log* logger, int32_t arg)
 {
 	if(arg < 3)
 	{
@@ -81,7 +81,7 @@ void validar_Argc(t_log* logger, int arg)
 }
 
 
-void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int socket_cliente)
+void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t socket_cliente)
 {
 	log_info(logger,"Entro a enviar new_pokemon");
 	t_paquete * paquete = malloc(sizeof(t_paquete));

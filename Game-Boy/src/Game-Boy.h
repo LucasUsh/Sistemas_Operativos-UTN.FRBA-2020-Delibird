@@ -9,7 +9,7 @@
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/src/conexion.h"
 
-void validar_Argc(t_log* logger, int arg);
-void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int socket_cliente);
+void validar_Argc(t_log* logger, int32_t arg);
+void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t socket_cliente);
 
 #endif

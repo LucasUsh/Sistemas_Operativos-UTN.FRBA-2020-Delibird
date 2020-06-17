@@ -25,7 +25,7 @@ double get_id(){
 	return id;
 }
 
-int main(void) {
+int32_t main(void) {
 	malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
 
 	logger = iniciar_logger();
@@ -59,16 +59,16 @@ int main(void) {
 	while (1){
 	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
 	printf("Estoy escuchando suscripciones\n");
-	uint32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 
 	while(socketSuscripciones != -1){
 		struct sockaddr_in dir_cliente;
-		int tam_direccion = sizeof(struct sockaddr_in);
-		int socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
+		int32_t tam_direccion = sizeof(struct sockaddr_in);
+		int32_t socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
 		printf("Se conecto un cliente\n");
 
-		int operacion;
-		if(recv(socketCliente, &operacion, sizeof(int), MSG_WAITALL) == -1){
+		int32_t operacion;
+		if(recv(socketCliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
 			operacion = -1;
 		}
 		switch (operacion) {
@@ -105,11 +105,11 @@ int main(void) {
 }
 
 /*void recibir_Suscripciones(char* IP_BROKER, char* PUERTO_BROKER) {
-	int socket_servidor_GC = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	int socket_cliente_entrante;
+	int32_t socket_servidor_GC = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	int32_t socket_cliente_entrante;
 
 	while(1) {
-    	socket_cliente_entrante = recibir_cliente(uint32_t socket_servidor);
+    	socket_cliente_entrante = recibir_cliente(int32_t socket_servidor);
 
 
 
@@ -118,14 +118,14 @@ int main(void) {
     }
 }
 
-void responder_mensaje(int* socket_cliente) {
+void responder_mensaje(int32_t* socket_cliente) {
 
-	int codigo_operacion;
+	int32_t codigo_operacion;
 
-	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
+	if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
 			codigo_operacion = -1;
 
-	//int size;
+	//int32_t size;
 	//void* msg;
 	switch (codigo_operacion) {
 
@@ -143,7 +143,7 @@ void responder_mensaje(int* socket_cliente) {
 }
 */
 
-void suscribirProceso(op_code operacion, uint32_t * PID){
+void suscribirProceso(op_code operacion, int32_t * PID){
 	switch(operacion) {
 	case SUSCRIPCION_NEW: // NEW_POKEMON = 1
 		// Si no existe la cola, la creamos

@@ -1,6 +1,6 @@
 #include "Game-Card.h"
 
-int main(void)
+int32_t main(void)
 {
 	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
@@ -9,7 +9,7 @@ int main(void)
 
 /*
 	pthread_t h1;
-	int socket;
+	int32_t socket;
 	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
 
     pthread_create(&h1, NULL, (void*) &conexionBroker, &socket);
@@ -25,9 +25,9 @@ int main(void)
 }
 
 void crear_servidor_GC() {
-	int socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
+	int32_t socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
 	log_debug (debug, "Se creo el socket en escucha.");
-	int socket_cliente_entrante;
+	int32_t socket_cliente_entrante;
 
     while(1) {
     	// quizás para Broker no conviene sobrepisar tod0 el tiempo el valor de este socket:
@@ -41,14 +41,14 @@ void crear_servidor_GC() {
 
 void responder_mensaje(int* socket_cliente) {
 	log_debug (debug, "Se ingreso a responder_mensaje().");
-	int codigo_operacion;
+	int32_t codigo_operacion;
 
 	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
 			codigo_operacion = -1;
 
 	log_debug (debug, "Código de operación %d", codigo_operacion);
 
-	//int size;
+	//int32_t size;
 	//void* msg;
 	switch (codigo_operacion) {
 
@@ -65,7 +65,7 @@ void responder_mensaje(int* socket_cliente) {
 	}
 }
 
-void conexionBroker(int *socket)
+void conexionBroker(int32_t *socket)
 {
 	char* ip_broker;
 	char* puerto_broker;

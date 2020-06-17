@@ -9,6 +9,6 @@
 #include "universo.h"
 #include<stdint.h>
 
-uint32_t universo_init(){
+int32_t universo_init(){
 	return 0;
 }

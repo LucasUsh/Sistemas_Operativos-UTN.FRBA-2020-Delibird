@@ -43,10 +43,10 @@ typedef struct {
 } t_entrenador;
 
 typedef struct {
-	int 	algoritmo_code;
+	int32_t 	algoritmo_code;
 	char* 	algoritmo_string;
-	int 	quantum;
-	int 	retardo;
+	int32_t 	quantum;
+	int32_t 	retardo;
 }t_algoritmo;
 
 typedef struct {

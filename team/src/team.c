@@ -12,17 +12,17 @@
 #include "pokemon_utils.h"
 
 
-int cantidadEntrenadores = 0;
+int32_t cantidadEntrenadores = 0;
 t_list* cola_ready;
 t_list* mensajes_localized_parseados;
 
 
 
-int get_cantidad_pokemon(t_list* list_pokemones){
+int32_t get_cantidad_pokemon(t_list* list_pokemones){
 
-	int total_pokemon = 0 ;
+	int32_t total_pokemon = 0 ;
 
-	int _sumar_pokemon(void* element){
+	int32_t _sumar_pokemon(void* element){
 		total_pokemon += ((t_pokemon_team*)element)->cantidad;
 		return total_pokemon;
 	}
@@ -38,7 +38,7 @@ bool puede_capturar_pokemones(t_entrenador* entrenador){
 
 
 
-int get_algoritmo_code(char* algoritmo){
+int32_t get_algoritmo_code(char* algoritmo){
 	if(string_equals_ignore_case(algoritmo, "RR")){
 		return RR;
 	} else if (string_equals_ignore_case(algoritmo, "SJF-SD")){
@@ -72,13 +72,13 @@ t_algoritmo* get_algoritmo(t_config* config)
 	return algoritmo;
 }
 
-t_list* get_objetivos(t_config* config, int index){
+t_list* get_objetivos(t_config* config, int32_t index){
 	t_list* objetivos = list_create();
 
 	char** pokemon_entrenadores = config_get_array_value(config, "OBJETIVOS_ENTRENADORES");
 	char** pokemones = get_array_by_index(pokemon_entrenadores,index);
 
-	int i = 0;
+	int32_t i = 0;
 
 	while(pokemones[i] != NULL){
 		t_pokemon_team* pokemon = get_pokemon(pokemones[i]);
@@ -89,7 +89,7 @@ t_list* get_objetivos(t_config* config, int index){
 	return objetivos;
 }
 
-t_posicion* get_posicion(t_config* config, int index){
+t_posicion* get_posicion(t_config* config, int32_t index){
 	t_posicion* posicion = (t_posicion*)malloc(sizeof(t_posicion));
 
 	char** posiciones = get_array_by_index(config_get_array_value(config, "POSICIONES_ENTRENADORES"),
@@ -104,15 +104,15 @@ t_posicion* get_posicion(t_config* config, int index){
 
 t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 	t_list* lista_sumarizada = list_create();
-	for(int i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
+	for(int32_t i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
 		t_pokemon_team* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
-		int pokemon_encontrado = 0;
+		int32_t pokemon_encontrado = 0;
 
 		if(lista_sumarizada->elements_count == 0){
 			list_add(lista_sumarizada, pokemon);
 		} else {
 
-			for(int j = 0; j < lista_sumarizada->elements_count; j++){
+			for(int32_t j = 0; j < lista_sumarizada->elements_count; j++){
 				t_pokemon_team* pokemon_sumarizado = list_get(lista_sumarizada, j);
 
 				if(string_equals_ignore_case(pokemon_sumarizado->nombre, pokemon->nombre)){
@@ -131,7 +131,7 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 
 }
 
-t_entrenador* get_entrenador(t_config* config, int index){
+t_entrenador* get_entrenador(t_config* config, int32_t index){
 	t_entrenador* entrenador = (t_entrenador*)malloc(sizeof(t_entrenador));
 
 	entrenador->estado = NEW;
@@ -145,10 +145,10 @@ t_entrenador* get_entrenador(t_config* config, int index){
 
 
 
-t_list* get_entrenadores(t_config* config, int cantidadEntrenadores){
+t_list* get_entrenadores(t_config* config, int32_t cantidadEntrenadores){
 	t_list* entrenadores_list = list_create();
 
-	int i;
+	int32_t i;
 	for(i=0 ; i < cantidadEntrenadores; i++){
 
 		//cada entrenador es un hilo
@@ -163,11 +163,11 @@ t_list* get_entrenadores(t_config* config, int cantidadEntrenadores){
 
 }
 
-int get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
+int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 	//raiz de (x2-x1)^2 + (y2-y1)^2
 
-	int distX = pos2.X - pos1.X;
-	int distY = pos2.Y - pos1.Y;
+	int32_t distX = pos2.X - pos1.X;
+	int32_t distY = pos2.Y - pos1.Y;
 
 	return sqrt(pow(distX,2) + pow(distY,2));
 
@@ -177,14 +177,14 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posic
 
 	t_entrenador* entrenador_cercano;
 	t_entrenador* entrenador;
-	int distancia_mas_chica = -1;
+	int32_t distancia_mas_chica = -1;
 
-	for(int i = 0; i < entrenadores->elements_count; i++){
+	for(int32_t i = 0; i < entrenadores->elements_count; i++){
 
 		entrenador = list_get(entrenadores, i);
 
 		if(entrenador->estado == BLOCKED || entrenador->estado == NEW ){
-			int distancia_entrenador = get_distancia_entre_puntos(*entrenador->posicion, *posicion_pokemon);
+			int32_t distancia_entrenador = get_distancia_entre_puntos(*entrenador->posicion, *posicion_pokemon);
 
 			if(distancia_mas_chica == -1){
 				distancia_mas_chica = distancia_entrenador;
@@ -199,9 +199,9 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posic
 }
 
 
-t_posicion* avanzar(t_posicion* posicion, int posX, int posY){
-	int nuevaPosicionX = posicion->X + posX;
-	int nuevaPosicionY = posicion->Y + posY;
+t_posicion* avanzar(t_posicion* posicion, int32_t posX, int32_t posY){
+	int32_t nuevaPosicionX = posicion->X + posX;
+	int32_t nuevaPosicionY = posicion->Y + posY;
 
 	posicion->X = nuevaPosicionX;
 	posicion->Y = nuevaPosicionY;
@@ -210,7 +210,7 @@ t_posicion* avanzar(t_posicion* posicion, int posX, int posY){
 }
 
 
-int main(int argc, char** argv)
+int32_t main(int32_t argc, char** argv)
 {
 	cola_ready = list_create();
 	t_list* objetivo_global = list_create();
@@ -222,7 +222,7 @@ int main(int argc, char** argv)
     t_config* entrenador_config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/team/config/entrenador1.config");
 
 
-    int cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
+    int32_t cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
     printf("En este team hay %d entrenadores\n", cantidadEntrenadores);
 
     t_algoritmo* algoritmo = get_algoritmo(entrenador_config);
@@ -239,7 +239,7 @@ int main(int argc, char** argv)
     }
 
 
-    for(int i = 0; i < cantidadEntrenadores; i++){
+    for(int32_t i = 0; i < cantidadEntrenadores; i++){
     	t_entrenador* entrenador_actual = list_get(entrenadores, i);
     	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
     			i + 1,
@@ -258,7 +258,7 @@ int main(int argc, char** argv)
 
 
 		//ver si se puede reemplazar por iterate
-		int j = 0;
+		int32_t j = 0;
 		for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
 			t_pokemon_team* objetivo_actual = list_get(entrenador_actual->objetivo, j);
 			list_add(objetivo_global, objetivo_actual);
@@ -286,8 +286,8 @@ void planificar_fifo(){
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	entrenador->estado = EXEC;
 
-	int posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
-	int posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
+	int32_t posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
+	int32_t posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
 
 	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
 
@@ -331,8 +331,8 @@ void planificar_rr(t_pokemon_team* pokemon_a_capturar){
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	entrenador->estado = EXEC;
 
-	int posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
-	int posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
+	int32_t posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
+	int32_t posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
 
 	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
 

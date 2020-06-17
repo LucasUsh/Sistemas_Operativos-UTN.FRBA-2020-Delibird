@@ -18,14 +18,14 @@
 
 
 typedef struct {
-	uint32_t X;
-	uint32_t Y;
+	int32_t X;
+	int32_t Y;
 } __attribute__((packed)) t_posicion; // ocupa 8 bytes
 
 typedef struct {
-	uint32_t size_Nombre;
+	int32_t size_Nombre;
 	char * nombre;
-	//uint32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
+	//int32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
 	//t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
 } t_pokemon;
 // con esta estructura ocupa maximo 26 bytes, minimo 19 bytes
@@ -47,13 +47,13 @@ typedef struct {
 typedef struct {
 	t_pokemon pokemon;
 	t_posicion posicion;
-	uint32_t cant;
+	int32_t cant;
 } t_New; // codigo_operacion= 1
 // ocupa entre 35 y 42 bytes
 
 typedef struct {
 	t_pokemon pokemon;
-	uint32_t cantUbicaciones;
+	int32_t cantUbicaciones;
 	t_list * listaPosiciones;
 } t_Localized; // codigo_operacion= 2
 
@@ -72,9 +72,9 @@ typedef struct {
 } t_Catch; // codigo_operacion= 5
 
 typedef struct {
-	uint32_t fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
+	int32_t fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
 } t_Caught; // codigo_operacion= 6
 
-uint32_t universo_init();
+int32_t universo_init();
 
 #endif /*UNIVERSO_H_*/

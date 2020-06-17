@@ -24,6 +24,6 @@ pthread_t hilo_global_cliente_GC;
 
 void crear_servidor_GC();
 void responder_mensaje(int* socket_cliente);
-void conexionBroker(int *socket);
+void conexionBroker(int32_t *socket);
 
 #endif
