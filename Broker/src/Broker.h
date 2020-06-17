@@ -16,8 +16,9 @@
 #include<commons/config.h>
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include <commons/collections/list.h>
-#include "../../OurLibraries/Sockets/sockets.c"
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.c"
 #include<pthread.h>
+#include <sys/time.h>
 
 typedef struct {
 	uint32_t id_Mensaje;
@@ -27,6 +28,11 @@ typedef struct {
 	t_list * suscriptoresQueRecibieron; // estos serian los que devolvieron el ACK
 } info_Mensaje;
 
+typedef struct {
+	bool ACK;
+} t_suscriptor;
+
+
 t_log* logger;
 t_config* config;
 
@@ -35,7 +41,7 @@ t_config* leer_config(void);
 
 void suscribirProceso(op_code operacion, uint32_t * PID);
 void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
-uint32_t asignarID();
+double get_id();
 
 t_list * suscriptores_New;
 t_list * suscriptores_Appeared;
