@@ -56,50 +56,11 @@ int32_t main(void) {
 	*
 	*/
 
+	// esto tendria que ser otro hilo
 	while (1){
-	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
-	printf("Estoy escuchando suscripciones\n");
-	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-
-	while(socketSuscripciones != -1){
-		struct sockaddr_in dir_cliente;
-		int32_t tam_direccion = sizeof(struct sockaddr_in);
-		int32_t socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
-		printf("Se conecto un cliente\n");
-
-		int32_t operacion;
-		if(recv(socketCliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
-			operacion = -1;
-		}
-		switch (operacion) {
-		case NEW_POKEMON:
-			printf("Recibi un new_pokemon");
-			break;
-		case APPEARED_POKEMON:
-			printf("Recibi un appeared_pokemon");
-			break;
-		case CATCH_POKEMON:
-			printf("Recibi un catch_pokemon");
-			break;
-		case CAUGHT_POKEMON:
-			printf("Recibi un caught_pokemon");
-			break;
-		case GET_POKEMON:
-			printf("Recibi un get_pokemon");
-			break;
-		case LOCALIZED_POKEMON:
-			printf("Recibi un localized_pokemon");
-			break;
-		case 0:
-			exit(2);
-		case -1:
-			exit(2);
-		}
-		/*recv(socketCliente, &(buffer_size), sizeof(buffer_size), 0);
-		recv(socketCliente, buffer, buffer_size, 0);*/
+		escucharSuscripciones(IP_BROKER, PUERTO_BROKER);
 	}
 
-	}
 	return EXIT_SUCCESS;
 
 }
@@ -142,6 +103,50 @@ void responder_mensaje(int32_t* socket_cliente) {
 	}
 }
 */
+
+void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
+	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
+	printf("Estoy escuchando suscripciones\n");
+	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+
+	while(socketSuscripciones != -1){
+		struct sockaddr_in dir_cliente;
+		int32_t tam_direccion = sizeof(struct sockaddr_in);
+		int32_t socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
+		printf("Se conecto un cliente\n");
+
+		int32_t operacion;
+		if(recv(socketCliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
+			operacion = -1;
+		}
+		switch (operacion) {
+		case NEW_POKEMON:
+			printf("Recibi un new_pokemon");
+			break;
+		case APPEARED_POKEMON:
+			printf("Recibi un appeared_pokemon");
+			break;
+		case CATCH_POKEMON:
+			printf("Recibi un catch_pokemon");
+			break;
+		case CAUGHT_POKEMON:
+			printf("Recibi un caught_pokemon");
+			break;
+		case GET_POKEMON:
+			printf("Recibi un get_pokemon");
+			break;
+		case LOCALIZED_POKEMON:
+			printf("Recibi un localized_pokemon");
+			break;
+		case 0:
+			exit(2);
+		case -1:
+			exit(2);
+		}
+		/*recv(socketCliente, &(buffer_size), sizeof(buffer_size), 0);
+		recv(socketCliente, buffer, buffer_size, 0);*/
+	}
+}
 
 void suscribirProceso(op_code operacion, int32_t * PID){
 	switch(operacion) {
