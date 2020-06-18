@@ -22,13 +22,13 @@ int32_t main(int32_t argc, char *argv[])
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
 		if(string_contains(argv[2], "APPEARED_POKEMON")){
-			printf("Appeared Pokemon \n");
+			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
-			printf("Catch Pokemon \n");
+			enviar_catch_pokemon(argv[3], argv[4], argv[5], socket);
 		}
 		if(string_contains(argv[2], "CAUGHT_POKEMON")){
-			printf("Caught Pokemon \n");
+			enviar_caught_pokemon(argv[3], argv[4], argv[5], socket);
 		}
 	}
 	// Ejemplo./gameboy GAMECARD NEW_POKEMON Pikachu 2 5 10 9
@@ -42,14 +42,8 @@ int32_t main(int32_t argc, char *argv[])
 			log_info(logger,"Envio new_pokemon");
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
-		if(string_contains(argv[2], "APPEARED_POKEMON")){
-			printf("Appeared Pokemon \n");
-		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
 			printf("Catch Pokemon \n");
-		}
-		if(string_contains(argv[2], "CAUGHT_POKEMON")){
-			printf("Caught Pokemon \n");
 		}
 	}
 	else {
@@ -60,6 +54,9 @@ int32_t main(int32_t argc, char *argv[])
 			{
 				log_info(logger,"Error al conectar al Team");
 				return 0;
+			}
+			if(string_contains(argv[2], "APPEARED_POKEMON")){
+				enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 			}
 		}
 	}
