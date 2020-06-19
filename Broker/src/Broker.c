@@ -26,12 +26,24 @@ double get_id(){
 }
 
 int32_t main(void) {
-	malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
+
+
+
+	//Lau: creo que no hace falta
+	//malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
 
 	logger = iniciar_logger();
 	config = leer_config();
 
-	get_id();
+	//get_id();
+
+
+	int tamanioMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	int inicioMemoria = (int)malloc(tamanioMemoria);
+	printf("inicio memoria: %d\n", inicioMemoria);
+
+	printf("final memoria?: %d\n", inicioMemoria + tamanioMemoria);
+
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -41,7 +53,16 @@ int32_t main(void) {
 	/*
 	* Creamos un hilo que debe estar constantemente escuchando con IP_BROKER y PUERTO_BROKER.
 	* El resto de los procesos se conectan a ese hilo, de a uno.
-	*
+	*/
+
+	// esto tendria que ser otro hilo
+	while (1){
+		escucharSuscripciones(IP_BROKER, PUERTO_BROKER);
+	}
+
+
+
+	/*
 	* Se les asigna un nuevo socket para que envien o reciban mensajes, se agrega el proceso a la
 	* lista de suscriptores a la que solicito unirse, Se verifica si hay mensajes sin ACK en la lista
 	* a la que suscribio un proceso, en caso de que si haya se envia por el nuevo socket y se
@@ -56,10 +77,7 @@ int32_t main(void) {
 	*
 	*/
 
-	// esto tendria que ser otro hilo
-	while (1){
-		escucharSuscripciones(IP_BROKER, PUERTO_BROKER);
-	}
+
 
 	return EXIT_SUCCESS;
 
@@ -150,7 +168,7 @@ void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
 
 void suscribirProceso(op_code operacion, int32_t * PID){
 	switch(operacion) {
-	case SUSCRIPCION_NEW: // NEW_POKEMON = 1
+	case SUSCRIPCION_NEW: // 0
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_New == false){
 			suscriptores_New = list_create();
@@ -161,7 +179,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case SUSCRIPCION_APPEARED: // 	APPEARED_POKEMON=2
+	case SUSCRIPCION_APPEARED: // 	1
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Appeared == false){
 			suscriptores_Appeared = list_create();
@@ -172,7 +190,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case SUSCRIPCION_CATCH: // 	CATCH_POKEMON=3
+	case SUSCRIPCION_CATCH: // 	2
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Catch == false){
 			suscriptores_Catch = list_create();
@@ -183,7 +201,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case SUSCRIPCION_CAUGHT: // CAUGHT_POKEMON=4
+	case SUSCRIPCION_CAUGHT: // 3
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Caught == false){
 			suscriptores_Caught = list_create();
@@ -194,7 +212,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case SUSCRIPCION_GET: // GET_POKEMON=5
+	case SUSCRIPCION_GET: // 4
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Get == false){
 			suscriptores_Get = list_create();
@@ -205,7 +223,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 
 		break;
 
-	case SUSCRIPCION_LOCALIZED: // LOCALIZED_POKEMON=6
+	case SUSCRIPCION_LOCALIZED: // 5
 		// Si no existe la cola, la creamos
 		if (flag_Suscriptores_Localized == false){
 			suscriptores_Localized = list_create();
@@ -224,7 +242,7 @@ void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
 	//void queue_push(t_queue *, void *element);
 
 	switch(operacion) {
-	case NEW_POKEMON: // NEW_POKEMON = 1
+	case NEW_POKEMON: // 6
 		// Si no existe la cola, la creamos
 		if(flag_Mensajes_New== false){
 			mensajes_New = list_create();
@@ -233,7 +251,7 @@ void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
 		list_add(mensajes_New, infoMensaje);
 		break;
 
-	case APPEARED_POKEMON: // 	APPEARED_POKEMON=2
+	case APPEARED_POKEMON: // 7
 		// Si no existe la cola, la creamos
 		if(flag_Mensajes_Appeared==false){
 			mensajes_Appeared = list_create();
@@ -242,7 +260,7 @@ void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
 		list_add(mensajes_Appeared, infoMensaje);
 		break;
 
-	case CATCH_POKEMON: // 	CATCH_POKEMON=3
+	case CATCH_POKEMON: // 	8
 		// Si no existe la cola, la creamos
 		if(flag_Mensajes_Catch==false){
 			mensajes_Catch = list_create();
@@ -251,7 +269,7 @@ void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
 		list_add(mensajes_Catch, infoMensaje);
 		break;
 
-	case CAUGHT_POKEMON: // CAUGHT_POKEMON=4
+	case CAUGHT_POKEMON: // 9
 		// Si no existe la cola, la creamos
 		if(flag_Mensajes_Caught==false){
 			mensajes_Caught = list_create();
@@ -260,7 +278,7 @@ void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
 		list_add(mensajes_Caught, infoMensaje);
 		break;
 
-	case GET_POKEMON: // GET_POKEMON=5
+	case GET_POKEMON: // 10
 		// Si no existe la cola, la creamos
 		if(flag_Mensajes_Get==false){
 			mensajes_Get = list_create();
@@ -269,7 +287,7 @@ void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
 		list_add(mensajes_Get, infoMensaje);
 		break;
 
-	case LOCALIZED_POKEMON: // LOCALIZED_POKEMON=6
+	case LOCALIZED_POKEMON: // 11
 		// Si no existe la cola, la creamos
 		if(flag_Mensajes_Localized==false){
 			mensajes_Localized = list_create();
@@ -306,3 +324,6 @@ t_config * leer_config(void){
 	}
 	return config;
 }
+
+
+

@@ -43,17 +43,18 @@ void suscribirProceso(op_code operacion, int32_t* PID);
 void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
 double get_id();
 
-t_list * suscriptores_New;
-t_list * suscriptores_Appeared;
-t_list * suscriptores_Catch;
-t_list * suscriptores_Caught;
-t_list * suscriptores_Get;
-t_list * suscriptores_Localized;
-t_list * mensajes_New;
-t_list * mensajes_Appeared;
-t_list * mensajes_Catch;
-t_list * mensajes_Caught;
-t_list * mensajes_Get;
-t_list * mensajes_Localized;
+t_list* suscriptores_New;
+t_list* suscriptores_Appeared;
+t_list* suscriptores_Catch;
+t_list* suscriptores_Caught;
+t_list* suscriptores_Get;
+t_list* suscriptores_Localized;
+t_list* mensajes_New;
+t_list* mensajes_Appeared;
+t_list* mensajes_Catch;
+t_list* mensajes_Caught;
+t_list* mensajes_Get;
+t_list* mensajes_Localized;
+t_list* tabla_particiones;
 
 #endif /* BROKER_H_ */
