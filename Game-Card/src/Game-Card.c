@@ -25,8 +25,8 @@ int32_t main(void)
 }
 
 void crear_servidor_GC() {
+
 	int32_t socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
-	log_debug (debug, "Se creo el socket en escucha.");
 	int32_t socket_cliente_entrante;
 
     while(1) {
@@ -35,12 +35,13 @@ void crear_servidor_GC() {
 
     	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)
     		log_debug (debug, "Hilo para responder al cliente creado correctamente.");
+
     	pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
     }
 }
 
 void responder_mensaje(int* socket_cliente) {
-	log_debug (debug, "Se ingreso a responder_mensaje().");
+
 	int32_t codigo_operacion;
 
 	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
@@ -48,20 +49,26 @@ void responder_mensaje(int* socket_cliente) {
 
 	log_debug (debug, "Código de operación %d", codigo_operacion);
 
-	//int32_t size;
-	//void* msg;
 	switch (codigo_operacion) {
 
-		case 1:
+		case NEW_POKEMON:
 			//msg = recibir_mensaje_servidor(socket_cliente, &size);
 			//printf("Recibi el siguiente mensaje: %s", (char*) msg);
 			//devolver_mensaje(msg, size, socket_cliente);
 			//free(msg);
 			break;
 
-		case -1:
-			printf ("Error al recibir paquete en serve_client. Hilo finalizado.");
-			pthread_exit(NULL);
+		case CATCH_POKEMON:
+
+			break;
+
+		case GET_POKEMON:
+
+			break;
+
+		default:
+
+			break;
 	}
 }
 
