@@ -349,7 +349,7 @@ t_particion generarParticionDinamicamente(int32_t tamanioMensaje, t_config* conf
 		particionNueva.tamanio = tamanioMensaje;
 	}
 
-	particionNueva.presencia = true;
+	particionNueva.ocupada = true;
 
 	//Agregar el info_mensaje?
 
@@ -464,3 +464,47 @@ int32_t getTamanioMensajeCaught(t_Caught msgCaught){
 
 	return sizeof(typeof(sizeof(msgCaught.fueAtrapado)));
 }
+
+
+bool particionCandidata(t_particion* particion, int32_t tamanioMensaje){
+	return !particion->ocupada && tamanioMensaje < particion->tamanio;
+}
+
+t_particion* getParticionFirstFit(int32_t tamanioMensaje){
+
+	bool _particionCandidata(void* element){
+		return particionCandidata((t_particion*)element, tamanioMensaje);
+	}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
+
+	return list_get(particionesCandidatas, 0);
+}
+
+t_particion* getParticionBestFit(int32_t tamanioMensaje){
+	int i;
+	t_particion* mejorParticion = malloc(sizeof(t_particion));
+
+	bool _particionCandidata(void* element){
+		return particionCandidata((t_particion*)element, tamanioMensaje);
+	}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
+
+	mejorParticion = list_get(particionesCandidatas, 0); //agarro la primera
+
+	//recorro a partir de la segunda
+	for(i = 1; i < particionesCandidatas->elements_count; i++){
+		t_particion* particionActual = list_get(particionesCandidatas, i);
+
+		if(particionActual->tamanio - tamanioMensaje == 0){
+			return particionActual;
+		} else if(particionActual->tamanio < mejorParticion->tamanio){
+			mejorParticion = particionActual;
+		}
+	}
+
+	return mejorParticion;
+
+}
+
