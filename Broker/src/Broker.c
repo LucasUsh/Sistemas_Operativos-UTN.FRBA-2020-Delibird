@@ -13,7 +13,7 @@
 
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
-int32_t tamanioMemoria;
+int32_t sizeMemoria;
 
 double get_id(){
 	//para obtener id usamos el timestamp
@@ -85,13 +85,13 @@ int32_t main(void) {
 
 	//get_id();
 
-	tamanioMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
-	int inicioMemoria = (int)malloc(tamanioMemoria);
+	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	int inicioMemoria = (int)malloc(sizeMemoria);
 
 	t_particion* particion_inicial = malloc(sizeof(t_particion));
 	particion_inicial->posicion_inicial = inicioMemoria;
-	particion_inicial->posicion_final = inicioMemoria + tamanioMemoria;
-	particion_inicial->tamanio = tamanioMemoria;
+	particion_inicial->posicion_final = inicioMemoria + sizeMemoria;
+	particion_inicial->size = sizeMemoria;
 
 	list_add(tabla_particiones, particion_inicial);
 
@@ -335,15 +335,15 @@ t_config * leer_config(void){
 
 
 
-t_particion generarParticionDinamicamente(int32_t tamanioMensaje, t_config* config){
+t_particion generarParticionDinamicamente(int32_t sizeMensaje, t_config* config){
 	// Se genera una partición del temanio del Mensaje
 	t_particion particionNueva;
-	int32_t tamanioMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
+	int32_t sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
-	if(tamanioMensaje < tamanioMinParticion){
-		particionNueva.tamanio = tamanioMinParticion;
+	if(sizeMensaje < sizeMinParticion){
+		particionNueva.size = sizeMinParticion;
 	} else {
-		particionNueva.tamanio = tamanioMensaje;
+		particionNueva.size = sizeMensaje;
 	}
 
 	particionNueva.ocupada = true;
@@ -360,21 +360,21 @@ int getMemoriaOcupada(){
 	int i = 0;
 	for(i = 0; i < tabla_particiones->elements_count; i++){
 		t_particion* particion_actual = list_get(tabla_particiones, i);
-		memoriaOcupada += particion_actual->tamanio;
+		memoriaOcupada += particion_actual->size;
 	}
 
 	return memoriaOcupada;
 }
 
 int getMemoriaDisponible(){
-	return tamanioMemoria - getMemoriaOcupada();
+	return sizeMemoria - getMemoriaOcupada();
 }
 
-int32_t getTamanioPokemon(t_pokemon pokemon){
+int32_t getSizePokemon(t_pokemon pokemon){
 	return sizeof(typeof(pokemon.size_Nombre)) + sizeof(typeof(char)) * pokemon.size_Nombre;
 }
 
-int32_t getTamanioMensajeNew(t_New msgNew){
+int32_t getSizeMensajeNew(t_New msgNew){
 	/*
 	 * ‘Pikachu’ 5 10 2
 	 * largo del nombre del pokémon
@@ -383,15 +383,15 @@ int32_t getTamanioMensajeNew(t_New msgNew){
  	 * posicion Y
 	 * cantidad
 	*/
-	int32_t tamanioMsg = 0;
-	tamanioMsg +=getTamanioPokemon(msgNew.pokemon) +
+	int32_t sizeMsg = 0;
+	sizeMsg +=getSizePokemon(msgNew.pokemon) +
 			sizeof(typeof(t_posicion)) +
 			sizeof(typeof(msgNew.cant));
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeLocalized(t_Localized msgLocalized){
+int32_t getSizeMensajeLocalized(t_Localized msgLocalized){
 	/*
 	 * ‘Pikachu’ 3 4 5 1 5 9 3
 	 * el largo del nombre del pokémon,
@@ -400,28 +400,28 @@ int32_t getTamanioMensajeLocalized(t_Localized msgLocalized){
 	 * y un par de int_32 para cada posición donde se encuentre. (2 * int_32 * cant_posiciones)
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgLocalized.pokemon) +
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgLocalized.pokemon) +
 			sizeof(typeof(msgLocalized.listaPosiciones->elements_count)) +
 			sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeGet(t_Get msgGet){
+int32_t getSizeMensajeGet(t_Get msgGet){
 	/*
 	 * ‘Pikachu’
 	 * el largo del nombre del pokémon,
 	 * el nombre del pokemon,
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgGet.pokemon);
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgGet.pokemon);
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeAppeared(t_Appeared msgAppeared){
+int32_t getsizeMensajeAppeared(t_Appeared msgAppeared){
 	/*
 	 * ‘Pikachu’ 1 5
 	 * el largo del nombre del pokémon,
@@ -430,14 +430,14 @@ int32_t getTamanioMensajeAppeared(t_Appeared msgAppeared){
 	 * Pos Y
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgAppeared.pokemon)+
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgAppeared.pokemon)+
 				  sizeof(typeof(t_posicion));
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeCatch(t_Catch msgCatch){
+int32_t getsizeMensajeCatch(t_Catch msgCatch){
 	/*
 	 * ‘Pikachu’ 1 5
 	 * el largo del nombre del pokémon,
@@ -446,14 +446,14 @@ int32_t getTamanioMensajeCatch(t_Catch msgCatch){
 	 * Pos Y
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgCatch.pokemon)+
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgCatch.pokemon)+
 				  sizeof(typeof(t_posicion));
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeCaught(t_Caught msgCaught){
+int32_t getsizeMensajeCaught(t_Caught msgCaught){
 	/*
 	 * 0
 	 * un uint_32 para saber si se puedo o no atrapar al pokemon
@@ -463,14 +463,14 @@ int32_t getTamanioMensajeCaught(t_Caught msgCaught){
 }
 
 
-bool particionCandidata(t_particion* particion, int32_t tamanioMensaje){
-	return !particion->ocupada && tamanioMensaje < particion->tamanio;
+bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
+	return !particion->ocupada && sizeMensaje < particion->size;
 }
 
-t_particion* getParticionFirstFit(int32_t tamanioMensaje){
+t_particion* getParticionFirstFit(int32_t sizeMensaje){
 
 	bool _particionCandidata(void* element){
-		return particionCandidata((t_particion*)element, tamanioMensaje);
+		return particionCandidata((t_particion*)element, sizeMensaje);
 	}
 
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
@@ -478,12 +478,12 @@ t_particion* getParticionFirstFit(int32_t tamanioMensaje){
 	return list_get(particionesCandidatas, 0);
 }
 
-t_particion* getParticionBestFit(int32_t tamanioMensaje){
+t_particion* getParticionBestFit(int32_t sizeMensaje){
 	int i;
 	t_particion* mejorParticion = malloc(sizeof(t_particion));
 
 	bool _particionCandidata(void* element){
-		return particionCandidata((t_particion*)element, tamanioMensaje);
+		return particionCandidata((t_particion*)element, sizeMensaje);
 	}
 
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
@@ -494,15 +494,25 @@ t_particion* getParticionBestFit(int32_t tamanioMensaje){
 	for(i = 1; i < particionesCandidatas->elements_count; i++){
 		t_particion* particionActual = list_get(particionesCandidatas, i);
 
-		if(particionActual->tamanio - tamanioMensaje == 0){
+		if(particionActual->size - sizeMensaje == 0){
 			return particionActual;
-		} else if(particionActual->tamanio < mejorParticion->tamanio){
+		} else if(particionActual->size < mejorParticion->size){
 			mejorParticion = particionActual;
 		}
 	}
 
 	return mejorParticion;
 
+}
+
+t_particion crearParticion(int32_t inicio, int32_t fin, int32_t size, bool ocupada){
+	t_particion newParticion;
+	newParticion.ocupada = false;
+	newParticion.posicion_final = fin;
+	newParticion.posicion_inicial = inicio;
+	newParticion.size = size;
+
+	return newParticion;
 }
 
 
