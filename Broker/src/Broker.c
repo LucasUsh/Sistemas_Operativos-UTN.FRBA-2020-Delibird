@@ -81,15 +81,12 @@ int32_t main(void) {
 
 	logger = iniciar_logger();
 	config = leer_config();
-
+	tabla_particiones = list_create();
 
 	//get_id();
 
 	tamanioMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	int inicioMemoria = (int)malloc(tamanioMemoria);
-	printf("inicio memoria: %d\n", inicioMemoria);
-
-	printf("final memoria?: %d\n", inicioMemoria + tamanioMemoria);
 
 	t_particion* particion_inicial = malloc(sizeof(t_particion));
 	particion_inicial->posicion_inicial = inicioMemoria;
@@ -505,6 +502,55 @@ t_particion* getParticionBestFit(int32_t tamanioMensaje){
 	}
 
 	return mejorParticion;
+
+}
+
+
+void pruebaLista(){
+
+	/*
+	 * el objetivo de esta prueba es para que quede claro como removiendo un item de una lista
+	 * el puntero elements_count se actualiza al instante
+	 *
+	 * Este caso nos viene bien para sacar un partición de la lista y dividirla en otras 2
+	 *
+	 * Por ejemplo: Entra un mensaje que ocupa 8 bytes.
+	 * Por medio del algoritmo First fit se inserta en una de 10 bytes
+	 * Esto va a generar una partición nueva de 8 bytes para el dato y una de 2 bytes restantes
+	 * Estos 2 bytes podrían terminar siendo fragmentación interna por ejemplo si el tamaño min de particion es de 3 bytes.
+	*/
+	printf("PRUEBA LISTAS -> \n");
+	t_list* lsprueba = list_create();
+	list_add(lsprueba, 125);//0
+	list_add(lsprueba, 198);//1
+	list_add(lsprueba, 3553);//2
+	list_add(lsprueba, 4128);//3
+
+	int item2 = list_get(lsprueba, 2);
+	printf("item en la pos 2: %d\n", item2);
+
+	int i;
+	for(i=0;i < lsprueba->elements_count;i++){
+		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
+	}
+
+
+	item2 = list_remove(lsprueba, 2);
+	printf("saque el elemento: %d\n", item2);
+
+	for(i=0;i < lsprueba->elements_count;i++){
+		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
+	}
+
+	list_add_in_index(lsprueba, 2, 3000);
+	list_add_in_index(lsprueba, 3, 553);
+
+	printf("agregue el elemento: 3000 en la pos 2\n");
+	printf("agregue el elemento: 553 en la pos 3\n");
+
+	for(i=0;i < lsprueba->elements_count;i++){
+		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
+	}
 
 }
 
