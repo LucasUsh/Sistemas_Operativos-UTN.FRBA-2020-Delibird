@@ -13,6 +13,7 @@
 
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
+int32_t tamanioMemoria;
 
 double get_id(){
 	//para obtener id usamos el timestamp
@@ -25,6 +26,52 @@ double get_id(){
 	return id;
 }
 
+void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
+	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
+	printf("Estoy escuchando suscripciones\n");
+	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+
+	while(socketSuscripciones != -1){
+		struct sockaddr_in dir_cliente;
+		int32_t tam_direccion = sizeof(struct sockaddr_in);
+		int32_t socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
+		printf("Se conecto un cliente\n");
+
+		int32_t operacion;
+		if(recv(socketCliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
+			operacion = -1;
+		}
+		switch (operacion) {
+		case NEW_POKEMON:
+			printf("Recibi un new_pokemon");
+			break;
+		case APPEARED_POKEMON:
+			printf("Recibi un appeared_pokemon");
+			break;
+		case CATCH_POKEMON:
+			printf("Recibi un catch_pokemon");
+			break;
+		case CAUGHT_POKEMON:
+			printf("Recibi un caught_pokemon");
+			break;
+		case GET_POKEMON:
+			printf("Recibi un get_pokemon");
+			break;
+		case LOCALIZED_POKEMON:
+			printf("Recibi un localized_pokemon");
+			break;
+		case 0:
+			exit(2);
+		case -1:
+			exit(2);
+		default:
+			return;
+		}
+		/*recv(socketCliente, &(buffer_size), sizeof(buffer_size), 0);
+		recv(socketCliente, buffer, buffer_size, 0);*/
+	}
+}
+
 int32_t main(void) {
 
 
@@ -35,15 +82,21 @@ int32_t main(void) {
 	logger = iniciar_logger();
 	config = leer_config();
 
+
 	//get_id();
 
-
-	int tamanioMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	tamanioMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	int inicioMemoria = (int)malloc(tamanioMemoria);
 	printf("inicio memoria: %d\n", inicioMemoria);
 
 	printf("final memoria?: %d\n", inicioMemoria + tamanioMemoria);
 
+	t_particion* particion_inicial = malloc(sizeof(t_particion));
+	particion_inicial->posicion_inicial = inicioMemoria;
+	particion_inicial->posicion_final = inicioMemoria + tamanioMemoria;
+	particion_inicial->tamanio = tamanioMemoria;
+
+	list_add(tabla_particiones, particion_inicial);
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -122,49 +175,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 }
 */
 
-void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
-	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
-	printf("Estoy escuchando suscripciones\n");
-	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 
-	while(socketSuscripciones != -1){
-		struct sockaddr_in dir_cliente;
-		int32_t tam_direccion = sizeof(struct sockaddr_in);
-		int32_t socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
-		printf("Se conecto un cliente\n");
-
-		int32_t operacion;
-		if(recv(socketCliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
-			operacion = -1;
-		}
-		switch (operacion) {
-		case NEW_POKEMON:
-			printf("Recibi un new_pokemon");
-			break;
-		case APPEARED_POKEMON:
-			printf("Recibi un appeared_pokemon");
-			break;
-		case CATCH_POKEMON:
-			printf("Recibi un catch_pokemon");
-			break;
-		case CAUGHT_POKEMON:
-			printf("Recibi un caught_pokemon");
-			break;
-		case GET_POKEMON:
-			printf("Recibi un get_pokemon");
-			break;
-		case LOCALIZED_POKEMON:
-			printf("Recibi un localized_pokemon");
-			break;
-		case 0:
-			exit(2);
-		case -1:
-			exit(2);
-		}
-		/*recv(socketCliente, &(buffer_size), sizeof(buffer_size), 0);
-		recv(socketCliente, buffer, buffer_size, 0);*/
-	}
-}
 
 void suscribirProceso(op_code operacion, int32_t * PID){
 	switch(operacion) {
@@ -327,3 +338,129 @@ t_config * leer_config(void){
 
 
 
+t_particion generarParticionDinamicamente(int32_t tamanioMensaje, t_config* config){
+	// Se genera una partición del temanio del Mensaje
+	t_particion particionNueva;
+	int32_t tamanioMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
+
+	if(tamanioMensaje < tamanioMinParticion){
+		particionNueva.tamanio = tamanioMinParticion;
+	} else {
+		particionNueva.tamanio = tamanioMensaje;
+	}
+
+	particionNueva.presencia = true;
+
+	//Agregar el info_mensaje?
+
+
+	return particionNueva;
+}
+
+int getMemoriaOcupada(){
+	int memoriaOcupada = 0;
+
+	int i = 0;
+	for(i = 0; i < tabla_particiones->elements_count; i++){
+		t_particion* particion_actual = list_get(tabla_particiones, i);
+		memoriaOcupada += particion_actual->tamanio;
+	}
+
+	return memoriaOcupada;
+}
+
+int getMemoriaDisponible(){
+	return tamanioMemoria - getMemoriaOcupada();
+}
+
+int32_t getTamanioPokemon(t_pokemon pokemon){
+	return sizeof(typeof(pokemon.size_Nombre)) + sizeof(typeof(char)) * pokemon.size_Nombre;
+}
+
+int32_t getTamanioMensajeNew(t_New msgNew){
+	/*
+	 * ‘Pikachu’ 5 10 2
+	 * largo del nombre del pokémon
+	 * el nombre del pokemon
+	 * posición X
+ 	 * posicion Y
+	 * cantidad
+	*/
+	int32_t tamanioMsg = 0;
+	tamanioMsg +=getTamanioPokemon(msgNew.pokemon) +
+			sizeof(typeof(t_posicion)) +
+			sizeof(typeof(msgNew.cant));
+
+	return tamanioMsg;
+}
+
+int32_t getTamanioMensajeLocalized(t_Localized msgLocalized){
+	/*
+	 * ‘Pikachu’ 3 4 5 1 5 9 3
+	 * el largo del nombre del pokémon,
+	 * el nombre del pokemon,
+	 * la cantidad de posiciones donde se encuentra
+	 * y un par de int_32 para cada posición donde se encuentre. (2 * int_32 * cant_posiciones)
+	*/
+
+	int32_t tamanioMsg = 0;
+	tamanioMsg += getTamanioPokemon(msgLocalized.pokemon) +
+			sizeof(typeof(msgLocalized.listaPosiciones->elements_count)) +
+			sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
+
+	return tamanioMsg;
+}
+
+int32_t getTamanioMensajeGet(t_Get msgGet){
+	/*
+	 * ‘Pikachu’
+	 * el largo del nombre del pokémon,
+	 * el nombre del pokemon,
+	*/
+
+	int32_t tamanioMsg = 0;
+	tamanioMsg += getTamanioPokemon(msgGet.pokemon);
+
+	return tamanioMsg;
+}
+
+int32_t getTamanioMensajeAppeared(t_Appeared msgAppeared){
+	/*
+	 * ‘Pikachu’ 1 5
+	 * el largo del nombre del pokémon,
+	 * el nombre del pokemon,
+	 * Pos X
+	 * Pos Y
+	*/
+
+	int32_t tamanioMsg = 0;
+	tamanioMsg += getTamanioPokemon(msgAppeared.pokemon)+
+				  sizeof(typeof(t_posicion));
+
+	return tamanioMsg;
+}
+
+int32_t getTamanioMensajeCatch(t_Catch msgCatch){
+	/*
+	 * ‘Pikachu’ 1 5
+	 * el largo del nombre del pokémon,
+	 * el nombre del pokemon,
+	 * Pos X
+	 * Pos Y
+	*/
+
+	int32_t tamanioMsg = 0;
+	tamanioMsg += getTamanioPokemon(msgCatch.pokemon)+
+				  sizeof(typeof(t_posicion));
+
+	return tamanioMsg;
+}
+
+int32_t getTamanioMensajeCaught(t_Caught msgCaught){
+	/*
+	 * 0
+	 * un uint_32 para saber si se puedo o no atrapar al pokemon
+	*/
+
+	return sizeof(typeof(sizeof(msgCaught.fueAtrapado)));
+}

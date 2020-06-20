@@ -32,6 +32,13 @@ typedef struct {
 	bool ACK;
 } t_suscriptor;
 
+typedef struct {
+	int posicion_inicial;
+	int posicion_final;
+	int tamanio;
+	bool presencia;
+} t_particion;
+
 
 t_log* logger;
 t_config* config;
@@ -42,6 +49,8 @@ t_config* leer_config(void);
 void suscribirProceso(op_code operacion, int32_t* PID);
 void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
 double get_id();
+int getMemoriaOcupada();
+int getMemoriaDisponible();
 
 t_list* suscriptores_New;
 t_list* suscriptores_Appeared;

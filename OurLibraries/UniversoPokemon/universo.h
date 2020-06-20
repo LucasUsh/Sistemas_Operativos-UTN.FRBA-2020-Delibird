@@ -31,6 +31,12 @@ typedef struct {
 // con esta estructura ocupa maximo 26 bytes, minimo 19 bytes
 // nombre mas corto: Mew/Muk (3 bytes); nombre mas largo: Feraligatr (10 bytes)
 
+/* Lauti:
+ * podríamos imaginar un caso que envíen laevoluciondepikachu, hay que contemplar casos que pueden enviar cualquier cosa
+ * no digo que lo hagan pero no creo que podamos confirmar al 100% el tamaño del tipo de dato, hay que calcularlo
+*/
+
+
 
 
 typedef struct {
@@ -53,7 +59,6 @@ typedef struct {
 
 typedef struct {
 	t_pokemon pokemon;
-	int32_t cantUbicaciones;
 	t_list * listaPosiciones;
 } t_Localized; // codigo_operacion= 2
 
