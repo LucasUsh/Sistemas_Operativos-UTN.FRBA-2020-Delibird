@@ -23,14 +23,19 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t
 	paquete->buffer->id_Mensaje = 0;
 	paquete->buffer->stream = new;
 
-	free(posicion);
-	free(p_pokemon);
-	free(new);
+//	free(posicion);
+//	free(p_pokemon);
+//	free(new);
 
 	int32_t bytes_a_enviar;
 	void *paqueteSerializado = serializar_paquete_new (paquete, &bytes_a_enviar, new);
 
 	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(posicion);
+	free(p_pokemon);
+	free(new);
+
 
 	free(paqueteSerializado);
 	free(paquete->buffer);
