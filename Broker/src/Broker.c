@@ -15,6 +15,16 @@ bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch,
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
 int32_t sizeMemoria;
 
+t_particion* crearParticion(int inicio, int fin, bool ocupada){
+	t_particion* newParticion = malloc(sizeof(t_particion));
+	newParticion->ocupada = false;
+	newParticion->posicion_final = fin;
+	newParticion->posicion_inicial = inicio;
+	newParticion->size = fin - inicio;
+
+	return newParticion;
+}
+
 double get_id(){
 	//para obtener id usamos el timestamp
 
@@ -88,12 +98,9 @@ int32_t main(void) {
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	int inicioMemoria = (int)malloc(sizeMemoria);
 
-	t_particion* particion_inicial = malloc(sizeof(t_particion));
-	particion_inicial->posicion_inicial = inicioMemoria;
-	particion_inicial->posicion_final = inicioMemoria + sizeMemoria;
-	particion_inicial->size = sizeMemoria;
+	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false);
 
-	list_add(tabla_particiones, particion_inicial);
+	list_add(tabla_particiones, particionInicial);
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -505,15 +512,32 @@ t_particion* getParticionBestFit(int32_t sizeMensaje){
 
 }
 
-t_particion crearParticion(int32_t inicio, int32_t fin, int32_t size, bool ocupada){
-	t_particion newParticion;
-	newParticion.ocupada = false;
-	newParticion.posicion_final = fin;
-	newParticion.posicion_inicial = inicio;
-	newParticion.size = size;
 
-	return newParticion;
-}
+
+void dividirParticionDinamica(t_particion particion, int32_t sizeMsg){
+
+
+
+	t_particion* primeraParticion = crearParticion(particion.posicion_inicial, particion.posicion_inicial + sizeMsg, false);
+
+	int inicioSegundaParticion = primeraParticion->posicion_final + 1;
+	int sizeSegundaParticion = particion.size - primeraParticion->size;
+	t_particion* segundaParticion = crearParticion(inicioSegundaParticion, inicioSegundaParticion + sizeSegundaParticion, false);
+
+	/*
+	 *lo que habría que hacer es obtener el index donde se encuentra la particion y agregar las otras 2.
+	 * supongo que tenemos que aplicar algo de semaforos para que ese index no vaya cambiando
+	 * a medida que se creen particiones
+	 *
+	 *
+	 * list_remove(tabla_particiones, indiceParticion);
+	 * list_add_at_index(tabla_particiones, primeraParticion, indiceParticion);
+	 * list_add_at_index(tabla_particiones, segundaParticion, indiceParticion + 1);
+	*/
+
+	return;
+
+};
 
 
 void pruebaLista(){
