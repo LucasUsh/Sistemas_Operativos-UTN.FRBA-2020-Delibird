@@ -62,6 +62,7 @@ void eliminar_paquete(t_paquete* paquete);
 void liberar_conexion(int32_t socket_cliente);
 
 void* serializar_paquete(t_paquete* paquete, int32_t *bytes);
+void* serializar_paquete_new (t_paquete*, int32_t*, t_New*);
 
 int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
 int32_t recibir_cliente(int32_t);

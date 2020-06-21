@@ -114,7 +114,7 @@ void* serializar_paquete(t_paquete* paquete, int32_t *bytes){
 	return stream;
 }
 
-void* serializar_paquete_new (t_paquete* paquete, int32_t *bytes, t_New* new){
+void* serializar_paquete_new (t_paquete* paquete, int32_t* bytes, t_New* new){
 
 	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
 	void *stream = malloc(*bytes);
