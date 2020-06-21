@@ -2,10 +2,16 @@
 
 int32_t main(void)
 {
+	instalar_filesystem ();
+
 	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (debug, "Hilo servidor creado correctamente.");
+
+	// TODO: asociarse globalmente a las colas NEW_POKEMON, CATCH y GET
+	// Una vez suscripto tendríamos entonces 3 sockets modo cliente,
+	// cuando llega un mensaje informar al Broker la recepción del mismo (ACK) y hacer lo que corresponda
 
 /*
 	pthread_t h1;
@@ -24,13 +30,20 @@ int32_t main(void)
     return 0;
 }
 
+void instalar_filesystem (){
+	t_config* config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	char* punto_de_montaje = config_get_string_value(config_GC,"PUNTO_MONTAJE_TALLGRASS");
+	config_destroy(config_GC);
+
+
+}
+
 void crear_servidor_GC() {
 
 	int32_t socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
 	int32_t socket_cliente_entrante;
 
     while(1) {
-    	// quizás para Broker no conviene sobrepisar tod0 el tiempo el valor de este socket:
     	socket_cliente_entrante = recibir_cliente(socket_servidor_GC);
 
     	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)

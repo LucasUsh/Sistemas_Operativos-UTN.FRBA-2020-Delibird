@@ -20,6 +20,7 @@
 #include<signal.h> // Cliente
 #include<unistd.h> // Cliente
 #include<stdint.h>
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.h"
 
 //#define IP_SERVIDOR "127.0.0.1"
 //#define PUERTO_SERVIDOR "4444"
@@ -67,7 +68,6 @@ int32_t recibir_cliente(int32_t);
 void servir_cliente(int32_t *socket);
 void devolver_mensaje(void* payload, int32_t size, int32_t socket_cliente);
 
-void* recibir_mensaje_servidor(int32_t socket_cliente, int32_t* size);
 void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente);
 
 #endif /* SOCKETS_H_ */

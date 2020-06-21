@@ -114,6 +114,33 @@ void* serializar_paquete(t_paquete* paquete, int32_t *bytes){
 	return stream;
 }
 
+void* serializar_paquete_new (t_paquete* paquete, int32_t *bytes, t_New* new){
+
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
+
+	memcpy(stream + desplazamiento, &(new->pokemon.size_Nombre), sizeof(new->pokemon.size_Nombre));
+	desplazamiento+= sizeof(new->pokemon.size_Nombre);
+	memcpy(stream + desplazamiento, new->pokemon.nombre, new->pokemon.size_Nombre);
+	desplazamiento+= new->pokemon.size_Nombre;
+	memcpy(stream + desplazamiento, &(new->posicion.X), sizeof(new->posicion.X));
+	desplazamiento+= sizeof(new->posicion.X);
+	memcpy(stream + desplazamiento, &(new->posicion.Y), sizeof(new->posicion.Y));
+	desplazamiento+= sizeof(new->posicion.Y);
+	memcpy(stream + desplazamiento, &(new->cant), sizeof(new->cant));
+
+	return stream;
+}
+
 // retorna el socket del servidor
 int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor){
 	int32_t socket_servidor;
@@ -154,16 +181,6 @@ int32_t recibir_cliente(int32_t socket_servidor){
 	return accept(socket_servidor, (struct sockaddr*) &dir_cliente, &tam_direccion);
 	//       ^ accept crea un nuevo socket para el cliente
 
-}
-
-void* recibir_mensaje_servidor(int32_t socket_cliente, int32_t* size){
-	void * buffer;
-
-	recv(socket_cliente, size, sizeof(int32_t), MSG_WAITALL);
-	buffer = malloc(*size);
-	recv(socket_cliente, buffer, *size, MSG_WAITALL);
-
-	return buffer;
 }
 
 void devolver_mensaje(void* payload, int32_t size, int32_t socket_cliente){

@@ -20,7 +20,7 @@
 typedef struct {
 	int32_t X;
 	int32_t Y;
-} __attribute__((packed)) t_posicion; // ocupa 8 bytes
+} t_posicion;
 
 typedef struct {
 	int32_t size_Nombre;
@@ -81,5 +81,6 @@ typedef struct {
 } t_Caught; // codigo_operacion= 6
 
 int32_t universo_init();
+int32_t tamanio_new (t_New*);
 
 #endif /*UNIVERSO_H_*/

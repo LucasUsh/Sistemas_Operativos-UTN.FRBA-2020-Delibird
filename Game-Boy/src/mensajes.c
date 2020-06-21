@@ -19,14 +19,13 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t
 	new->posicion = *posicion;
 	new->pokemon = *p_pokemon;
 
-	paquete->buffer->size = sizeof(new)*3; //por que *3??
+	paquete->buffer->size = tamanio_new (new);
 	paquete->buffer->id_Mensaje = 0;
 	paquete->buffer->stream = new;
-	//memcpy(paquete->buffer->stream, new, paquete->buffer->size);
 
-	free(new);
 	free(posicion);
 	free(p_pokemon);
+	free(new);
 
 	int32_t bytes_a_enviar;
 	void *paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
