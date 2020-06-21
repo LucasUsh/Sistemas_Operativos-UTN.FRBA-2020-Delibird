@@ -21,6 +21,7 @@
 #include <sys/time.h>
 
 typedef struct {
+	op_code listaALaQuePertenece;
 	int32_t id_Mensaje;
 	void * mensaje;
 	int32_t PID; // ID del proceso que mando el mensaje
