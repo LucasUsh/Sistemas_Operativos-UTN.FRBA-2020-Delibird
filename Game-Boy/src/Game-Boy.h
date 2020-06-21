@@ -5,7 +5,8 @@
 #include<commons/string.h>
 #include<commons/log.h>
 #include<readline/readline.h>
-#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.c"
+#include "../../OurLibraries/Sockets/sockets.c"
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/src/conexion.h"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/src/mensajes.h"
 
