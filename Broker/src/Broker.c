@@ -13,7 +13,17 @@
 
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
-int32_t tamanioMemoria;
+int32_t sizeMemoria;
+
+t_particion* crearParticion(int inicio, int fin, bool ocupada){
+	t_particion* newParticion = malloc(sizeof(t_particion));
+	newParticion->ocupada = false;
+	newParticion->posicion_final = fin;
+	newParticion->posicion_inicial = inicio;
+	newParticion->size = fin - inicio;
+
+	return newParticion;
+}
 
 double get_id(){
 	//para obtener id usamos el timestamp
@@ -81,22 +91,16 @@ int32_t main(void) {
 
 	logger = iniciar_logger();
 	config = leer_config();
-
+	tabla_particiones = list_create();
 
 	//get_id();
 
-	tamanioMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
-	int inicioMemoria = (int)malloc(tamanioMemoria);
-	printf("inicio memoria: %d\n", inicioMemoria);
+	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	int inicioMemoria = (int)malloc(sizeMemoria);
 
-	printf("final memoria?: %d\n", inicioMemoria + tamanioMemoria);
+	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false);
 
-	t_particion* particion_inicial = malloc(sizeof(t_particion));
-	particion_inicial->posicion_inicial = inicioMemoria;
-	particion_inicial->posicion_final = inicioMemoria + tamanioMemoria;
-	particion_inicial->tamanio = tamanioMemoria;
-
-	list_add(tabla_particiones, particion_inicial);
+	list_add(tabla_particiones, particionInicial);
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -338,18 +342,18 @@ t_config * leer_config(void){
 
 
 
-t_particion generarParticionDinamicamente(int32_t tamanioMensaje, t_config* config){
+t_particion generarParticionDinamicamente(int32_t sizeMensaje, t_config* config){
 	// Se genera una partición del temanio del Mensaje
 	t_particion particionNueva;
-	int32_t tamanioMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
+	int32_t sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
-	if(tamanioMensaje < tamanioMinParticion){
-		particionNueva.tamanio = tamanioMinParticion;
+	if(sizeMensaje < sizeMinParticion){
+		particionNueva.size = sizeMinParticion;
 	} else {
-		particionNueva.tamanio = tamanioMensaje;
+		particionNueva.size = sizeMensaje;
 	}
 
-	particionNueva.presencia = true;
+	particionNueva.ocupada = true;
 
 	//Agregar el info_mensaje?
 
@@ -363,21 +367,21 @@ int getMemoriaOcupada(){
 	int i = 0;
 	for(i = 0; i < tabla_particiones->elements_count; i++){
 		t_particion* particion_actual = list_get(tabla_particiones, i);
-		memoriaOcupada += particion_actual->tamanio;
+		memoriaOcupada += particion_actual->size;
 	}
 
 	return memoriaOcupada;
 }
 
 int getMemoriaDisponible(){
-	return tamanioMemoria - getMemoriaOcupada();
+	return sizeMemoria - getMemoriaOcupada();
 }
 
-int32_t getTamanioPokemon(t_pokemon pokemon){
+int32_t getSizePokemon(t_pokemon pokemon){
 	return sizeof(typeof(pokemon.size_Nombre)) + sizeof(typeof(char)) * pokemon.size_Nombre;
 }
 
-int32_t getTamanioMensajeNew(t_New msgNew){
+int32_t getSizeMensajeNew(t_New msgNew){
 	/*
 	 * ‘Pikachu’ 5 10 2
 	 * largo del nombre del pokémon
@@ -386,15 +390,15 @@ int32_t getTamanioMensajeNew(t_New msgNew){
  	 * posicion Y
 	 * cantidad
 	*/
-	int32_t tamanioMsg = 0;
-	tamanioMsg +=getTamanioPokemon(msgNew.pokemon) +
+	int32_t sizeMsg = 0;
+	sizeMsg +=getSizePokemon(msgNew.pokemon) +
 			sizeof(typeof(t_posicion)) +
 			sizeof(typeof(msgNew.cant));
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeLocalized(t_Localized msgLocalized){
+int32_t getSizeMensajeLocalized(t_Localized msgLocalized){
 	/*
 	 * ‘Pikachu’ 3 4 5 1 5 9 3
 	 * el largo del nombre del pokémon,
@@ -403,28 +407,28 @@ int32_t getTamanioMensajeLocalized(t_Localized msgLocalized){
 	 * y un par de int_32 para cada posición donde se encuentre. (2 * int_32 * cant_posiciones)
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgLocalized.pokemon) +
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgLocalized.pokemon) +
 			sizeof(typeof(msgLocalized.listaPosiciones->elements_count)) +
 			sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeGet(t_Get msgGet){
+int32_t getSizeMensajeGet(t_Get msgGet){
 	/*
 	 * ‘Pikachu’
 	 * el largo del nombre del pokémon,
 	 * el nombre del pokemon,
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgGet.pokemon);
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgGet.pokemon);
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeAppeared(t_Appeared msgAppeared){
+int32_t getsizeMensajeAppeared(t_Appeared msgAppeared){
 	/*
 	 * ‘Pikachu’ 1 5
 	 * el largo del nombre del pokémon,
@@ -433,14 +437,14 @@ int32_t getTamanioMensajeAppeared(t_Appeared msgAppeared){
 	 * Pos Y
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgAppeared.pokemon)+
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgAppeared.pokemon)+
 				  sizeof(typeof(t_posicion));
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeCatch(t_Catch msgCatch){
+int32_t getsizeMensajeCatch(t_Catch msgCatch){
 	/*
 	 * ‘Pikachu’ 1 5
 	 * el largo del nombre del pokémon,
@@ -449,14 +453,14 @@ int32_t getTamanioMensajeCatch(t_Catch msgCatch){
 	 * Pos Y
 	*/
 
-	int32_t tamanioMsg = 0;
-	tamanioMsg += getTamanioPokemon(msgCatch.pokemon)+
+	int32_t sizeMsg = 0;
+	sizeMsg += getSizePokemon(msgCatch.pokemon)+
 				  sizeof(typeof(t_posicion));
 
-	return tamanioMsg;
+	return sizeMsg;
 }
 
-int32_t getTamanioMensajeCaught(t_Caught msgCaught){
+int32_t getsizeMensajeCaught(t_Caught msgCaught){
 	/*
 	 * 0
 	 * un uint_32 para saber si se puedo o no atrapar al pokemon
@@ -464,3 +468,123 @@ int32_t getTamanioMensajeCaught(t_Caught msgCaught){
 
 	return sizeof(typeof(sizeof(msgCaught.fueAtrapado)));
 }
+
+
+bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
+	return !particion->ocupada && sizeMensaje < particion->size;
+}
+
+t_particion* getParticionFirstFit(int32_t sizeMensaje){
+
+	bool _particionCandidata(void* element){
+		return particionCandidata((t_particion*)element, sizeMensaje);
+	}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
+
+	return list_get(particionesCandidatas, 0);
+}
+
+t_particion* getParticionBestFit(int32_t sizeMensaje){
+	int i;
+	t_particion* mejorParticion = malloc(sizeof(t_particion));
+
+	bool _particionCandidata(void* element){
+		return particionCandidata((t_particion*)element, sizeMensaje);
+	}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
+
+	mejorParticion = list_get(particionesCandidatas, 0); //agarro la primera
+
+	//recorro a partir de la segunda
+	for(i = 1; i < particionesCandidatas->elements_count; i++){
+		t_particion* particionActual = list_get(particionesCandidatas, i);
+
+		if(particionActual->size - sizeMensaje == 0){
+			return particionActual;
+		} else if(particionActual->size < mejorParticion->size){
+			mejorParticion = particionActual;
+		}
+	}
+
+	return mejorParticion;
+
+}
+
+
+
+void dividirParticionDinamica(t_particion particion, int32_t sizeMsg){
+
+
+
+	t_particion* primeraParticion = crearParticion(particion.posicion_inicial, particion.posicion_inicial + sizeMsg, false);
+
+	int inicioSegundaParticion = primeraParticion->posicion_final + 1;
+	int sizeSegundaParticion = particion.size - primeraParticion->size;
+	t_particion* segundaParticion = crearParticion(inicioSegundaParticion, inicioSegundaParticion + sizeSegundaParticion, false);
+
+	/*
+	 *lo que habría que hacer es obtener el index donde se encuentra la particion y agregar las otras 2.
+	 * supongo que tenemos que aplicar algo de semaforos para que ese index no vaya cambiando
+	 * a medida que se creen particiones
+	 *
+	 *
+	 * list_remove(tabla_particiones, indiceParticion);
+	 * list_add_at_index(tabla_particiones, primeraParticion, indiceParticion);
+	 * list_add_at_index(tabla_particiones, segundaParticion, indiceParticion + 1);
+	*/
+
+	return;
+
+};
+
+
+void pruebaLista(){
+
+	/*
+	 * el objetivo de esta prueba es para que quede claro como removiendo un item de una lista
+	 * el puntero elements_count se actualiza al instante
+	 *
+	 * Este caso nos viene bien para sacar un partición de la lista y dividirla en otras 2
+	 *
+	 * Por ejemplo: Entra un mensaje que ocupa 8 bytes.
+	 * Por medio del algoritmo First fit se inserta en una de 10 bytes
+	 * Esto va a generar una partición nueva de 8 bytes para el dato y una de 2 bytes restantes
+	 * Estos 2 bytes podrían terminar siendo fragmentación interna por ejemplo si el tamaño min de particion es de 3 bytes.
+	*/
+	printf("PRUEBA LISTAS -> \n");
+	t_list* lsprueba = list_create();
+	list_add(lsprueba, 125);//0
+	list_add(lsprueba, 198);//1
+	list_add(lsprueba, 3553);//2
+	list_add(lsprueba, 4128);//3
+
+	int item2 = list_get(lsprueba, 2);
+	printf("item en la pos 2: %d\n", item2);
+
+	int i;
+	for(i=0;i < lsprueba->elements_count;i++){
+		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
+	}
+
+
+	item2 = list_remove(lsprueba, 2);
+	printf("saque el elemento: %d\n", item2);
+
+	for(i=0;i < lsprueba->elements_count;i++){
+		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
+	}
+
+	list_add_in_index(lsprueba, 2, 3000);
+	list_add_in_index(lsprueba, 3, 553);
+
+	printf("agregue el elemento: 3000 en la pos 2\n");
+	printf("agregue el elemento: 553 en la pos 3\n");
+
+	for(i=0;i < lsprueba->elements_count;i++){
+		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
+	}
+
+}
+

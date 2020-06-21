@@ -35,8 +35,8 @@ typedef struct {
 typedef struct {
 	int posicion_inicial;
 	int posicion_final;
-	int tamanio;
-	bool presencia;
+	int size;
+	bool ocupada;
 } t_particion;
 
 
