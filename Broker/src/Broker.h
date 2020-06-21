@@ -30,6 +30,7 @@ typedef struct {
 
 typedef struct {
 	bool ACK;
+	double id;
 } t_suscriptor;
 
 typedef struct {
@@ -37,6 +38,7 @@ typedef struct {
 	int posicion_final;
 	int size;
 	bool ocupada;
+	int numero;
 } t_particion;
 
 

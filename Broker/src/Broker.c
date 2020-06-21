@@ -514,26 +514,49 @@ t_particion* getParticionBestFit(int32_t sizeMensaje){
 
 
 
-void dividirParticionDinamica(t_particion particion, int32_t sizeMsg){
+void dividirParticionDinamica(int indiceParticion, t_particion* particionOriginal, int32_t sizeMsg){
 
+	/*
+	 *Ej: Particion mide 20 bytes y el tamaño del mensaje es de 14
+	 *Se reemplaza la de 20 por una de 14 ocupada y otra de 6 libre
+	 *particion al principio:
+	 *|						|
+	 *1500					1520
+	 *
+	 *particioes despues:
+	 *|						|
+	 *1500		  1514		1520
+	*/
 
+	/*
+	 *
+	 * [............................] MP
+	 *
+	 * 0 -> 15 particion 1
+	 * 16 -> 50 particion 2
+	*/
 
-	t_particion* primeraParticion = crearParticion(particion.posicion_inicial, particion.posicion_inicial + sizeMsg, false);
+	t_particion* primeraParticion = crearParticion(particionOriginal->posicion_inicial,
+			particionOriginal->posicion_inicial + sizeMsg, false);
 
 	int inicioSegundaParticion = primeraParticion->posicion_final + 1;
-	int sizeSegundaParticion = particion.size - primeraParticion->size;
-	t_particion* segundaParticion = crearParticion(inicioSegundaParticion, inicioSegundaParticion + sizeSegundaParticion, false);
+
+	int sizeSegundaParticion = particionOriginal->size - primeraParticion->size;
+
+	t_particion* segundaParticion = crearParticion(inicioSegundaParticion,
+			inicioSegundaParticion + sizeSegundaParticion, false);
 
 	/*
 	 *lo que habría que hacer es obtener el index donde se encuentra la particion y agregar las otras 2.
 	 * supongo que tenemos que aplicar algo de semaforos para que ese index no vaya cambiando
-	 * a medida que se creen particiones
+	 * en este instante a medida que se creen particiones
 	 *
-	 *
-	 * list_remove(tabla_particiones, indiceParticion);
-	 * list_add_at_index(tabla_particiones, primeraParticion, indiceParticion);
-	 * list_add_at_index(tabla_particiones, segundaParticion, indiceParticion + 1);
+	 *por el momento lo paso como parametro pero hay que ver como conseguirlo
 	*/
+
+	list_remove(tabla_particiones, indiceParticion);
+	list_add_in_index(tabla_particiones, indiceParticion, primeraParticion);
+	list_add_in_index(tabla_particiones, indiceParticion + 1, segundaParticion);
 
 	return;
 
