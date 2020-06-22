@@ -73,11 +73,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 			t_New* new = NULL;
 			new = deserializar_paquete_new (socket_cliente, &tamanio_estructura);
 
-			log_debug (debug, "***Estructura t_New recibida*** \n");
-			log_debug (debug, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
-			log_debug (debug, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
-			log_debug (debug, "Cantidad: %d", new->cant);
-			log_debug (debug, "*******************************");
+
 
 			break;
 
@@ -114,3 +110,12 @@ void conexionBroker(int32_t *socket)
 	printf("\n");
 	log_info(logger_GC,"Conectado al Broker");
 }
+
+
+/*
+log_debug (debug, "***Estructura t_New recibida*** \n");
+log_debug (debug, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
+log_debug (debug, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
+log_debug (debug, "Cantidad: %d", new->cant);
+log_debug (debug, "*******************************");
+ */

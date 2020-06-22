@@ -25,8 +25,6 @@ typedef struct {
 typedef struct {
 	int32_t size_Nombre;
 	char * nombre;
-	//int32_t cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
-	//t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
 } t_pokemon;
 // con esta estructura ocupa maximo 26 bytes, minimo 19 bytes
 // nombre mas corto: Mew/Muk (3 bytes); nombre mas largo: Feraligatr (10 bytes)
@@ -54,33 +52,39 @@ typedef struct {
 	t_pokemon pokemon;
 	t_posicion posicion;
 	int32_t cant;
-} t_New; // codigo_operacion= 1
+} t_New;
 // ocupa entre 35 y 42 bytes
 
 typedef struct {
 	t_pokemon pokemon;
 	t_list * listaPosiciones;
-} t_Localized; // codigo_operacion= 2
+} t_Localized;
 
 typedef struct {
 	t_pokemon pokemon;
-} t_Get; // codigo_operacion= 3
-
-typedef struct {
-	t_pokemon pokemon;
-	t_posicion posicion;
-} t_Appeared; // codigo_operacion= 4
+} t_Get;
 
 typedef struct {
 	t_pokemon pokemon;
 	t_posicion posicion;
-} t_Catch; // codigo_operacion= 5
+} t_Appeared;
+
+typedef struct {
+	t_pokemon pokemon;
+	t_posicion posicion;
+} t_Catch;
 
 typedef struct {
 	int32_t fueAtrapado; // 1 cuando fue atrapado, 0 cuando no fue atrapado
-} t_Caught; // codigo_operacion= 6
+} t_Caught;
 
 int32_t universo_init();
-int32_t tamanio_new (t_New*);
+int32_t tamanio_pokemon (t_pokemon* pokemon);
+int32_t tamanio_new (t_New* new);
+int32_t tamanio_localized (t_Localized* localized);
+int32_t tamanio_get (t_Get* get);
+int32_t tamanio_appeared (t_Appeared* appeared);
+int32_t tamanio_catch (t_Catch* catch);
+int32_t tamanio_caught (t_Caught* caught);
 
 #endif /*UNIVERSO_H_*/
