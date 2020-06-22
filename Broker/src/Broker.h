@@ -11,14 +11,16 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<pthread.h>
+#include <sys/time.h>
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
-#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include <commons/collections/list.h>
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.c"
-#include<pthread.h>
-#include <sys/time.h>
+#include "Particiones.h"
+
 
 typedef struct {
 	op_code listaALaQuePertenece;
@@ -34,15 +36,6 @@ typedef struct {
 	double id;
 } t_suscriptor;
 
-typedef struct {
-	int posicion_inicial;
-	int posicion_final;
-	int size;
-	bool ocupada;
-	int numero;
-} t_particion;
-
-
 t_log* logger;
 t_config* config;
 
@@ -52,6 +45,7 @@ t_config* leer_config(void);
 void suscribirProceso(op_code operacion, int32_t* PID);
 void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
 double get_id();
+
 int getMemoriaOcupada();
 int getMemoriaDisponible();
 
@@ -67,6 +61,5 @@ t_list* mensajes_Catch;
 t_list* mensajes_Caught;
 t_list* mensajes_Get;
 t_list* mensajes_Localized;
-t_list* tabla_particiones;
 
 #endif /* BROKER_H_ */
