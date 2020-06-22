@@ -230,4 +230,23 @@ t_particion * seleccionarVictimaLRU(){
 	return particionAEliminar;
 }
 
+t_particion * consolidarParticion(t_particion * particion){
+	t_particion* particionAMirar = malloc(sizeof(t_particion));
 
+	if(particion->posicion_inicial !=0){//si no es la primer particion de la lista miramos la que tiene inmediatamente antes
+		particionAMirar = list_get(tabla_particiones, (particion->indiceParticion)-1);
+		if(!particionAMirar->ocupada){//si la particion anterior esta libre
+			particion->posicion_inicial = particionAMirar->posicion_inicial;
+			particion->size += particionAMirar->size;
+			particion->indiceParticion = particionAMirar->indiceParticion; //tomamos siempre el menor indice
+		}
+	}
+	if(particion->indiceParticion != tabla_particiones->elements_count){//si no es el ultimo elemento de la lista
+		particionAMirar = list_get(tabla_particiones, (particion->indiceParticion)+1);
+		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
+			particion->posicion_final = particionAMirar->posicion_final;
+			particion->size += particionAMirar->size;
+		}
+	}
+	return particion;
+}
