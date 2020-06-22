@@ -20,7 +20,7 @@ typedef struct {
 	int posicion_final;
 	int size;
 	bool ocupada;
-	int indiceParticion;
+	int indiceParticion; //valor que asigna Broker a partir de una variable global
 } t_particion;
 
 t_list* tabla_particiones;
