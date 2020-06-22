@@ -53,22 +53,32 @@ void crear_servidor_GC() {
     }
 }
 
-void responder_mensaje(int* socket_cliente) {
+void responder_mensaje(int32_t* socket_cliente) {
 
-	int32_t codigo_operacion;
+	int32_t codigo_operacion = 0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje = 0;
 
-	if(recv(*socket_cliente, &codigo_operacion, sizeof(int), MSG_WAITALL) == -1)
+	if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
 			codigo_operacion = -1;
+	recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+	recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 	log_debug (debug, "Código de operación %d", codigo_operacion);
 
 	switch (codigo_operacion) {
 
 		case NEW_POKEMON:
-			//msg = recibir_mensaje_servidor(socket_cliente, &size);
-			//printf("Recibi el siguiente mensaje: %s", (char*) msg);
-			//devolver_mensaje(msg, size, socket_cliente);
-			//free(msg);
+			;
+			t_New* new = NULL;
+			new = deserializar_paquete_new (socket_cliente, &tamanio_estructura);
+
+			log_debug (debug, "***Estructura t_New recibida*** \n");
+			log_debug (debug, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
+			log_debug (debug, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
+			log_debug (debug, "Cantidad: %d", new->cant);
+			log_debug (debug, "*******************************");
+
 			break;
 
 		case CATCH_POKEMON:

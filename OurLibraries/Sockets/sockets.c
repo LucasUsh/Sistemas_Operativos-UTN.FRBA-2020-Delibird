@@ -195,4 +195,51 @@ void* serializar_paquete_new (t_paquete* paquete, int32_t* bytes, t_New* new){
 	return stream;
 }
 
+t_New* deserializar_paquete_new (int32_t* socket_cliente, int32_t* tamanio_new) {
+
+	t_New* new = malloc (sizeof(t_New));
+
+	recv (*socket_cliente, &(new->pokemon.size_Nombre), sizeof(new->pokemon.size_Nombre), MSG_WAITALL);
+
+	new->pokemon.nombre = malloc (new->pokemon.size_Nombre);
+
+	recv(*socket_cliente, new->pokemon.nombre, new->pokemon.size_Nombre, MSG_WAITALL);
+
+	recv(*socket_cliente, &(new->posicion.X), sizeof(new->posicion.X), MSG_WAITALL);
+
+	recv(*socket_cliente, &(new->posicion.Y), sizeof(new->posicion.Y), MSG_WAITALL);
+
+	recv(*socket_cliente, &(new->cant), sizeof(new->cant), MSG_WAITALL);
+
+	return new;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

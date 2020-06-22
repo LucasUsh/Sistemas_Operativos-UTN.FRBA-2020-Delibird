@@ -68,6 +68,7 @@ int32_t recibir_cliente(int32_t);
 
 void* serializar_paquete(t_paquete* paquete, int32_t *bytes);
 void* serializar_paquete_new (t_paquete*, int32_t*, t_New*);
+t_New* deserializar_paquete_new (int32_t* socket_cliente, int32_t* tamanio_new);
 
 
 #endif /* SOCKETS_H_ */

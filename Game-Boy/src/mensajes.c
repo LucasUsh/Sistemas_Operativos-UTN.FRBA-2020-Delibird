@@ -36,7 +36,6 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t
 	free(p_pokemon);
 	free(new);
 
-
 	free(paqueteSerializado);
 	free(paquete->buffer);
 	free(paquete);
