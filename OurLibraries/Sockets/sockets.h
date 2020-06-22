@@ -57,18 +57,17 @@ typedef struct
 
 int32_t crear_conexion(char* ip, char* puerto);
 void enviar_mensaje(char* mensaje, int32_t socket_cliente);
+void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente);
 char* recibir_mensaje(int32_t socket_cliente);
-void eliminar_paquete(t_paquete* paquete);
 void liberar_conexion(int32_t socket_cliente);
+
+
+int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
+int32_t recibir_cliente(int32_t);
+
 
 void* serializar_paquete(t_paquete* paquete, int32_t *bytes);
 void* serializar_paquete_new (t_paquete*, int32_t*, t_New*);
 
-int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
-int32_t recibir_cliente(int32_t);
-void servir_cliente(int32_t *socket);
-void devolver_mensaje(void* payload, int32_t size, int32_t socket_cliente);
-
-void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente);
 
 #endif /* SOCKETS_H_ */
