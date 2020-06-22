@@ -20,7 +20,7 @@ typedef struct {
 	int posicion_final;
 	int size;
 	bool ocupada;
-	int numero;
+	int indiceParticion;
 } t_particion;
 
 t_list* tabla_particiones;

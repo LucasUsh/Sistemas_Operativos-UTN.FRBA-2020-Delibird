@@ -19,7 +19,7 @@ t_particion* crearParticion(int inicio, int fin, bool ocupada){
 }
 
 t_particion generarParticionDinamicamente(int32_t sizeMensaje, t_config* config){
-	// Se genera una partición del temanio del Mensaje
+	// Se genera una partición del tamanio del Mensaje
 	t_particion particionNueva;
 	int32_t sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
@@ -38,7 +38,7 @@ t_particion generarParticionDinamicamente(int32_t sizeMensaje, t_config* config)
 }
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
-	return !particion->ocupada && sizeMensaje < particion->size;
+	return !particion->ocupada && sizeMensaje <= particion->size;
 }
 
 t_particion* getParticionFirstFit(int32_t sizeMensaje){
@@ -64,14 +64,16 @@ t_particion* getParticionBestFit(int32_t sizeMensaje){
 
 	mejorParticion = list_get(particionesCandidatas, 0); //agarro la primera
 
-	//recorro a partir de la segunda
-	for(i = 1; i < particionesCandidatas->elements_count; i++){
-		t_particion* particionActual = list_get(particionesCandidatas, i);
+	if(mejorParticion->size - sizeMensaje != 0){ // si la primera que tomamos no es BestFit hacemos toda la logica
+		//recorro a partir de la segunda
+		for(i = 1; i < particionesCandidatas->elements_count; i++){
+			t_particion* particionActual = list_get(particionesCandidatas, i);
 
-		if(particionActual->size - sizeMensaje == 0){
-			return particionActual;
-		} else if(particionActual->size < mejorParticion->size){
-			mejorParticion = particionActual;
+			if(particionActual->size - sizeMensaje == 0){
+				return particionActual;
+			} else if(particionActual->size < mejorParticion->size){
+				mejorParticion = particionActual;
+			}
 		}
 	}
 
@@ -176,6 +178,56 @@ void pruebaLista(){
 		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
 	}
 
+}
+
+bool particionCandidataVictima(t_particion* particion){
+	return particion->ocupada;
+}
+
+t_particion * seleccionarVictimaFIFO(){
+	int i;
+	t_particion* particionAEliminar = malloc(sizeof(t_particion));
+
+	bool _particionCandidataVictima(void* element){
+			return particionCandidataVictima((t_particion*)element);
+		}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataVictima);
+
+	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
+
+	for(i = 1; i < particionesCandidatas->elements_count; i++){
+			t_particion* particionActual = list_get(particionesCandidatas, i);
+
+			if(particionAEliminar->indiceParticion > particionActual->indiceParticion){
+				particionAEliminar = particionActual;
+			}
+	}
+
+	return particionAEliminar;
+}
+
+t_particion * seleccionarVictimaLRU(){
+	int i;
+	t_particion* particionAEliminar = malloc(sizeof(t_particion));
+
+	bool _particionCandidataVictima(void* element){
+			return particionCandidataVictima((t_particion*)element);
+		}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataVictima);
+
+	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
+
+	for(i = 1; i < particionesCandidatas->elements_count; i++){
+			t_particion* particionActual = list_get(particionesCandidatas, i);
+
+			if(particionAEliminar->indiceParticion < particionActual->indiceParticion){
+				particionAEliminar = particionActual;
+			}
+	}
+
+	return particionAEliminar;
 }
 
 
