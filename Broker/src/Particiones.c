@@ -131,55 +131,6 @@ void dividirParticionDinamica(int indiceParticion, t_particion* particionOrigina
 
 };
 
-
-void pruebaLista(){
-
-	/*
-	 * el objetivo de esta prueba es para que quede claro como removiendo un item de una lista
-	 * el puntero elements_count se actualiza al instante
-	 *
-	 * Este caso nos viene bien para sacar un partición de la lista y dividirla en otras 2
-	 *
-	 * Por ejemplo: Entra un mensaje que ocupa 8 bytes.
-	 * Por medio del algoritmo First fit se inserta en una de 10 bytes
-	 * Esto va a generar una partición nueva de 8 bytes para el dato y una de 2 bytes restantes
-	 * Estos 2 bytes podrían terminar siendo fragmentación interna por ejemplo si el tamaño min de particion es de 3 bytes.
-	*/
-	printf("PRUEBA LISTAS -> \n");
-	t_list* lsprueba = list_create();
-	list_add(lsprueba, 125);//0
-	list_add(lsprueba, 198);//1
-	list_add(lsprueba, 3553);//2
-	list_add(lsprueba, 4128);//3
-
-	int item2 = list_get(lsprueba, 2);
-	printf("item en la pos 2: %d\n", item2);
-
-	int i;
-	for(i=0;i < lsprueba->elements_count;i++){
-		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
-	}
-
-
-	item2 = list_remove(lsprueba, 2);
-	printf("saque el elemento: %d\n", item2);
-
-	for(i=0;i < lsprueba->elements_count;i++){
-		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
-	}
-
-	list_add_in_index(lsprueba, 2, 3000);
-	list_add_in_index(lsprueba, 3, 553);
-
-	printf("agregue el elemento: 3000 en la pos 2\n");
-	printf("agregue el elemento: 553 en la pos 3\n");
-
-	for(i=0;i < lsprueba->elements_count;i++){
-		printf("item en pos %d: %d\n",i, list_get(lsprueba, i));
-	}
-
-}
-
 bool particionCandidataVictima(t_particion* particion){
 	return particion->ocupada;
 }
@@ -267,3 +218,34 @@ t_particion * consolidarParticion(t_particion * particion){
 	}
 	return particion;
 }
+
+int tamanioMinimo(int tamanioSolicitadoEnBytes){
+///algoritmo para calcular la menor potencia de 2 en la que entra el proceso; Buddy System
+
+	if(tamanioSolicitadoEnBytes !=1){
+		int menorPotenciaDeDos=2;
+		while(menorPotenciaDeDos < tamanioSolicitadoEnBytes){
+			menorPotenciaDeDos = menorPotenciaDeDos*2;
+		}
+		return menorPotenciaDeDos;
+	} else return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

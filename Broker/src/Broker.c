@@ -10,6 +10,8 @@
 
 #include "Broker.h"
 
+#include "pruebas.h"
+
 
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
@@ -73,8 +75,6 @@ void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
 }
 
 int32_t main(void) {
-
-
 
 	//Lau: creo que no hace falta
 	//malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
