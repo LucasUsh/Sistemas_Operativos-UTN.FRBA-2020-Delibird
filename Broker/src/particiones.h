@@ -23,6 +23,7 @@ typedef struct {
 	int size;
 	bool ocupada;
 	int indiceParticion; //valor que asigna Broker a partir de una variable global
+	int ramaBuddy; // 0 si es la de la izquierda, 1 si es la de la derecha
 } t_particion;
 
 t_list* tabla_particiones;

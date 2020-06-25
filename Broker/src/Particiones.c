@@ -223,6 +223,31 @@ int tamanioMinimo(int tamanioSolicitadoEnBytes){
 	} else return 1;
 }
 
+void inicializarMemoriaBS(t_config* config){ //creamos un bloque con el tamaño de la memoria
+	t_particion * particionInicial;
+	int32_t sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	particionInicial->posicion_inicial=0;
+	particionInicial->posicion_final= sizeMemoria-1;
+	particionInicial->size = sizeMemoria;
+	particionInicial->ocupada = false;
+	list_add(tabla_particiones, particionInicial);
+}
+
+t_particion * generarParticionBS(t_particion* particionInicial){
+	t_particion * particionNueva = malloc(sizeof(t_particion));
+	particionNueva->size = (particionInicial->size)*0.5;
+	particionNueva->posicion_inicial = particionInicial->posicion_inicial+((particionInicial->size)*0.5);
+	particionNueva->posicion_final = particionInicial->posicion_final;
+	particionNueva->ocupada = false;
+	particionNueva->ramaBuddy = 1;//rama de la derecha
+
+	particionInicial->posicion_final = particionInicial->posicion_inicial+((particionInicial->size)*0.5)-1;
+	particionInicial->size = (particionInicial->size)*0.5;
+	particionInicial->ocupada = false;
+	particionInicial->ramaBuddy = 0;//rama de la izquierda
+	return particionNueva;
+}
+
 
 
 
