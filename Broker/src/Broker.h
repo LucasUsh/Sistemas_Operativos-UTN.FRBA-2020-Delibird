@@ -17,19 +17,18 @@
 #include<commons/string.h>
 #include<commons/config.h>
 #include <commons/collections/list.h>
-#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
-#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.c"
-#include "Particiones.h"
-
+#include "../../OurLibraries/Sockets/sockets.h"
+#include "../../OurLibraries/UniversoPokemon/universo.h"
 
 typedef struct {
-	op_code listaALaQuePertenece;
-	int32_t id_Mensaje;
+	op_code op_code;
+	int32_t id_mensaje;
 	void * mensaje;
-	int32_t PID; // ID del proceso que mando el mensaje
+	int32_t process_id; // ID del proceso que mando el mensaje
 	t_list * suscriptoresALosQueSeEnvio;
 	t_list * suscriptoresQueRecibieron; // estos serian los que devolvieron el ACK
-} info_Mensaje;
+} info_mensaje;
+
 
 typedef struct {
 	bool ACK;
@@ -43,7 +42,7 @@ t_log* iniciar_logger(void);
 t_config* leer_config(void);
 
 void suscribirProceso(op_code operacion, int32_t* PID);
-void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje);
+void agregarMensaje(op_code operacion, info_mensaje * infoMensaje);
 double get_id();
 
 int getMemoriaOcupada();

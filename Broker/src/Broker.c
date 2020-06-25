@@ -9,13 +9,14 @@
  */
 
 #include "Broker.h"
-
 #include "pruebas.h"
+#include "particiones.h"
 
+int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
 
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
-int32_t sizeMemoria;
+int32_t sizeMemoria, sizeMinParticion;
 
 double get_id(){
 	//para obtener id usamos el timestamp
@@ -86,6 +87,8 @@ int32_t main(void) {
 	//get_id();
 
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
+
 	int inicioMemoria = (int)malloc(sizeMemoria);
 
 	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false);
@@ -243,7 +246,7 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 	}
 }
 
-void agregarMensaje(op_code operacion, info_Mensaje * infoMensaje){
+void agregarMensaje(op_code operacion, info_mensaje * infoMensaje){
 	//void queue_push(t_queue *, void *element);
 
 	switch(operacion) {

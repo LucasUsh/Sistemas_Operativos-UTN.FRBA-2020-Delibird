@@ -6,7 +6,7 @@
  */
 
 #include<commons/string.h>
-#include "Particiones.h"
+#include "particiones.h"
 
 t_particion* crearParticion(int inicio, int fin, bool ocupada){
 	t_particion* newParticion = malloc(sizeof(t_particion));
@@ -18,10 +18,9 @@ t_particion* crearParticion(int inicio, int fin, bool ocupada){
 	return newParticion;
 }
 
-t_particion generarParticionDinamicamente(int32_t sizeMensaje, t_config* config){
+t_particion generarParticionDinamicamente(int32_t sizeMensaje, int32_t sizeMinParticion){
 	// Se genera una partición del tamanio del Mensaje
 	t_particion particionNueva;
-	int32_t sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
 	if(sizeMensaje < sizeMinParticion){
 		particionNueva.size = sizeMinParticion;
@@ -97,13 +96,6 @@ void dividirParticionDinamica(int indiceParticion, t_particion* particionOrigina
 	 *1500		  1514		1520
 	*/
 
-	/*
-	 *
-	 * [............................] MP
-	 *
-	 * 0 -> 15 particion 1
-	 * 16 -> 50 particion 2
-	*/
 
 	t_particion* primeraParticion = crearParticion(particionOriginal->posicion_inicial,
 			particionOriginal->posicion_inicial + sizeMsg, false);
@@ -148,11 +140,11 @@ t_particion * seleccionarVictimaFIFO(){
 	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
 
 	for(i = 1; i < particionesCandidatas->elements_count; i++){
-			t_particion* particionActual = list_get(particionesCandidatas, i);
+		t_particion* particionActual = list_get(particionesCandidatas, i);
 
-			if(particionAEliminar->indiceParticion > particionActual->indiceParticion){
-				particionAEliminar = particionActual;
-			}
+		if(particionAEliminar->indiceParticion > particionActual->indiceParticion){
+			particionAEliminar = particionActual;
+		}
 	}
 
 	return particionAEliminar;
@@ -163,19 +155,19 @@ t_particion * seleccionarVictimaLRU(){
 	t_particion* particionAEliminar = malloc(sizeof(t_particion));
 
 	bool _particionCandidataVictima(void* element){
-			return particionCandidataVictima((t_particion*)element);
-		}
+		return particionCandidataVictima((t_particion*)element);
+	}
 
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataVictima);
 
 	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
 
 	for(i = 1; i < particionesCandidatas->elements_count; i++){
-			t_particion* particionActual = list_get(particionesCandidatas, i);
+		t_particion* particionActual = list_get(particionesCandidatas, i);
 
-			if(particionAEliminar->indiceParticion < particionActual->indiceParticion){
-				particionAEliminar = particionActual;
-			}
+		if(particionAEliminar->indiceParticion < particionActual->indiceParticion){
+			particionAEliminar = particionActual;
+		}
 	}
 
 	return particionAEliminar;
@@ -230,10 +222,6 @@ int tamanioMinimo(int tamanioSolicitadoEnBytes){
 		return menorPotenciaDeDos;
 	} else return 1;
 }
-
-
-
-
 
 
 
