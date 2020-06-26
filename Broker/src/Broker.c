@@ -9,8 +9,9 @@
  */
 
 #include "Broker.h"
+#include "Particiones.h"
 #include "pruebas.h"
-#include "particiones.h"
+
 
 int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
 
@@ -83,6 +84,9 @@ int32_t main(void) {
 	logger = iniciar_logger();
 	config = leer_config();
 	tabla_particiones = list_create();
+
+	pruebaParticionesBuddy(config);
+	return EXIT_SUCCESS;
 
 	//get_id();
 

@@ -5,8 +5,9 @@
  *      Author: utnso
  */
 
+#include "Particiones.h"
+
 #include<commons/string.h>
-#include "particiones.h"
 
 t_particion* crearParticion(int inicio, int fin, bool ocupada){
 	t_particion* newParticion = malloc(sizeof(t_particion));
@@ -224,13 +225,14 @@ int tamanioMinimo(int tamanioSolicitadoEnBytes){
 }
 
 void inicializarMemoriaBS(t_config* config){ //creamos un bloque con el tamaño de la memoria
-	t_particion * particionInicial;
+	t_particion * particionInicial= malloc(sizeof(t_particion));;
 	int32_t sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	particionInicial->posicion_inicial=0;
 	particionInicial->posicion_final= sizeMemoria-1;
 	particionInicial->size = sizeMemoria;
 	particionInicial->ocupada = false;
 	list_add(tabla_particiones, particionInicial);
+	free(particionInicial);
 }
 
 t_particion * generarParticionBS(t_particion* particionInicial){
