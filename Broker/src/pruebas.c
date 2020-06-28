@@ -93,93 +93,89 @@ void pruebaMostrarEstadoMemoria(){
 		printf("No hay particiones en la tabla de particiones\n");
 	}else {
 		int i;
-		for(i=0; i <= tabla_particiones->elements_count -1; i++){
+		for(i=0; i < tabla_particiones->elements_count; i++){
 				t_particion * particion = list_get(tabla_particiones, i);
-				printf("Particion %d: \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n Indice de particion: %d \n", i,particion->posicion_inicial, particion->posicion_final, particion->size, particion->id);
+				printf("Particion %d: \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n "
+						"id de particion: %f \n Rama buddy: %d \n Posicion en la lista: %d \n", i,particion->posicion_inicial,
+						particion->posicion_final, particion->size, particion->id, particion->ramaBuddy, obtenerPosicion(particion));
 				printf("-------barra separadora-------\n");
 				}
 		}
 }
 
-	/*switch(tabla_particiones->elements_count){
-	case 0:
-		printf("No hay particiones en la tabla de particiones\n");
-		break;
-	case 1:
-		for(int i =0; tabla_particiones->elements_count; i++){//sacamos el -1
-			t_particion * particion = list_get(tabla_particiones, i);
-			printf("Particion %d: \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n", i,particion->posicion_inicial, particion->posicion_final, particion->size);
-			printf("-------barra separadora-------\n");
-		}
-		break;
-	default:
-		for(int i =0; tabla_particiones->elements_count-1; i++){
-			t_particion * particion = list_get(tabla_particiones, i);
-			printf("Particion %d: \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n", i,particion->posicion_inicial, particion->posicion_final, particion->size);
-			printf("-------barra separadora-------\n");
-		}
-		break;
-	}*/
-
-void pruebaParticionesBuddy(t_config* config){
-	int id = 0;
-	int buddyLoco;
-	pruebaMostrarEstadoMemoria();
-
-	// INICIALIZAMOS
-	inicializarMemoriaBS(config);
-	id+=1;
-	t_particion * particion0 = malloc(sizeof(t_particion));
-	particion0 = list_get(tabla_particiones, 0);
-	particion0->id = id;
+void pruebaParticionesBuddy(){
+	t_particion * particionPrueba;
 	pruebaMostrarEstadoMemoria();
 
 	//GENERAMOS PRIMER PARTICION
-	t_particion * particion1 = malloc(sizeof(t_particion));
-	particion1 = generarParticionBS(particion0);
-	id+=1;
-	particion0->id=id;
-	id+=1;
-	particion1->id=id;
-	list_add(tabla_particiones, particion1);
+	particionPrueba = list_get(tabla_particiones, 0);
+	generarParticionBS(particionPrueba);
 	pruebaMostrarEstadoMemoria();
 
-	buddyLoco = particion0->id ^particion1->id;
-	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion1->id, buddyLoco);
-
-	//GENERAMOS SEGUNDA PARTICION
-	particion0 = list_get(tabla_particiones, 0);
-	t_particion * particion2 = malloc(sizeof(t_particion));
-	particion2 = generarParticionBS(particion0);
-	id+=1;
-	particion0->id=id;
-	id+=1;
-	particion2->id=id;
-	list_add(tabla_particiones, particion2);
+	//GENERAMOS SEGUNDA PARTICION DE LA RAMA IZQUIERDA
+	particionPrueba = list_get(tabla_particiones, 0);
+	generarParticionBS(particionPrueba);
 	pruebaMostrarEstadoMemoria();
 
-	buddyLoco = particion0->id ^particion2->id;
+	//GENERAMOS TERCER PARTICION
+	particionPrueba = list_get(tabla_particiones, 0);
+	generarParticionBS(particionPrueba);
+	pruebaMostrarEstadoMemoria();
+
+	printf("Termine la prueba");
+
+}
+
+t_particion * pruebaBuscarParticionDeSizeMsgLuegoDe6Particiones(int sizeMsg){
+	//GENERAMOS SEIS PARTICIONES
+	t_particion * particionPrueba = list_get(tabla_particiones, 0);
+	generarParticionBS(particionPrueba);
+	particionPrueba = list_get(tabla_particiones, 0);
+	generarParticionBS(particionPrueba);
+	particionPrueba = list_get(tabla_particiones, 0);
+	generarParticionBS(particionPrueba);
+	//Estado que deberia haber en este momento: 256  256  512  1024
+
+	particionPrueba = list_get(tabla_particiones, 2);
+	generarParticionBS(particionPrueba);
+	//Estado que deberia haber en este momento: 256  256  256  256 1024
+
+	particionPrueba = list_get(tabla_particiones, 4);
+	generarParticionBS(particionPrueba);
+	//Estado que deberia haber en este momento: 256  256  256  256  512  512
+
+	particionPrueba = list_get(tabla_particiones, 4);
+	generarParticionBS(particionPrueba);
+	//Estado que deberia haber en este momento: 256  256  256  256  256  256  512
+
+	pruebaMostrarEstadoMemoria();
+
+
+	//CALCULAMOS TAMANIO MINIMO POTENCIA DE DOS Y BUSCAMOS EN LA LISTA
+	int tamanio = tamanioMinimo(sizeMsg);
+	int i;
+	for(i=0; i<tabla_particiones->elements_count; i++){
+		particionPrueba = list_get(tabla_particiones, i);
+		if(particionPrueba->size == tamanio){
+			return particionPrueba;
+		}
+	}
+	printf("No encontre una particion de ese tamaño \n");
+	return 0;
+}
+
+void pruebaConsolidarParticionesBuddy(){
+	//int buddyLoco;
+
+	//buddyLoco = particion0->id ^particion1->id;
+	//printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion1->id, buddyLoco);
+
+	/*buddyLoco = particion0->id ^particion2->id;
 	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion2->id, buddyLoco);
 	buddyLoco = particion0->id ^particion1->id;
 	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion1->id, buddyLoco);
 	buddyLoco = particion2->id ^particion1->id;
 	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion2->id, particion1->id, buddyLoco);
-
-	//GENERAMOS TERCER PARTICION
-	particion1 = list_get(tabla_particiones, 1);
-	t_particion * particion3 = malloc(sizeof(t_particion));
-	particion3 = generarParticionBS(particion1);
-	id+=1;
-	particion1->id=id;
-	id+=1;
-	particion3->id=id;
-	list_add(tabla_particiones, particion3);
-	pruebaMostrarEstadoMemoria();// mostramos estado al particionar la particion de la posicion 1
-
-	printf("Termine la prueba");
-	free(particion0);
-	free(particion1);
-	free(particion2);
-	free(particion3);
+	*/
 
 }

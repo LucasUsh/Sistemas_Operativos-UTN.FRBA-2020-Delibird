@@ -10,5 +10,5 @@
 
 void pruebaLista();
 void pruebaTamanioMinimo();
-void pruebaParticionesBuddy(t_config* config);
+void pruebaParticionesBuddy();
 void pruebaMostrarEstadoMemoria();

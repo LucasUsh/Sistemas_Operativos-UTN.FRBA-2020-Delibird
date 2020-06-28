@@ -24,8 +24,8 @@ double get_id(){
 
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	double id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec) / 1000;
-	//printf("el id es: %d\n", id);
+	double id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec);
+	//printf("el id es: %f\n", id);
 
 	return id;
 }
@@ -87,11 +87,10 @@ int32_t main(void) {
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
 	int inicioMemoria = (int)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
-
-
 	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false, 0);
-
 	list_add(tabla_particiones, particionInicial);
+
+	//t_particion * unaParticion = pruebaBuscarParticionDeSizeMsgLuegoDe6Particiones(257);
 
 
 

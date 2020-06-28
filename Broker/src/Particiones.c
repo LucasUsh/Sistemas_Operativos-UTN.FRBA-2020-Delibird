@@ -179,13 +179,13 @@ t_particion * seleccionarVictimaLRU(){
 
 int obtenerPosicion(t_particion * particion){
 	int i;
-	for(i=0; tabla_particiones->elements_count-1; i++){
+	for(i=0; i < tabla_particiones->elements_count; i++){
 		t_particion*particionAMirar = list_get(tabla_particiones, i);
 		if(particion->id == particionAMirar->id){
 			return i;
 		}
 	}
-	printf("No encontre el elemento de id %d", particion->id);
+	printf("No encontre el elemento de id %d \n", particion->id);
 	return -1;
 }
 
@@ -215,12 +215,12 @@ t_particion * consolidarParticion(t_particion * particion){
 	return particion;
 }
 
-int tamanioMinimo(int tamanioSolicitadoEnBytes){
-///algoritmo para calcular la menor potencia de 2 en la que entra el proceso; Buddy System
+int tamanioMinimo(int sizeMsg){
+///algoritmo para calcular la menor potencia de 2 en la que entra un mensaje; Buddy System
 
-	if(tamanioSolicitadoEnBytes !=1){
+	if(sizeMsg !=1){
 		int menorPotenciaDeDos=2;
-		while(menorPotenciaDeDos < tamanioSolicitadoEnBytes){
+		while(menorPotenciaDeDos < sizeMsg){
 			menorPotenciaDeDos = menorPotenciaDeDos*2;
 		}
 		return menorPotenciaDeDos;
@@ -239,24 +239,21 @@ void inicializarMemoriaBS(t_config* config){ //creamos un bloque con el tamaño 
 }
 
 
-t_particion * generarParticionBS(t_particion* particionInicial){
+void generarParticionBS(t_particion* particionInicial){
+	int inicioIzquierda = (int)particionInicial->posicion_inicial;
+	int finIzquierda = (int)particionInicial->posicion_inicial + (((int)particionInicial->size)*0.5);
 
-	//t_particion * particionIzquierda = malloc(sizeof(t_particion));
-	t_particion * particionDerecha = malloc(sizeof(t_particion));
+	int inicioDerecha = (int)particionInicial->posicion_inicial+(((int)particionInicial->size)*0.5);
+	int finDerecha = (int)particionInicial->posicion_final;
 
-	int inicioIzquierda = particionInicial->posicion_inicial;
-	int finIzquierda = particionInicial->posicion_inicial + ((particionInicial->size)*0.5) - 1;
+	t_particion *particionIzquierda = crearParticion(inicioIzquierda, finIzquierda, false, 1);
+	t_particion *particionDerecha = crearParticion(inicioDerecha, finDerecha, false, 2);
 
-	int inicioDerecha = particionInicial->posicion_inicial+((particionInicial->size)*0.5);
-	int finDerecha = particionInicial->posicion_final;
-
-	particionInicial = crearParticion(inicioIzquierda, finIzquierda, false, 1);
-	particionDerecha = crearParticion(inicioDerecha, finDerecha, false, 2);
-
-
-	//free(particionInicial);
-
-	return particionInicial;
+	int posicion = obtenerPosicion(particionInicial);
+	list_remove(tabla_particiones, posicion);
+	list_add_in_index(tabla_particiones,posicion, particionDerecha);
+	list_add_in_index(tabla_particiones,posicion, particionIzquierda);
+	free(particionInicial);
 }
 
 /*

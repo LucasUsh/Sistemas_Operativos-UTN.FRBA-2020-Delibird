@@ -22,8 +22,8 @@ typedef struct {
 	int posicion_final;
 	int size;
 	bool ocupada;
-	int id; //valor que asigna Broker a partir de una variable global
-	int ramaBuddy; // 0 si es la de la izquierda, 1 si es la de la derecha
+	double id; //valor que asigna Broker a partir de una variable global
+	int ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
 } t_particion;
 
 typedef enum {
@@ -56,7 +56,7 @@ int obtenerPosicion(t_particion * particion);
 t_particion * consolidarParticion(t_particion * particion);
 int tamanioMinimo(int tamanioSolicitadoEnBytes);
 void inicializarMemoriaBS(t_config* config);
-t_particion * generarParticionBS(t_particion* particionInicial);
+void generarParticionBS(t_particion* particionInicial);
 
 
 
