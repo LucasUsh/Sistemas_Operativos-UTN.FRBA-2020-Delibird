@@ -5,15 +5,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/Broker.c \
-../src/Particiones.c 
+../src/Particiones.c \
+../src/pruebas.c 
 
 OBJS += \
 ./src/Broker.o \
-./src/Particiones.o 
+./src/Particiones.o \
+./src/pruebas.o 
 
 C_DEPS += \
 ./src/Broker.d \
-./src/Particiones.d 
+./src/Particiones.d \
+./src/pruebas.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

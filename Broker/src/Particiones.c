@@ -9,12 +9,15 @@
 
 #include<commons/string.h>
 
-t_particion* crearParticion(int inicio, int fin, bool ocupada){
+t_particion* crearParticion(int inicio, int fin, bool ocupada,int ramaBuddy){
 	t_particion* newParticion = malloc(sizeof(t_particion));
 	newParticion->ocupada = false;
 	newParticion->posicion_final = fin;
 	newParticion->posicion_inicial = inicio;
 	newParticion->size = fin - inicio;
+	newParticion->id = get_id();
+	newParticion->ramaBuddy = ramaBuddy;
+
 
 	return newParticion;
 }
@@ -99,14 +102,14 @@ void dividirParticionDinamica(int indiceParticion, t_particion* particionOrigina
 
 
 	t_particion* primeraParticion = crearParticion(particionOriginal->posicion_inicial,
-			particionOriginal->posicion_inicial + sizeMsg, false);
+			particionOriginal->posicion_inicial + sizeMsg, false, 0);
 
 	int inicioSegundaParticion = primeraParticion->posicion_final + 1;
 
 	int sizeSegundaParticion = particionOriginal->size - primeraParticion->size;
 
 	t_particion* segundaParticion = crearParticion(inicioSegundaParticion,
-			inicioSegundaParticion + sizeSegundaParticion, false);
+			inicioSegundaParticion + sizeSegundaParticion, false, 0);
 
 	/*
 	 *lo que habría que hacer es obtener el index donde se encuentra la particion y agregar las otras 2.
@@ -143,7 +146,7 @@ t_particion * seleccionarVictimaFIFO(){
 	for(i = 1; i < particionesCandidatas->elements_count; i++){
 		t_particion* particionActual = list_get(particionesCandidatas, i);
 
-		if(particionAEliminar->indiceParticion > particionActual->indiceParticion){
+		if(particionAEliminar->id > particionActual->id){
 			particionAEliminar = particionActual;
 		}
 	}
@@ -166,7 +169,7 @@ t_particion * seleccionarVictimaLRU(){
 	for(i = 1; i < particionesCandidatas->elements_count; i++){
 		t_particion* particionActual = list_get(particionesCandidatas, i);
 
-		if(particionAEliminar->indiceParticion < particionActual->indiceParticion){
+		if(particionAEliminar->id < particionActual->id){
 			particionAEliminar = particionActual;
 		}
 	}
@@ -178,11 +181,11 @@ int obtenerPosicion(t_particion * particion){
 	int i;
 	for(i=0; tabla_particiones->elements_count-1; i++){
 		t_particion*particionAMirar = list_get(tabla_particiones, i);
-		if(particion->indiceParticion == particionAMirar->indiceParticion){
+		if(particion->id == particionAMirar->id){
 			return i;
 		}
 	}
-	printf("No encontre el elemento de id %d", particion->indiceParticion);
+	printf("No encontre el elemento de id %d", particion->id);
 	return -1;
 }
 
@@ -235,27 +238,43 @@ void inicializarMemoriaBS(t_config* config){ //creamos un bloque con el tamaño 
 	free(particionInicial);
 }
 
-t_particion * generarParticionBS(t_particion* particionInicial){
-	t_particion * particionNueva = malloc(sizeof(t_particion));
-	particionNueva->size = (particionInicial->size)*0.5;
-	particionNueva->posicion_inicial = particionInicial->posicion_inicial+((particionInicial->size)*0.5);
-	particionNueva->posicion_final = particionInicial->posicion_final;
-	particionNueva->ocupada = false;
-	particionNueva->ramaBuddy = 1;//rama de la derecha
 
-	particionInicial->posicion_final = particionInicial->posicion_inicial+((particionInicial->size)*0.5)-1;
-	particionInicial->size = (particionInicial->size)*0.5;
-	particionInicial->ocupada = false;
-	particionInicial->ramaBuddy = 0;//rama de la izquierda
-	return particionNueva;
+t_particion * generarParticionBS(t_particion* particionInicial){
+
+	//t_particion * particionIzquierda = malloc(sizeof(t_particion));
+	t_particion * particionDerecha = malloc(sizeof(t_particion));
+
+	int inicioIzquierda = particionInicial->posicion_inicial;
+	int finIzquierda = particionInicial->posicion_inicial + ((particionInicial->size)*0.5) - 1;
+
+	int inicioDerecha = particionInicial->posicion_inicial+((particionInicial->size)*0.5);
+	int finDerecha = particionInicial->posicion_final;
+
+	particionInicial = crearParticion(inicioIzquierda, finIzquierda, false, 1);
+	particionDerecha = crearParticion(inicioDerecha, finDerecha, false, 2);
+
+
+	//free(particionInicial);
+
+	return particionInicial;
 }
 
+/*
+list_add_in_index(tabla_particiones, particion.indiceParticion, particion);
+list_add_in_index(tabla_particiones, particion.indiceParticion + 1, nuevaParticion)
+*/
 
+void algoritmo_particion(char* algoritmo_particion, info_mensaje mensaje){
 
+	//manejar el size a partir de aca?
 
+	if(string_equals_ignore_case(algoritmo_particion, "BS")){
 
+	} else if (string_equals_ignore_case(algoritmo_particion, "PARTICIONES")){
 
+	}
 
+}
 
 
 

@@ -95,7 +95,7 @@ void pruebaMostrarEstadoMemoria(){
 		int i;
 		for(i=0; i <= tabla_particiones->elements_count -1; i++){
 				t_particion * particion = list_get(tabla_particiones, i);
-				printf("Particion %d: \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n Indice de particion: %d \n", i,particion->posicion_inicial, particion->posicion_final, particion->size, particion->indiceParticion);
+				printf("Particion %d: \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n Indice de particion: %d \n", i,particion->posicion_inicial, particion->posicion_final, particion->size, particion->id);
 				printf("-------barra separadora-------\n");
 				}
 		}
@@ -122,57 +122,57 @@ void pruebaMostrarEstadoMemoria(){
 	}*/
 
 void pruebaParticionesBuddy(t_config* config){
-	int indiceParticion = 0;
+	int id = 0;
 	int buddyLoco;
 	pruebaMostrarEstadoMemoria();
 
 	// INICIALIZAMOS
 	inicializarMemoriaBS(config);
-	indiceParticion+=1;
+	id+=1;
 	t_particion * particion0 = malloc(sizeof(t_particion));
 	particion0 = list_get(tabla_particiones, 0);
-	particion0->indiceParticion = indiceParticion;
+	particion0->id = id;
 	pruebaMostrarEstadoMemoria();
 
 	//GENERAMOS PRIMER PARTICION
 	t_particion * particion1 = malloc(sizeof(t_particion));
 	particion1 = generarParticionBS(particion0);
-	indiceParticion+=1;
-	particion0->indiceParticion=indiceParticion;
-	indiceParticion+=1;
-	particion1->indiceParticion=indiceParticion;
+	id+=1;
+	particion0->id=id;
+	id+=1;
+	particion1->id=id;
 	list_add(tabla_particiones, particion1);
 	pruebaMostrarEstadoMemoria();
 
-	buddyLoco = particion0->indiceParticion ^particion1->indiceParticion;
-	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->indiceParticion, particion1->indiceParticion, buddyLoco);
+	buddyLoco = particion0->id ^particion1->id;
+	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion1->id, buddyLoco);
 
 	//GENERAMOS SEGUNDA PARTICION
 	particion0 = list_get(tabla_particiones, 0);
 	t_particion * particion2 = malloc(sizeof(t_particion));
 	particion2 = generarParticionBS(particion0);
-	indiceParticion+=1;
-	particion0->indiceParticion=indiceParticion;
-	indiceParticion+=1;
-	particion2->indiceParticion=indiceParticion;
+	id+=1;
+	particion0->id=id;
+	id+=1;
+	particion2->id=id;
 	list_add(tabla_particiones, particion2);
 	pruebaMostrarEstadoMemoria();
 
-	buddyLoco = particion0->indiceParticion ^particion2->indiceParticion;
-	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->indiceParticion, particion2->indiceParticion, buddyLoco);
-	buddyLoco = particion0->indiceParticion ^particion1->indiceParticion;
-	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->indiceParticion, particion1->indiceParticion, buddyLoco);
-	buddyLoco = particion2->indiceParticion ^particion1->indiceParticion;
-	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion2->indiceParticion, particion1->indiceParticion, buddyLoco);
+	buddyLoco = particion0->id ^particion2->id;
+	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion2->id, buddyLoco);
+	buddyLoco = particion0->id ^particion1->id;
+	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion0->id, particion1->id, buddyLoco);
+	buddyLoco = particion2->id ^particion1->id;
+	printf("El buddyLoco entre idParticion: %d y el idParticion: %d, es: %d \n", particion2->id, particion1->id, buddyLoco);
 
 	//GENERAMOS TERCER PARTICION
 	particion1 = list_get(tabla_particiones, 1);
 	t_particion * particion3 = malloc(sizeof(t_particion));
 	particion3 = generarParticionBS(particion1);
-	indiceParticion+=1;
-	particion1->indiceParticion=indiceParticion;
-	indiceParticion+=1;
-	particion3->indiceParticion=indiceParticion;
+	id+=1;
+	particion1->id=id;
+	id+=1;
+	particion3->id=id;
 	list_add(tabla_particiones, particion3);
 	pruebaMostrarEstadoMemoria();// mostramos estado al particionar la particion de la posicion 1
 

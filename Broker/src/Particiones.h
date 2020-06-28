@@ -22,13 +22,28 @@ typedef struct {
 	int posicion_final;
 	int size;
 	bool ocupada;
-	int indiceParticion; //valor que asigna Broker a partir de una variable global
+	int id; //valor que asigna Broker a partir de una variable global
 	int ramaBuddy; // 0 si es la de la izquierda, 1 si es la de la derecha
 } t_particion;
 
+typedef enum {
+	BS    = 1,
+	PARTICIONES = 2
+} particion_code;
+
+typedef enum {
+	FIFO    = 1,
+	LRU = 2
+} reemplazo_code;
+
+typedef enum {
+	FF    = 1,
+	BF = 2
+} seleccion_particion_code;
+
 t_list* tabla_particiones;
 
-t_particion* crearParticion(int inicio, int fin, bool ocupada);
+t_particion* crearParticion(int inicio, int fin, bool ocupada, int ramaBuddy);
 t_particion generarParticionDinamicamente(int32_t sizeMensaje, int32_t sizeMinParticion);
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
 t_particion* getParticionFirstFit(int32_t sizeMensaje);

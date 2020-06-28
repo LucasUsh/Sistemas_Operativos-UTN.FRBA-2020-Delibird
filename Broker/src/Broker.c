@@ -31,7 +31,7 @@ double get_id(){
 }
 
 void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
-	//iniciar_servidor(IP_BROKER, PUERTO_BROKER);
+	// tiene que devolver info_mensaje?
 	printf("Estoy escuchando suscripciones\n");
 	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 
@@ -78,26 +78,47 @@ void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
 
 int32_t main(void) {
 
-	//Lau: creo que no hace falta
-	//malloc(sizeof(bool)*12); // uno por cada cola de mensajes y suscriptores
-
 	logger = iniciar_logger();
 	config = leer_config();
 	tabla_particiones = list_create();
 
-	pruebaParticionesBuddy(config);
-	return EXIT_SUCCESS;
-
-	//get_id();
 
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
-	int inicioMemoria = (int)malloc(sizeMemoria);
+	int inicioMemoria = (int)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
 
-	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false);
+
+	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false, 0);
 
 	list_add(tabla_particiones, particionInicial);
+
+
+
+/*
+	if(string_equals_ignore_case(algoritmo_particion, "BS")){
+
+	} else if (string_equals_ignore_case(algoritmo_particion, "PARTICIONES")){
+
+	}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -250,71 +271,72 @@ void suscribirProceso(op_code operacion, int32_t * PID){
 	}
 }
 
-void agregarMensaje(op_code operacion, info_mensaje * infoMensaje){
-	//void queue_push(t_queue *, void *element);
+bool esSuscripcion(op_code cod_operacion){
+	return cod_operacion == SUSCRIPCION_NEW ||
+			cod_operacion == SUSCRIPCION_APPEARED ||
+			cod_operacion == SUSCRIPCION_CATCH ||
+			cod_operacion == SUSCRIPCION_CAUGHT ||
+			cod_operacion == SUSCRIPCION_GET ||
+			cod_operacion == SUSCRIPCION_LOCALIZED;
+}
 
-	switch(operacion) {
+
+void agregarMensaje(t_paquete* paquete){
+
+	info_mensaje* mensaje = malloc(sizeof(info_mensaje));
+
+	//recibo el mensaje y lo reconozco
+	mensaje->id_mensaje = get_id();
+	//mensaje->mensaje = deserializarPaquete(paquete);
+	mensaje->op_code = paquete->codigo_operacion;
+
+	//algoritmo_particion(algoritmo_particion, mensaje);
+
+	return;
+}
+
+
+//paquete -> t_new
+
+/*
+void* deserializarPaquete(t_paquete* paquete){
+
+	switch(paquete->codigo_operacion) {
 	case NEW_POKEMON: // 6
-		// Si no existe la cola, la creamos
-		if(flag_Mensajes_New== false){
-			mensajes_New = list_create();
-			flag_Mensajes_New = true;
-		}
-		list_add(mensajes_New, infoMensaje);
-		break;
+		t_New mensajeNew = deserializar_paquete_new(paquete->buffer);
+		return mensajeNew;
 
 	case APPEARED_POKEMON: // 7
-		// Si no existe la cola, la creamos
-		if(flag_Mensajes_Appeared==false){
-			mensajes_Appeared = list_create();
-			flag_Mensajes_Appeared = true;
-		}
-		list_add(mensajes_Appeared, infoMensaje);
-		break;
+		t_Appeared mensajeAppeared = deserializar_paquete_Appeared(paquete->buffer);
+		return mensajeNew;
+
 
 	case CATCH_POKEMON: // 	8
-		// Si no existe la cola, la creamos
-		if(flag_Mensajes_Catch==false){
-			mensajes_Catch = list_create();
-			flag_Mensajes_Catch = true;
-		}
-		list_add(mensajes_Catch, infoMensaje);
-		break;
+		t_Catch mensajeCatch = deserializar_paquete_Catch(paquete->buffer);
+		return mensajeNew;
+
 
 	case CAUGHT_POKEMON: // 9
-		// Si no existe la cola, la creamos
-		if(flag_Mensajes_Caught==false){
-			mensajes_Caught = list_create();
-			flag_Mensajes_Caught = true;
-		}
-		list_add(mensajes_Caught, infoMensaje);
-		break;
+		t_Caught mensajeCaught = deserializar_paquete_Caught(paquete->buffer);
+		return mensajeNew;
 
 	case GET_POKEMON: // 10
-		// Si no existe la cola, la creamos
-		if(flag_Mensajes_Get==false){
-			mensajes_Get = list_create();
-			flag_Mensajes_Get = true;
-		}
-		list_add(mensajes_Get, infoMensaje);
-		break;
+		t_Get mensajeGet = deserializar_paquete_Get(paquete->buffer);
+		return mensajeNew;
+
 
 	case LOCALIZED_POKEMON: // 11
-		// Si no existe la cola, la creamos
-		if(flag_Mensajes_Localized==false){
-			mensajes_Localized = list_create();
-			flag_Mensajes_Localized = true;
-		}
-		list_add(mensajes_Localized, infoMensaje);
-		break;
+		t_Localized mensajeLocalized = deserializar_paquete_Localized(paquete->buffer);
+		return mensajeNew;
 
 	default:
-		return;
+		return 0;
 
 	}
 
 }
 
+*/
 
 t_log* iniciar_logger(void){
 	t_log* logger;

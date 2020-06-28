@@ -42,7 +42,7 @@ t_log* iniciar_logger(void);
 t_config* leer_config(void);
 
 void suscribirProceso(op_code operacion, int32_t* PID);
-void agregarMensaje(op_code operacion, info_mensaje * infoMensaje);
+void agregarMensaje(t_paquete* paquete);
 double get_id();
 
 int getMemoriaOcupada();
