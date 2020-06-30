@@ -87,10 +87,10 @@ int32_t main(void) {
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
 	int inicioMemoria = (int)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
-	t_particion* particionInicial = crearParticion(inicioMemoria, inicioMemoria + sizeMemoria, false, 0);
+	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false, 0);
 	list_add(tabla_particiones, particionInicial);
 
-	//t_particion * unaParticion = pruebaBuscarParticionDeSizeMsgLuegoDe6Particiones(257);
+	pruebaEncontrarBuddyTrasDosParticiones();
 
 
 

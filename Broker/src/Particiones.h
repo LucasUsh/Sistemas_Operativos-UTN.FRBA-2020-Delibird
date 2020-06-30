@@ -18,6 +18,8 @@
 #include "Broker.h"
 
 typedef struct {
+	op_code codigo_operacion; //de la cola a la que pertenece el mensaje
+	int id_Mensaje;
 	int posicion_inicial;
 	int posicion_final;
 	int size;
