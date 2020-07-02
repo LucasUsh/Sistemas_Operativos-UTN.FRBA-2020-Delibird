@@ -55,49 +55,6 @@ void enviar_mensaje(char* mensaje, int32_t socket_cliente){
 
 }
 
-void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente){
-	t_paquete * paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = codOperacion;
-	paquete->buffer = malloc(sizeof(t_buffer));
-
-	paquete->buffer->size = sizeof(*mensaje);// + sizeof(idMensaje);
-	paquete->buffer->id_Mensaje = idMensaje;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size); //paquete->buffer->stream = mensaje;
-
-	int32_t bytes_a_enviar;
-	void * paqueteSerializado = serializar_paquete(paquete, &bytes_a_enviar);
-
-	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
-
-	free (paqueteSerializado);
-	free (paquete->buffer->stream);
-	free (paquete->buffer);
-	free (paquete);
-
-}
-
-char* recibir_mensaje(int32_t socket_cliente){
-	op_code operacion;
-	int32_t buffer_size = 0;
-
-	void * buffer = malloc(buffer_size);
-
-
-	recv(socket_cliente, &(operacion), sizeof(operacion), 0);
-
-	/*switch (operacion) {
-	case MENSAJE:
-		break;
-	case 0:
-		exit(2);
-	}*/
-
-	recv(socket_cliente, &(buffer_size), sizeof(buffer_size), 0);
-	recv(socket_cliente, buffer, buffer_size, 0);
-	return buffer;
-}
-
 void liberar_conexion(int32_t socket_cliente){
 	close(socket_cliente);
 }
@@ -144,7 +101,6 @@ int32_t recibir_cliente(int32_t socket_servidor){
 	//       ^ accept crea un nuevo socket para el cliente
 
 }
-
 
 
 

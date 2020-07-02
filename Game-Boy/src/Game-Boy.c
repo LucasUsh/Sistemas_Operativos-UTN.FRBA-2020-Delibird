@@ -2,7 +2,20 @@
 
 t_log* logger;
 t_config* config;
+/*
+ * Ojo que los mensajes estos son los mismos pero con distinta cantidad de argumentos.
 
+./gameboy BROKER CATCH_POKEMON [POKEMON] [POSX] [POSY]
+./gameboy GAMECARD CATCH_POKEMON [POKEMON] [POSX] [POSY] [ID_MENSAJE]
+
+./gameboy BROKER CAUGHT_POKEMON [ID_MENSAJE_CORRELATIVO] [OK/FAIL]
+
+./gameboy BROKER GET_POKEMON [POKEMON]
+./gameboy GAMECARD GET_POKEMON [POKEMON] [ID_MENSAJE]
+
+ * Lo que se puede hacer es meterle un "0" a los que piden el ID_MENSAJE
+ * (ver enviar_new_pokemon del broker como ejemplo)
+ */
 int32_t main(int32_t argc, char *argv[])
 {
 	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.log", "Game-Boy", 1, LOG_LEVEL_INFO);
@@ -19,7 +32,7 @@ int32_t main(int32_t argc, char *argv[])
 			return 0;
 		}
 		if(string_contains(argv[2], "NEW_POKEMON")){
-			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
 		}
 		if(string_contains(argv[2], "APPEARED_POKEMON")){
 			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
@@ -40,7 +53,7 @@ int32_t main(int32_t argc, char *argv[])
 		}
 		if(string_contains(argv[2], "NEW_POKEMON")){
 			log_info(logger,"Envio new_pokemon");
-			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], argv[7], socket);
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
 			log_info(logger,"Envio Catch Pokemon");
@@ -50,6 +63,15 @@ int32_t main(int32_t argc, char *argv[])
 			log_info(logger,"Envio Get Pokemon");
 			//enviar_get_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
+
+		// SOLO PARA PROBAR DESDE GAME-CARD QUE FUNCIONAN BIEN LAS FUNCIONES:
+		if(string_contains(argv[2], "APPEARED_POKEMON")){
+			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+		}
+		if(string_contains(argv[2], "CAUGHT_POKEMON")){
+			enviar_caught_pokemon(argv[3], argv[4], argv[5], socket);
+		}
+
 	}
 
 	else if(string_contains(argv[1], "TEAM")){
