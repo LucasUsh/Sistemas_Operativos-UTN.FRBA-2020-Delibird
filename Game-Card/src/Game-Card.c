@@ -71,8 +71,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 		case NEW_POKEMON:
 			;
 			t_New* new = NULL;
-			new = deserializar_paquete_new (socket_cliente, &tamanio_estructura);
-
+			new = deserializar_paquete_new (socket_cliente);
 
 
 			break;

@@ -31,7 +31,7 @@ int32_t main(int32_t argc, char *argv[])
 			enviar_caught_pokemon(argv[3], argv[4], argv[5], socket);
 		}
 	}
-	// Ejemplo./gameboy GAMECARD NEW_POKEMON Pikachu 2 5 10 9
+
 	else if(string_contains(argv[1], "GAMECARD")) {
 		socket = conexionGameCard();
 		if(socket == 0){
@@ -46,19 +46,21 @@ int32_t main(int32_t argc, char *argv[])
 			log_info(logger,"Envio Catch Pokemon");
 			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
+		if(string_contains(argv[2], "GET_POKEMON")){
+			log_info(logger,"Envio Get Pokemon");
+			//enviar_get_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+		}
 	}
-	else {
 
-		if(string_contains(argv[1], "TEAM")){
-			socket = conexionTeam();
-			if(socket == 0)
-			{
-				log_info(logger,"Error al conectar al Team");
-				return 0;
-			}
-			if(string_contains(argv[2], "APPEARED_POKEMON")){
-				enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
-			}
+	else if(string_contains(argv[1], "TEAM")){
+		socket = conexionTeam();
+		if(socket == 0)
+		{
+			log_info(logger,"Error al conectar al Team");
+			return 0;
+		}
+		if(string_contains(argv[2], "APPEARED_POKEMON")){
+			enviar_appeared_pokemon(argv[3], argv[4], argv[5], "0", socket);
 		}
 	}
 

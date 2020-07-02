@@ -195,7 +195,7 @@ void* serializar_paquete_new (t_paquete* paquete, int32_t* bytes, t_New* new){
 	return stream;
 }
 
-t_New* deserializar_paquete_new (int32_t* socket_cliente, int32_t* tamanio_new) {
+t_New* deserializar_paquete_new (int32_t* socket_cliente) {
 
 	t_New* new = malloc (sizeof(t_New));
 
@@ -213,6 +213,49 @@ t_New* deserializar_paquete_new (int32_t* socket_cliente, int32_t* tamanio_new) 
 
 	return new;
 }
+
+void* serializar_paquete_appeared (t_paquete* paquete, int32_t* bytes, t_Appeared* app){
+
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
+
+	memcpy(stream + desplazamiento, &(app->pokemon.size_Nombre), sizeof(app->pokemon.size_Nombre));
+	desplazamiento+= sizeof(app->pokemon.size_Nombre);
+	memcpy(stream + desplazamiento, app->pokemon.nombre, app->pokemon.size_Nombre);
+	desplazamiento+= app->pokemon.size_Nombre;
+	memcpy(stream + desplazamiento, &(app->posicion.X), sizeof(app->posicion.X));
+	desplazamiento+= sizeof(app->posicion.X);
+
+	return stream;
+}
+
+t_Appeared* deserializar_paquete_appeared (int32_t* socket_cliente) {
+
+	t_Appeared* app = malloc (sizeof(t_Appeared));
+
+	recv (*socket_cliente, &(app->pokemon.size_Nombre), sizeof(app->pokemon.size_Nombre), MSG_WAITALL);
+
+	app->pokemon.nombre = malloc (app->pokemon.size_Nombre);
+
+	recv(*socket_cliente, app->pokemon.nombre, app->pokemon.size_Nombre, MSG_WAITALL);
+
+	recv(*socket_cliente, &(app->posicion.X), sizeof(app->posicion.X), MSG_WAITALL);
+
+	recv(*socket_cliente, &(app->posicion.Y), sizeof(app->posicion.Y), MSG_WAITALL);
+
+	return app;
+}
+
+
 
 
 
