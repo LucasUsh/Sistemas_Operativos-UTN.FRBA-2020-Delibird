@@ -175,8 +175,8 @@ int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 
 t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posicion_pokemon){
 
-	t_entrenador* entrenador_cercano;
-	t_entrenador* entrenador;
+	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
+	t_entrenador* entrenador= malloc(sizeof(t_entrenador));
 	int32_t distancia_mas_chica = -1;
 
 	for(int32_t i = 0; i < entrenadores->elements_count; i++){
@@ -208,7 +208,129 @@ t_posicion* avanzar(t_posicion* posicion, int32_t posX, int32_t posY){
 
 	return posicion;
 }
+void showEntrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* objetivo_global){
+	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
+	    printf("********************\n");
 
+
+	    void _mostrar_pokemon(void* elemento){
+	    	return mostrar_pokemon((t_pokemon_team*)elemento, objetivo_global);
+	    }
+
+
+	    for(int32_t i = 0; i < cantidadEntrenadores; i++){
+	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
+	    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
+	    			i + 1,
+					entrenador_actual->posicion->X,
+					entrenador_actual->posicion->Y);
+
+
+	    	printf("|POKEMONES:\n");
+	    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
+
+	    	printf("|OBJETIVOS:\n");
+	    	list_iterate(entrenador_actual->objetivo, _mostrar_pokemon);
+
+
+			printf("********************\n");
+
+
+			//ver si se puede reemplazar por iterate
+			int32_t j = 0;
+			for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
+				t_pokemon_team* objetivo_actual = list_get(entrenador_actual->objetivo, j);
+				list_add(objetivo_global, objetivo_actual);
+			}
+		}
+
+	    objetivo_global = sumarizar_pokemones(objetivo_global);
+
+		printf("|OBJETIVO GLOBAL:\n");
+		list_iterate(objetivo_global, _mostrar_pokemon);
+
+		printf("********************\n");
+}
+
+void generar_y_enviar_get(t_list* objetivo_global){
+	int i=0;
+	for(i = 0; i < objetivo_global->elements_count; i++){
+		t_pokemon_team* pokemon_actual = list_get(objetivo_global, i);
+
+		t_Get mensaje_get;
+		mensaje_get.pokemon.nombre = pokemon_actual->nombre;
+		mensaje_get.pokemon.size_Nombre = string_length(pokemon_actual->nombre);
+		//conectarse al broker y mandar el mensaje;
+	}
+
+	return;
+}
+
+
+t_Localized* generar_localized(char* pokemon){
+	t_list* listaPosiciones = list_create();
+	t_Localized* mensaje = malloc(sizeof(t_Localized)); // reemplazar por funcion get size Localized
+	int cantPosiciones =  (rand() % (3)) + 1; //nro random entre 1y 3
+	int i = 0;
+
+	for(i = 0; i < cantPosiciones; i++){
+		t_posicion* posicion = malloc(sizeof(t_posicion));
+		posicion->X = (rand() % (10)) + 1; // numero random entre 1 y 10
+		posicion->Y = (rand() % (10)) + 1;
+
+		list_add(listaPosiciones, posicion);
+	}
+
+	mensaje->listaPosiciones = listaPosiciones;
+	mensaje->pokemon.nombre = pokemon;
+	mensaje->pokemon.size_Nombre = string_length(pokemon); // creo que hay que sumar 1
+
+	return mensaje;
+}
+
+t_list* get_nombres_pokemon(){
+	t_list* nombre_pokemones = list_create();
+
+	list_add(nombre_pokemones, "Charmander");
+	list_add(nombre_pokemones, "Pikachu");
+	list_add(nombre_pokemones, "Squirtle");
+	list_add(nombre_pokemones, "Pidgey");
+	list_add(nombre_pokemones, "Rattata");
+	list_add(nombre_pokemones, "Bulbasaur");
+
+	return nombre_pokemones;
+
+}
+
+char* get_nombre_aleatorio(t_list* nombre_pokemones){
+	int i =  (rand() % (nombre_pokemones->elements_count - 1));
+	return list_get(nombre_pokemones, i);
+}
+
+t_list* simular_localized(){
+	/*
+	 * El objetivo de esta funcion es generar mensajes localized de forma aleatoria
+	 * primero se agarran 3 nombres de pokemon random de la lista nombres_pokemon
+	 * */
+	t_list* mensajes_localized = list_create();
+	int cantidad_pokemon = (rand() % (3)) + 1; //nro random entre 1 y 3 para tener pocos mensajes
+	t_list* nombre_pokemones = get_nombres_pokemon();
+
+	//por ej: si cantidad_pokemon = 2, genero 2 mensajes.
+	int i;
+	for(i = 0; i < cantidad_pokemon; i++){
+		//el nombre lo obtengo de forma aleatoria
+		char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
+
+		//con el nombre, genero tambien X cantidad de posiciones aleatorias
+		t_Localized* mensaje_localized = generar_localized(nombre_pokemon);
+
+		list_add(mensajes_localized, mensaje_localized);
+	}
+
+	return mensajes_localized;
+
+}
 
 int32_t main(int32_t argc, char** argv)
 {
@@ -228,56 +350,39 @@ int32_t main(int32_t argc, char** argv)
     t_algoritmo* algoritmo = get_algoritmo(entrenador_config);
     t_list* entrenadores = get_entrenadores(entrenador_config, cantidadEntrenadores);
 
+    //showEntrenadores(algoritmo, entrenadores, objetivo_global);
 
 
-    printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
-    printf("********************\n");
+    generar_y_enviar_get(objetivo_global);
+    t_list* mensajes_localized = simular_localized();
 
+    printf("***************************************** LLEGARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
+    int j;
+    for(j = 0; j < mensajes_localized->elements_count ; j++){
+    	t_Localized* mensaje = list_get(mensajes_localized, j);
+    	printf("pokemon: %s\n", mensaje->pokemon.nombre);
+    	printf("cant de posiciones: %d\n", mensaje->listaPosiciones->elements_count);
 
-    void _mostrar_pokemon(void* elemento){
-    	return mostrar_pokemon((t_pokemon_team*)elemento, objetivo_global);
+    	int m;
+    	for(m=0; m < mensaje->listaPosiciones->elements_count; m++){
+    		t_posicion* posicion = list_get(mensaje->listaPosiciones, m);
+    		printf("Pos %d:\n", m);
+    		printf("posX: %d\n", posicion->X);
+    		printf("posY: %d\n", posicion->Y);
+    	}
+
+    	printf("*****************************************\n");
+
     }
 
 
-    for(int32_t i = 0; i < cantidadEntrenadores; i++){
-    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
-    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
-    			i + 1,
-				entrenador_actual->posicion->X,
-				entrenador_actual->posicion->Y);
 
-
-    	printf("|POKEMONES:\n");
-    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
-
-    	printf("|OBJETIVOS:\n");
-    	list_iterate(entrenador_actual->objetivo, _mostrar_pokemon);
-
-
-		printf("********************\n");
-
-
-		//ver si se puede reemplazar por iterate
-		int32_t j = 0;
-		for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
-			t_pokemon_team* objetivo_actual = list_get(entrenador_actual->objetivo, j);
-			list_add(objetivo_global, objetivo_actual);
-		}
-	}
-
-    objetivo_global = sumarizar_pokemones(objetivo_global);
-
-	printf("|OBJETIVO GLOBAL:\n");
-	list_iterate(objetivo_global, _mostrar_pokemon);
-
-	printf("********************\n");
-
-	//simular_fifo(entrenadores);
 
     printf("End");
 
 	return EXIT_SUCCESS;
 }
+
 
 
 void planificar_fifo(){
