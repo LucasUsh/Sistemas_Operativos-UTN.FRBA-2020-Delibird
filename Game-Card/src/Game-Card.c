@@ -77,6 +77,12 @@ void responder_mensaje(int32_t* socket_cliente) {
 			break;
 
 		case CATCH_POKEMON:
+			;
+			t_Catch* catch = NULL;
+			catch = deserializar_paquete_catch (socket_cliente);
+
+			log_debug(debug, "Nombre: %s", catch->pokemon.nombre);
+			log_debug(debug, "Posicion: x %d, y %d", catch->posicion.X, catch->posicion.Y);
 
 			break;
 

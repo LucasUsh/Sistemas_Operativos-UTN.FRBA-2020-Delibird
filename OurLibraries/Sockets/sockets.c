@@ -211,12 +211,48 @@ t_Appeared* deserializar_paquete_appeared (int32_t* socket_cliente) {
 	return app;
 }
 
+void* serializar_paquete_catch (t_paquete* paquete, int32_t* bytes, t_Catch* catch){
 
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
 
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
 
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
+	memcpy(stream + desplazamiento, &(catch->pokemon.size_Nombre), sizeof(catch->pokemon.size_Nombre));
+	desplazamiento+= sizeof(catch->pokemon.size_Nombre);
+	memcpy(stream + desplazamiento, catch->pokemon.nombre, catch->pokemon.size_Nombre);
+	desplazamiento+= catch->pokemon.size_Nombre;
+	memcpy(stream + desplazamiento, &(catch->posicion.X), sizeof(catch->posicion.X));
+	desplazamiento+= sizeof(catch->posicion.X);
+	memcpy(stream + desplazamiento, &(catch->posicion.Y), sizeof(catch->posicion.Y));
+	desplazamiento+= sizeof(catch->posicion.Y);
 
+	return stream;
+}
 
+t_Catch* deserializar_paquete_catch (int32_t* socket_cliente) {
+
+	t_Catch* catch = malloc (sizeof(t_Catch));
+
+	recv (*socket_cliente, &(catch->pokemon.size_Nombre), sizeof(catch->pokemon.size_Nombre), MSG_WAITALL);
+
+	catch->pokemon.nombre = malloc (catch->pokemon.size_Nombre);
+
+	recv(*socket_cliente, catch->pokemon.nombre, catch->pokemon.size_Nombre, MSG_WAITALL);
+
+	recv(*socket_cliente, &(catch->posicion.X), sizeof(catch->posicion.X), MSG_WAITALL);
+
+	recv(*socket_cliente, &(catch->posicion.Y), sizeof(catch->posicion.Y), MSG_WAITALL);
+
+	return catch;
+}
 
 
 

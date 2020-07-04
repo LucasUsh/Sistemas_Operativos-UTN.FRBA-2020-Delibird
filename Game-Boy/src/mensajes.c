@@ -75,33 +75,30 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id, int32_t soc
 	paquete->codigo_operacion = CATCH_POKEMON;
 	paquete->buffer = malloc(sizeof(t_buffer));
 
-	t_pokemon * p_pokemon = malloc(sizeof(t_pokemon));
-	p_pokemon->size_Nombre = strlen(pokemon) +1;
-	p_pokemon->nombre = pokemon;
+	t_pokemon p_pokemon;
+	p_pokemon.size_Nombre = strlen(pokemon) +1;
+	p_pokemon.nombre = pokemon;
 
-	t_posicion * posicion = malloc(sizeof(t_posicion));
-	posicion->X = (int32_t) atoi (x);
-	posicion->Y = (int32_t) atoi (y);
+	t_posicion posicion;
+	posicion.X = (int32_t) atoi (x);
+	posicion.Y = (int32_t) atoi (y);
 
-	t_Catch * catch = malloc(sizeof(t_Catch));
-	catch->posicion = *posicion;
-	catch->pokemon = *p_pokemon;
+	t_Catch catch;
+	catch.posicion = posicion;
+	catch.pokemon = p_pokemon;
 
-	paquete->buffer->size = tamanio_catch(catch);
+	paquete->buffer->size = tamanio_appeared(&catch); //misma funcion que appeared
 	paquete->buffer->id_Mensaje = (int32_t) atoi (id);
-	paquete->buffer->stream = catch;
+	paquete->buffer->stream = &catch;
 
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_paquete_catch (paquete, &bytes_a_enviar, &catch);
 
-	//enviar
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
 
-	free(posicion);
-	free(p_pokemon);
-	free(catch);
-
+	free(paqueteSerializado);
 	free(paquete->buffer);
 	free(paquete);
-
-
 }
 
 void enviar_caught_pokemon(char* pokemon, char* id_mensaje, char* ok, int32_t socket_cliente)
