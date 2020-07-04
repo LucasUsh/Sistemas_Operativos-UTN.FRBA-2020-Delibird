@@ -16,5 +16,4 @@ void enviar_caught_pokemon(char* pokemon, char* id_mensaje, char* ok, int32_t so
 void enviar_get_pokemon(char* pokemon, int32_t socket_cliente);
 
 
-
 #endif

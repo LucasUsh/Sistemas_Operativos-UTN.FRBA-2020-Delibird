@@ -254,6 +254,38 @@ t_Catch* deserializar_paquete_catch (int32_t* socket_cliente) {
 	return catch;
 }
 
+void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get){
+
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+
+	memcpy(stream + desplazamiento, &(get->pokemon.size_Nombre), sizeof(get->pokemon.size_Nombre));
+	desplazamiento+= sizeof(get->pokemon.size_Nombre);
+	memcpy(stream + desplazamiento, get->pokemon.nombre, get->pokemon.size_Nombre);
+	desplazamiento+= get->pokemon.size_Nombre;
+
+	return stream;
+}
+
+t_Get* deserializar_paquete_get (int32_t* socket_cliente) {
+
+	t_Get* get = malloc (sizeof(t_Get));
+
+	recv (*socket_cliente, &(get->pokemon.size_Nombre), sizeof(get->pokemon.size_Nombre), MSG_WAITALL);
+
+	get->pokemon.nombre = malloc(get->pokemon.size_Nombre);
+
+	recv(*socket_cliente, get->pokemon.nombre, get->pokemon.size_Nombre, MSG_WAITALL);
+
+	return get;
+}
+
 
 
 

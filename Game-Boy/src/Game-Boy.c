@@ -61,7 +61,7 @@ int32_t main(int32_t argc, char *argv[])
 		}
 		if(string_contains(argv[2], "GET_POKEMON")){
 			log_info(logger,"Envio Get Pokemon");
-			//enviar_get_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			enviar_get_pokemon(argv[3], socket);
 		}
 
 		// SOLO PARA PROBAR DESDE GAME-CARD QUE FUNCIONAN BIEN LAS FUNCIONES:
@@ -71,7 +71,6 @@ int32_t main(int32_t argc, char *argv[])
 		if(string_contains(argv[2], "CAUGHT_POKEMON")){
 			enviar_caught_pokemon(argv[3], argv[4], argv[5], socket);
 		}
-
 	}
 
 	else if(string_contains(argv[1], "TEAM")){

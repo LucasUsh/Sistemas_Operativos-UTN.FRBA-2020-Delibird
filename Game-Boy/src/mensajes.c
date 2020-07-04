@@ -87,7 +87,7 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id, int32_t soc
 	catch.posicion = posicion;
 	catch.pokemon = p_pokemon;
 
-	paquete->buffer->size = tamanio_appeared(&catch); //misma funcion que appeared
+	paquete->buffer->size = tamanio_catch(&catch);
 	paquete->buffer->id_Mensaje = (int32_t) atoi (id);
 	paquete->buffer->stream = &catch;
 
@@ -108,6 +108,28 @@ void enviar_caught_pokemon(char* pokemon, char* id_mensaje, char* ok, int32_t so
 
 void enviar_get_pokemon(char* pokemon, int32_t socket_cliente)
 {
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = GET_POKEMON;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	t_pokemon p_pokemon;
+	p_pokemon.size_Nombre = strlen(pokemon) +1;
+	p_pokemon.nombre = pokemon;
+
+	t_Get get;
+	get.pokemon = p_pokemon;
+
+	paquete->buffer->size = tamanio_get(&get);
+	paquete->buffer->stream = &get;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_paquete_get (paquete, &bytes_a_enviar, &get);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
 
 }
 

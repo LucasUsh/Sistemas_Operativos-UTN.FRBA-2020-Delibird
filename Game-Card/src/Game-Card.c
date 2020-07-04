@@ -87,7 +87,11 @@ void responder_mensaje(int32_t* socket_cliente) {
 			break;
 
 		case GET_POKEMON:
+			;
+			t_Get* get = NULL;
+			get = deserializar_paquete_get (socket_cliente);
 
+			log_debug(debug, "Nombre: %s", get->pokemon.nombre);
 			break;
 
 		default:
