@@ -17,6 +17,7 @@
 #include "../../OurLibraries/UniversoPokemon/universo.h"
 #include <pthread.h>
 #include <math.h>
+#include <time.h>
 
 typedef enum {
 	RR    = 1,

@@ -14,7 +14,7 @@
 
 int32_t cantidadEntrenadores = 0;
 t_list* cola_ready;
-t_list* mensajes_localized_parseados;
+//t_list* mensajes_localized_parseados;
 
 
 
@@ -198,6 +198,24 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posic
 	return entrenador_cercano;
 }
 
+t_list* get_objetivo_global(t_list* entrenadores){
+	t_list* objetivo_global = list_create();
+	int i, j;
+
+    for(i = 0; i < entrenadores->elements_count; i++){
+		t_entrenador* entrenador_actual = list_get(entrenadores, i);
+
+		//ver si se puede reemplazar por iterate
+		for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
+			t_pokemon_team* objetivo_actual = list_get(entrenador_actual->objetivo, j);
+			list_add(objetivo_global, objetivo_actual);
+		}
+	}
+
+	objetivo_global = sumarizar_pokemones(objetivo_global);
+
+	return objetivo_global;
+}
 
 t_posicion* avanzar(t_posicion* posicion, int32_t posX, int32_t posY){
 	int32_t nuevaPosicionX = posicion->X + posX;
@@ -208,7 +226,7 @@ t_posicion* avanzar(t_posicion* posicion, int32_t posX, int32_t posY){
 
 	return posicion;
 }
-void showEntrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* objetivo_global){
+void show_entrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* objetivo_global){
 	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
 	    printf("********************\n");
 
@@ -218,7 +236,7 @@ void showEntrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* obje
 	    }
 
 
-	    for(int32_t i = 0; i < cantidadEntrenadores; i++){
+	    for(int32_t i = 0; i < entrenadores->elements_count; i++){
 	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
 	    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
 	    			i + 1,
@@ -235,16 +253,7 @@ void showEntrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* obje
 
 			printf("********************\n");
 
-
-			//ver si se puede reemplazar por iterate
-			int32_t j = 0;
-			for(j = 0; j < entrenador_actual->objetivo->elements_count; j++){
-				t_pokemon_team* objetivo_actual = list_get(entrenador_actual->objetivo, j);
-				list_add(objetivo_global, objetivo_actual);
-			}
 		}
-
-	    objetivo_global = sumarizar_pokemones(objetivo_global);
 
 		printf("|OBJETIVO GLOBAL:\n");
 		list_iterate(objetivo_global, _mostrar_pokemon);
@@ -259,7 +268,9 @@ void generar_y_enviar_get(t_list* objetivo_global){
 
 		t_Get mensaje_get;
 		mensaje_get.pokemon.nombre = pokemon_actual->nombre;
-		mensaje_get.pokemon.size_Nombre = string_length(pokemon_actual->nombre);
+		mensaje_get.pokemon.size_Nombre = string_length(pokemon_actual->nombre); // +1?
+
+		printf("mandando el mensaje GET %s\n", mensaje_get.pokemon.nombre);
 		//conectarse al broker y mandar el mensaje;
 	}
 
@@ -312,11 +323,13 @@ t_list* simular_localized(){
 	 * El objetivo de esta funcion es generar mensajes localized de forma aleatoria
 	 * primero se agarran 3 nombres de pokemon random de la lista nombres_pokemon
 	 * */
+	srand(time(NULL));
 	t_list* mensajes_localized = list_create();
-	int cantidad_pokemon = (rand() % (3)) + 1; //nro random entre 1 y 3 para tener pocos mensajes
+	int cantidad_pokemon = (rand() % (7)) + 1; //nro random entre 1 y 3 para tener pocos mensajes
 	t_list* nombre_pokemones = get_nombres_pokemon();
 
 	//por ej: si cantidad_pokemon = 2, genero 2 mensajes.
+
 	int i;
 	for(i = 0; i < cantidad_pokemon; i++){
 		//el nombre lo obtengo de forma aleatoria
@@ -332,10 +345,57 @@ t_list* simular_localized(){
 
 }
 
+
+t_list* filtrar_localized_repetidos(t_list* mensajes_localized){
+	t_list* mensajes_filtrados = list_create();
+		for(int i = 0; i < mensajes_localized->elements_count; i++){
+			t_Localized* mensaje = list_get(mensajes_localized, i);
+			bool mensaje_encontrado = false;
+
+			if(mensajes_filtrados->elements_count == 0){
+				list_add(mensajes_filtrados, mensaje);
+			} else {
+
+				for(int j = 0; j < mensajes_filtrados->elements_count; j++){
+					t_Localized* mensaje_filtrado = list_get(mensajes_filtrados, j);
+					if(string_equals_ignore_case(mensaje_filtrado->pokemon.nombre, mensaje->pokemon.nombre)){
+						mensaje_encontrado=true;
+					}
+				}
+
+				if(!mensaje_encontrado){
+					list_add(mensajes_filtrados, mensaje);
+				}
+			}
+		}
+
+		return mensajes_filtrados;
+}
+
+t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* objetivo_global){
+	t_list* mensajes_filtrados = list_create();
+	printf("%d\n", objetivo_global->elements_count);
+	for(int i = 0; i < mensajes_localized->elements_count; i++){
+		t_Localized* mensaje = list_get(mensajes_localized, i);
+
+		for(int j = 0; j < objetivo_global->elements_count; j++){
+			t_pokemon_team* objetivo_actual = list_get(objetivo_global, j);
+			if(string_equals_ignore_case(mensaje->pokemon.nombre, objetivo_actual->nombre)){
+				list_add(mensajes_filtrados, mensaje);
+				break;
+			}
+		}
+	}
+
+	return mensajes_filtrados;
+}
+
+
 int32_t main(int32_t argc, char** argv)
 {
 	cola_ready = list_create();
 	t_list* objetivo_global = list_create();
+
 
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
     //char* config_name = argv[1];
@@ -350,21 +410,25 @@ int32_t main(int32_t argc, char** argv)
     t_algoritmo* algoritmo = get_algoritmo(entrenador_config);
     t_list* entrenadores = get_entrenadores(entrenador_config, cantidadEntrenadores);
 
-    //showEntrenadores(algoritmo, entrenadores, objetivo_global);
+
+    objetivo_global = get_objetivo_global(entrenadores);
+    //show_entrenadores(algoritmo, entrenadores, objetivo_global);
 
 
     generar_y_enviar_get(objetivo_global);
-    t_list* mensajes_localized = simular_localized();
+
+    t_list* mensajes_localized_parseados = simular_localized();
+
+    t_list* mensajes_localized_filtrados = filtrar_localized_objetivo_global(filtrar_localized_repetidos(mensajes_localized_parseados), objetivo_global);
 
     printf("***************************************** LLEGARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
-    int j;
-    for(j = 0; j < mensajes_localized->elements_count ; j++){
-    	t_Localized* mensaje = list_get(mensajes_localized, j);
+
+    for(int j = 0; j < mensajes_localized_parseados->elements_count ; j++){
+    	t_Localized* mensaje = list_get(mensajes_localized_parseados, j);
     	printf("pokemon: %s\n", mensaje->pokemon.nombre);
     	printf("cant de posiciones: %d\n", mensaje->listaPosiciones->elements_count);
 
-    	int m;
-    	for(m=0; m < mensaje->listaPosiciones->elements_count; m++){
+    	for(int m=0; m < mensaje->listaPosiciones->elements_count; m++){
     		t_posicion* posicion = list_get(mensaje->listaPosiciones, m);
     		printf("Pos %d:\n", m);
     		printf("posX: %d\n", posicion->X);
@@ -376,7 +440,23 @@ int32_t main(int32_t argc, char** argv)
     }
 
 
+    printf("***************************************** SE FILTRARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
 
+    for(int j = 0; j < mensajes_localized_filtrados->elements_count ; j++){
+    	t_Localized* mensaje_filtrado = list_get(mensajes_localized_filtrados, j);
+    	printf("pokemon: %s\n", mensaje_filtrado->pokemon.nombre);
+    	printf("cant de posiciones: %d\n", mensaje_filtrado->listaPosiciones->elements_count);
+
+    	for(int m=0; m < mensaje_filtrado->listaPosiciones->elements_count; m++){
+    		t_posicion* posicion = list_get(mensaje_filtrado->listaPosiciones, m);
+    		printf("Pos %d:\n", m);
+    		printf("posX: %d\n", posicion->X);
+    		printf("posY: %d\n", posicion->Y);
+    	}
+
+    	printf("*****************************************\n");
+
+    }
 
     printf("End");
 
