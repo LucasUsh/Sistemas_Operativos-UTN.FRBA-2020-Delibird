@@ -286,6 +286,70 @@ t_Get* deserializar_paquete_get (int32_t* socket_cliente) {
 	return get;
 }
 
+void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* caught){
+
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+
+	memcpy(stream + desplazamiento, &(caught->fueAtrapado), sizeof(caught->fueAtrapado));
+	desplazamiento+= sizeof(caught->fueAtrapado);
+
+	return stream;
+}
+
+t_Caught* deserializar_paquete_caught (int32_t* socket_cliente) {
+
+	t_Caught* caught = malloc (sizeof(t_Caught));
+
+	recv (*socket_cliente, &(caught->fueAtrapado), sizeof(caught->fueAtrapado), MSG_WAITALL);
+
+	return caught;
+}
+
+void* serializar_paquete_localized (t_paquete* paquete, int32_t* bytes, t_Localized* localized){
+
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+
+	memcpy(stream + desplazamiento, &(localized->pokemon.size_Nombre), sizeof(localized->pokemon.size_Nombre));
+	desplazamiento+= sizeof(localized->pokemon.size_Nombre);
+	memcpy(stream + desplazamiento, localized->pokemon.nombre, localized->pokemon.size_Nombre);
+	desplazamiento+= localized->pokemon.size_Nombre;
+
+	memcpy(stream + desplazamiento, &(localized->listaPosiciones), sizeof(t_posicion)*localized->listaPosiciones->elements_count);
+	desplazamiento+= sizeof(t_posicion)*localized->listaPosiciones->elements_count;
+
+	return stream;
+}
+
+t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
+
+	t_Localized* localized = malloc (sizeof(t_Localized));
+
+	recv (*socket_cliente, &(localized->pokemon.size_Nombre), sizeof(localized->pokemon.size_Nombre), MSG_WAITALL);
+
+	localized->pokemon.nombre = malloc(localized->pokemon.size_Nombre);
+
+	recv(*socket_cliente, localized->pokemon.nombre, localized->pokemon.size_Nombre, MSG_WAITALL);
+
+	recv(*socket_cliente, localized->listaPosiciones, sizeof(t_posicion)*localized->listaPosiciones->elements_count, MSG_WAITALL);
+
+	return localized;
+}
+
+
 
 
 
