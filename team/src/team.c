@@ -16,7 +16,145 @@ int32_t cantidadEntrenadores = 0;
 t_list* cola_ready;
 t_list* mensajes_localized_a_planificar;
 
+t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
 
+	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
+	t_entrenador* entrenador= malloc(sizeof(t_entrenador));
+	int32_t distancia_mas_chica = -1;
+
+	for(int32_t i = 0; i < entrenadores->elements_count; i++){
+
+		entrenador = list_get(entrenadores, i);
+
+		if(entrenador->estado == BLOCKED || entrenador->estado == NEW ){
+			int32_t distancia_entrenador = get_distancia_entre_puntos(entrenador->posicion, posicion_pokemon);
+
+			if(distancia_mas_chica == -1){
+				distancia_mas_chica = distancia_entrenador;
+				entrenador_cercano= entrenador;
+			} else if (distancia_entrenador < distancia_mas_chica) {
+				distancia_mas_chica = distancia_entrenador;
+				entrenador_cercano = entrenador;
+			}
+		}
+	}
+	return entrenador_cercano;
+}
+
+t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
+	int32_t nuevaPosicionX = posicion.X + posX;
+	int32_t nuevaPosicionY = posicion.Y + posY;
+
+	posicion.X = nuevaPosicionX;
+	posicion.Y = nuevaPosicionY;
+
+	return posicion;
+}
+
+
+
+void planificar_fifo(){
+
+	printf("planificando FIFO...\n");
+	while(cola_ready->elements_count > 0){
+		printf("proximo entrenador..\n");
+
+		// en fifo, el proximo entrenador es el que esté primero en la cola de ready
+		t_entrenador* entrenador = list_remove(cola_ready, 0);
+		entrenador->estado = EXEC;
+
+		int32_t posicion_final_X = entrenador->posicion_destino.X - entrenador->posicion.X;
+		int32_t posicion_final_Y = entrenador->posicion_destino.Y - entrenador->posicion.Y;
+
+		printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+
+		entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
+
+		printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+
+		//una vez que lo muevo llamo al broker y hago el catch
+
+	}
+
+	return;
+}
+
+void simular_fifo(t_list* entrenadores)
+{
+	printf("simulando fifo... \n");
+	t_posicion posPok;
+
+	posPok.X = 3;
+	posPok.Y = 5;
+
+	t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, posPok);
+
+	entrenador_mas_cercano->estado = READY;
+	entrenador_mas_cercano->posicion_destino = posPok;
+
+	list_add(cola_ready, entrenador_mas_cercano);
+
+
+	printf("elementos en ready: %d\n", cola_ready->elements_count);
+
+	planificar_fifo();
+
+	printf("elementos en ready: %d\n", cola_ready->elements_count);
+
+}
+
+void planificar_rr(){
+	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
+	printf("planificando FIFO...\n");
+	while(cola_ready->elements_count > 0){
+	t_entrenador* entrenador = list_remove(cola_ready, 0);
+	entrenador->estado = EXEC;
+
+	int32_t posicion_final_X = entrenador->posicion_destino.X - entrenador->posicion.X;
+	int32_t posicion_final_Y = entrenador->posicion_destino.Y - entrenador->posicion.Y;
+
+	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+
+	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
+
+	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+
+	//una vez que lo muevo llamo al broker y hago el catch
+	}
+
+	return;
+}
+
+void planificar_sjfsd(){
+	return;
+}
+
+void planificar_sjfcd(){
+	return;
+}
+
+
+void planificar(t_algoritmo* algoritmo)
+{
+
+	switch(algoritmo->algoritmo_code){
+	case FIFO:
+		planificar_fifo();
+		break;
+	case RR:
+		planificar_rr();
+		break;
+	case SJFSD:
+		planificar_sjfsd();
+		break;
+	case SJFCD:
+		planificar_sjfcd();
+		break;
+	default:
+		return;
+	}
+
+}
 
 int32_t get_cantidad_pokemon(t_list* list_pokemones){
 
@@ -51,6 +189,8 @@ int32_t get_algoritmo_code(char* algoritmo){
 
 	return 0;
 }
+
+
 
 t_algoritmo* get_algoritmo(t_config* config)
 {
@@ -173,30 +313,7 @@ int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 
 }
 
-t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
 
-	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
-	t_entrenador* entrenador= malloc(sizeof(t_entrenador));
-	int32_t distancia_mas_chica = -1;
-
-	for(int32_t i = 0; i < entrenadores->elements_count; i++){
-
-		entrenador = list_get(entrenadores, i);
-
-		if(entrenador->estado == BLOCKED || entrenador->estado == NEW ){
-			int32_t distancia_entrenador = get_distancia_entre_puntos(entrenador->posicion, posicion_pokemon);
-
-			if(distancia_mas_chica == -1){
-				distancia_mas_chica = distancia_entrenador;
-				entrenador_cercano= entrenador;
-			} else if (distancia_entrenador < distancia_mas_chica) {
-				distancia_mas_chica = distancia_entrenador;
-				entrenador_cercano = entrenador;
-			}
-		}
-	}
-	return entrenador_cercano;
-}
 
 t_list* get_objetivo_global(t_list* entrenadores){
 	t_list* objetivo_global = list_create();
@@ -217,15 +334,7 @@ t_list* get_objetivo_global(t_list* entrenadores){
 	return objetivo_global;
 }
 
-t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
-	int32_t nuevaPosicionX = posicion.X + posX;
-	int32_t nuevaPosicionY = posicion.Y + posY;
 
-	posicion.X = nuevaPosicionX;
-	posicion.Y = nuevaPosicionY;
-
-	return posicion;
-}
 void show_entrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* objetivo_global){
 	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
 	    printf("********************\n");
@@ -501,105 +610,23 @@ int32_t main(int32_t argc, char** argv)
 
    }
 
-   show_cola_ready();
+   //show_cola_ready();
 
-    printf("End");
 
-	return EXIT_SUCCESS;
+   planificar(algoritmo);
+
+   printf("End");
+
+   return EXIT_SUCCESS;
 }
 
 
 
-void planificar_fifo(){
-
-	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
-	t_entrenador* entrenador = list_remove(cola_ready, 0);
-	entrenador->estado = EXEC;
-
-	int32_t posicion_final_X = entrenador->posicion_destino.X - entrenador->posicion.X;
-	int32_t posicion_final_Y = entrenador->posicion_destino.Y - entrenador->posicion.Y;
-
-	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-
-	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
-
-	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-
-	//una vez que lo muevo llamo al broker y hago el catch
-
-	return;
-}
 
 
-void simular_fifo(t_list* entrenadores)
-{
-	printf("simulando fifo... \n");
-	t_posicion posPok;
-
-	posPok.X = 3;
-	posPok.Y = 5;
-
-	t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, posPok);
-
-	entrenador_mas_cercano->estado = READY;
-	entrenador_mas_cercano->posicion_destino = posPok;
-
-	list_add(cola_ready, entrenador_mas_cercano);
 
 
-	printf("elementos en ready: %d\n", cola_ready->elements_count);
-
-	planificar_fifo();
-
-	printf("elementos en ready: %d\n", cola_ready->elements_count);
-
-}
 
 
-void planificar_rr(){
-	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
-	t_entrenador* entrenador = list_remove(cola_ready, 0);
-	entrenador->estado = EXEC;
 
-	int32_t posicion_final_X = entrenador->posicion_destino.X - entrenador->posicion.X;
-	int32_t posicion_final_Y = entrenador->posicion_destino.Y - entrenador->posicion.Y;
 
-	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-
-	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
-
-	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-
-	//una vez que lo muevo llamo al broker y hago el catch
-
-	return;
-}
-
-void planificar_sjfsd(){
-	return;
-}
-
-void planificar_sjfcd(){
-	return;
-}
-
-void planificar(t_algoritmo* algoritmo, t_pokemon_team* pokemon_a_capturar)
-{
-	switch(algoritmo->algoritmo_code){
-	case FIFO:
-		planificar_fifo();
-		break;
-	case RR:
-		planificar_rr();
-		break;
-	case SJFSD:
-		planificar_sjfsd();
-		break;
-	case SJFCD:
-		planificar_sjfcd();
-		break;
-	default:
-		return;
-	}
-
-}
