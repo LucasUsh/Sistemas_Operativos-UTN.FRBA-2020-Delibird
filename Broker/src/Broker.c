@@ -18,70 +18,13 @@ int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
 bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
 bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
 int32_t sizeMemoria, sizeMinParticion;
-
-double get_id(){
-	//para obtener id usamos el timestamp
-
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	double id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec);
-	//printf("el id es: %f\n", id);
-
-	return id;
-}
-
-void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
-	// tiene que devolver info_mensaje?
-	printf("Estoy escuchando suscripciones\n");
-	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-
-	while(socketSuscripciones != -1){
-		struct sockaddr_in dir_cliente;
-		int32_t tam_direccion = sizeof(struct sockaddr_in);
-		int32_t socketCliente = accept(socketSuscripciones, (void*) &dir_cliente, &tam_direccion);
-		printf("Se conecto un cliente\n");
-
-		int32_t operacion;
-		if(recv(socketCliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
-			operacion = -1;
-		}
-		switch (operacion) {
-		case NEW_POKEMON:
-			printf("Recibi un new_pokemon");
-			break;
-		case APPEARED_POKEMON:
-			printf("Recibi un appeared_pokemon");
-			break;
-		case CATCH_POKEMON:
-			printf("Recibi un catch_pokemon");
-			break;
-		case CAUGHT_POKEMON:
-			printf("Recibi un caught_pokemon");
-			break;
-		case GET_POKEMON:
-			printf("Recibi un get_pokemon");
-			break;
-		case LOCALIZED_POKEMON:
-			printf("Recibi un localized_pokemon");
-			break;
-		case 0:
-			exit(2);
-		case -1:
-			exit(2);
-		default:
-			return;
-		}
-		/*recv(socketCliente, &(buffer_size), sizeof(buffer_size), 0);
-		recv(socketCliente, buffer, buffer_size, 0);*/
-	}
-}
+int32_t id_mensaje = 0;
 
 int32_t main(void) {
 
 	logger = iniciar_logger();
 	config = leer_config();
 	tabla_particiones = list_create();
-
 
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
@@ -90,34 +33,7 @@ int32_t main(void) {
 	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false, 0);
 	list_add(tabla_particiones, particionInicial);
 
-	pruebaEncontrarBuddyTrasDosParticiones();
-
-
-
-/*
-	if(string_equals_ignore_case(algoritmo_particion, "BS")){
-
-	} else if (string_equals_ignore_case(algoritmo_particion, "PARTICIONES")){
-
-	}
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	//pruebaEncontrarBuddyTrasDosParticiones();
 
 	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -157,46 +73,73 @@ int32_t main(void) {
 
 }
 
-/*void recibir_Suscripciones(char* IP_BROKER, char* PUERTO_BROKER) {
-	int32_t socket_servidor_GC = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	int32_t socket_cliente_entrante;
+double get_id(){
+	//para obtener id usamos el timestamp
 
-	while(1) {
-    	socket_cliente_entrante = recibir_cliente(int32_t socket_servidor);
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	double id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec);
+	//printf("el id es: %f\n", id);
 
-
-
-    	pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante);
-    	pthread_detach(hilo_global_cliente_GC);
-    }
+	return id;
 }
 
-void responder_mensaje(int32_t* socket_cliente) {
+void escucharSuscripciones(char* IP_BROKER, char* PUERTO_BROKER){
+	// tiene que devolver info_mensaje?
+	printf("Estoy escuchando suscripciones\n");
+	int32_t socketSuscripciones = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 
-	int32_t codigo_operacion;
+	while(socketSuscripciones != -1){
+		//struct sockaddr_in dir_cliente;
+		//int32_t tamanio_estructura = sizeof(struct sockaddr_in);
+		int32_t codigo_operacion = 0;
+		int32_t tamanio_estructura = 0;
 
-	if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
-			codigo_operacion = -1;
+		int32_t socket_cliente = (int32_t)recibir_cliente(socketSuscripciones);
+		//accept(socketSuscripciones, (void*) &dir_cliente, &tamanio_estructura);
+		printf("Se conecto un cliente\n");
 
-	//int32_t size;
-	//void* msg;
-	switch (codigo_operacion) {
+		int32_t operacion;
+		if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) == -1){
+			operacion = -1;
+		}
+		recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+		recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+		log_info(logger, "Código de operación %d \n", codigo_operacion);
 
-		case 0:
-			//msg = recibir_mensaje_servidor(socket_cliente, &size);
-			//printf("Recibi el siguiente mensaje: %s", (char*) msg);
-			//devolver_mensaje(msg, size, socket_cliente);
-			//free(msg);
+		switch (operacion) {
+		case NEW_POKEMON:
+			printf("Recibi un new_pokemon");
+			t_New* new = NULL;
+			new = deserializar_paquete_new (&socket_cliente);
+
 			break;
-
+		case APPEARED_POKEMON:
+			printf("Recibi un appeared_pokemon");
+			break;
+		case CATCH_POKEMON:
+			printf("Recibi un catch_pokemon");
+			break;
+		case CAUGHT_POKEMON:
+			printf("Recibi un caught_pokemon");
+			break;
+		case GET_POKEMON:
+			printf("Recibi un get_pokemon");
+			break;
+		case LOCALIZED_POKEMON:
+			printf("Recibi un localized_pokemon");
+			break;
+		case 0:
+			exit(2);
 		case -1:
-			printf ("Error al recibir paquete en serve_client. Hilo finalizado.");
-			pthread_exit(NULL);
+			exit(2);
+		default:
+			return;
+		}
+		/*recv(socketCliente, &(buffer_size), sizeof(buffer_size), 0);
+		recv(socketCliente, buffer, buffer_size, 0);*/
 	}
 }
-*/
-
-
 
 void suscribirProceso(op_code operacion, int32_t * PID){
 	switch(operacion) {
