@@ -101,9 +101,27 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id, int32_t soc
 	free(paquete);
 }
 
-void enviar_caught_pokemon(char* pokemon, char* id_mensaje, char* ok, int32_t socket_cliente)
+void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int32_t socket_cliente)
 {
-	printf("Caught Pokemon \n");
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = CAUGHT_POKEMON;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	t_Caught caught;
+	caught.fueAtrapado = (int32_t) atoi(fueAtrapado);
+
+	paquete->buffer->size = tamanio_caught(&caught);
+	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje_correlativo);
+	paquete->buffer->stream = &caught;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_paquete_caught(paquete, &bytes_a_enviar, &caught);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
 }
 
 void enviar_get_pokemon(char* pokemon, int32_t socket_cliente)
