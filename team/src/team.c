@@ -14,7 +14,7 @@
 
 int32_t cantidadEntrenadores = 0;
 t_list* cola_ready;
-//t_list* mensajes_localized_parseados;
+t_list* mensajes_localized_a_planificar;
 
 
 
@@ -89,14 +89,14 @@ t_list* get_objetivos(t_config* config, int32_t index){
 	return objetivos;
 }
 
-t_posicion* get_posicion(t_config* config, int32_t index){
-	t_posicion* posicion = (t_posicion*)malloc(sizeof(t_posicion));
+t_posicion get_posicion(t_config* config, int32_t index){
+	t_posicion posicion;
 
 	char** posiciones = get_array_by_index(config_get_array_value(config, "POSICIONES_ENTRENADORES"),
 			index);
 
-	posicion->X = atoi(posiciones[0]);
-	posicion->Y = atoi(posiciones[1]);
+	posicion.X = atoi(posiciones[0]);
+	posicion.Y = atoi(posiciones[1]);
 
 
 	return posicion;
@@ -173,7 +173,7 @@ int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 
 }
 
-t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posicion_pokemon){
+t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
 
 	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
 	t_entrenador* entrenador= malloc(sizeof(t_entrenador));
@@ -184,7 +184,7 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion* posic
 		entrenador = list_get(entrenadores, i);
 
 		if(entrenador->estado == BLOCKED || entrenador->estado == NEW ){
-			int32_t distancia_entrenador = get_distancia_entre_puntos(*entrenador->posicion, *posicion_pokemon);
+			int32_t distancia_entrenador = get_distancia_entre_puntos(entrenador->posicion, posicion_pokemon);
 
 			if(distancia_mas_chica == -1){
 				distancia_mas_chica = distancia_entrenador;
@@ -217,12 +217,12 @@ t_list* get_objetivo_global(t_list* entrenadores){
 	return objetivo_global;
 }
 
-t_posicion* avanzar(t_posicion* posicion, int32_t posX, int32_t posY){
-	int32_t nuevaPosicionX = posicion->X + posX;
-	int32_t nuevaPosicionY = posicion->Y + posY;
+t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
+	int32_t nuevaPosicionX = posicion.X + posX;
+	int32_t nuevaPosicionY = posicion.Y + posY;
 
-	posicion->X = nuevaPosicionX;
-	posicion->Y = nuevaPosicionY;
+	posicion.X = nuevaPosicionX;
+	posicion.Y = nuevaPosicionY;
 
 	return posicion;
 }
@@ -240,8 +240,8 @@ void show_entrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* obj
 	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
 	    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
 	    			i + 1,
-					entrenador_actual->posicion->X,
-					entrenador_actual->posicion->Y);
+					entrenador_actual->posicion.X,
+					entrenador_actual->posicion.Y);
 
 
 	    	printf("|POKEMONES:\n");
@@ -347,6 +347,11 @@ t_list* simular_localized(){
 
 
 t_list* filtrar_localized_repetidos(t_list* mensajes_localized){
+
+	//								**************************************
+	// EN REALIDAD, PUEDEN LLEGAR REPETIDOS, HAY QUE COMPARAR SI SE PUEDE SACIAR O NO EL OBJETIVO GLOBAL
+	//								**************************************
+
 	t_list* mensajes_filtrados = list_create();
 		for(int i = 0; i < mensajes_localized->elements_count; i++){
 			t_Localized* mensaje = list_get(mensajes_localized, i);
@@ -390,6 +395,29 @@ t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* ob
 	return mensajes_filtrados;
 }
 
+t_list* localized_to_pokemon_team(t_Localized mensaje_localized){
+	t_list* pokemones = list_create();
+	for(int i = 0; i < mensaje_localized.listaPosiciones->elements_count; i++){
+		t_pokemon_team* pokemon;
+		pokemon->cantidad = 1;
+		pokemon->nombre = mensaje_localized.pokemon.nombre;
+		pokemon->posicion = list_get(mensaje_localized.listaPosiciones, i);
+
+		list_add(pokemones, pokemon);
+	}
+
+	return pokemones;
+}
+
+void show_cola_ready(){
+	for(int i = 0; i < cola_ready->elements_count; i++){
+		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+
+		printf("posicion en la lista: %d\n", i);
+		printf("posicion actual: X:%d, Y:%d\n", entrenador_actual->posicion.X, entrenador_actual->posicion.Y);
+		printf("posicion destino: X:%d, Y:%d\n", entrenador_actual->posicion_destino.X, entrenador_actual->posicion_destino.Y);
+	}
+}
 
 int32_t main(int32_t argc, char** argv)
 {
@@ -419,44 +447,61 @@ int32_t main(int32_t argc, char** argv)
 
     t_list* mensajes_localized_parseados = simular_localized();
 
-    t_list* mensajes_localized_filtrados = filtrar_localized_objetivo_global(filtrar_localized_repetidos(mensajes_localized_parseados), objetivo_global);
+    mensajes_localized_a_planificar = filtrar_localized_objetivo_global(filtrar_localized_repetidos(mensajes_localized_parseados), objetivo_global);
+
+
 
     printf("***************************************** LLEGARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
 
-    for(int j = 0; j < mensajes_localized_parseados->elements_count ; j++){
-    	t_Localized* mensaje = list_get(mensajes_localized_parseados, j);
-    	printf("pokemon: %s\n", mensaje->pokemon.nombre);
-    	printf("cant de posiciones: %d\n", mensaje->listaPosiciones->elements_count);
+   for(int j = 0; j < mensajes_localized_parseados->elements_count ; j++){
+	t_Localized* mensaje = list_get(mensajes_localized_parseados, j);
+	printf("pokemon: %s\n", mensaje->pokemon.nombre);
+	printf("cant de posiciones: %d\n", mensaje->listaPosiciones->elements_count);
 
-    	for(int m=0; m < mensaje->listaPosiciones->elements_count; m++){
-    		t_posicion* posicion = list_get(mensaje->listaPosiciones, m);
-    		printf("Pos %d:\n", m);
-    		printf("posX: %d\n", posicion->X);
-    		printf("posY: %d\n", posicion->Y);
-    	}
+	for(int m=0; m < mensaje->listaPosiciones->elements_count; m++){
+		t_posicion* posicion = list_get(mensaje->listaPosiciones, m);
+		printf("Pos %d:\n", m);
+		printf("posX: %d\n", posicion->X);
+		printf("posY: %d\n", posicion->Y);
+	}
 
-    	printf("*****************************************\n");
+	printf("*****************************************\n");
 
-    }
+   }
 
 
-    printf("***************************************** SE FILTRARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
+   printf("***************************************** SE FILTRARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
 
-    for(int j = 0; j < mensajes_localized_filtrados->elements_count ; j++){
-    	t_Localized* mensaje_filtrado = list_get(mensajes_localized_filtrados, j);
-    	printf("pokemon: %s\n", mensaje_filtrado->pokemon.nombre);
-    	printf("cant de posiciones: %d\n", mensaje_filtrado->listaPosiciones->elements_count);
+   for(int j = 0; j < mensajes_localized_a_planificar->elements_count ; j++){
+	t_Localized* mensaje_filtrado = list_get(mensajes_localized_a_planificar, j);
+	printf("pokemon: %s\n", mensaje_filtrado->pokemon.nombre);
+	printf("cant de posiciones: %d\n", mensaje_filtrado->listaPosiciones->elements_count);
 
-    	for(int m=0; m < mensaje_filtrado->listaPosiciones->elements_count; m++){
-    		t_posicion* posicion = list_get(mensaje_filtrado->listaPosiciones, m);
-    		printf("Pos %d:\n", m);
-    		printf("posX: %d\n", posicion->X);
-    		printf("posY: %d\n", posicion->Y);
-    	}
+	for(int m=0; m < mensaje_filtrado->listaPosiciones->elements_count; m++){
+		t_posicion* posicion = list_get(mensaje_filtrado->listaPosiciones, m);
+		printf("Pos %d:\n", m);
+		printf("posX: %d\n", posicion->X);
+		printf("posY: %d\n", posicion->Y);
+	}
 
-    	printf("*****************************************\n");
+	printf("*****************************************\n");
 
-    }
+   }
+
+   for(int n = 0; n < mensajes_localized_a_planificar->elements_count; n++){
+	 t_Localized* mensaje = list_get(mensajes_localized_a_planificar, n);
+	 t_posicion* posicion = list_get(mensaje->listaPosiciones, 0);
+
+ 	 t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, *posicion);
+
+     entrenador_mas_cercano->estado = READY;
+ 	 entrenador_mas_cercano->posicion_destino = *posicion;
+
+	 list_add(cola_ready, entrenador_mas_cercano);
+
+   }
+
+   show_cola_ready();
 
     printf("End");
 
@@ -471,14 +516,14 @@ void planificar_fifo(){
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	entrenador->estado = EXEC;
 
-	int32_t posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
-	int32_t posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
+	int32_t posicion_final_X = entrenador->posicion_destino.X - entrenador->posicion.X;
+	int32_t posicion_final_Y = entrenador->posicion_destino.Y - entrenador->posicion.Y;
 
-	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
+	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
 
-	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
+	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	//una vez que lo muevo llamo al broker y hago el catch
 
@@ -489,10 +534,10 @@ void planificar_fifo(){
 void simular_fifo(t_list* entrenadores)
 {
 	printf("simulando fifo... \n");
-	t_posicion* posPok = (t_posicion*)malloc(sizeof(t_posicion));
+	t_posicion posPok;
 
-	posPok->X = 3;
-	posPok->Y = 5;
+	posPok.X = 3;
+	posPok.Y = 5;
 
 	t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, posPok);
 
@@ -511,30 +556,30 @@ void simular_fifo(t_list* entrenadores)
 }
 
 
-void planificar_rr(t_pokemon_team* pokemon_a_capturar){
+void planificar_rr(){
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	entrenador->estado = EXEC;
 
-	int32_t posicion_final_X = entrenador->posicion_destino->X - entrenador->posicion->X;
-	int32_t posicion_final_Y = entrenador->posicion_destino->Y - entrenador->posicion->Y;
+	int32_t posicion_final_X = entrenador->posicion_destino.X - entrenador->posicion.X;
+	int32_t posicion_final_Y = entrenador->posicion_destino.Y - entrenador->posicion.Y;
 
-	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
+	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
 
-	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion->X, entrenador->posicion->Y);
+	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	//una vez que lo muevo llamo al broker y hago el catch
 
 	return;
 }
 
-void planificar_sjfsd(t_pokemon_team* pokemon_a_capturar){
+void planificar_sjfsd(){
 	return;
 }
 
-void planificar_sjfcd(t_pokemon_team* pokemon_a_capturar){
+void planificar_sjfcd(){
 	return;
 }
 
@@ -542,16 +587,16 @@ void planificar(t_algoritmo* algoritmo, t_pokemon_team* pokemon_a_capturar)
 {
 	switch(algoritmo->algoritmo_code){
 	case FIFO:
-		planificar_fifo(pokemon_a_capturar);
+		planificar_fifo();
 		break;
 	case RR:
-		planificar_rr(pokemon_a_capturar);
+		planificar_rr();
 		break;
 	case SJFSD:
-		planificar_sjfsd(pokemon_a_capturar);
+		planificar_sjfsd();
 		break;
 	case SJFCD:
-		planificar_sjfcd(pokemon_a_capturar);
+		planificar_sjfcd();
 		break;
 	default:
 		return;

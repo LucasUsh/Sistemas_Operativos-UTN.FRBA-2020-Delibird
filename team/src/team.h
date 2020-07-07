@@ -35,8 +35,8 @@ typedef enum {
 } estado_code;
 
 typedef struct {
-	t_posicion* posicion;
-	t_posicion* posicion_destino;
+	t_posicion posicion;
+	t_posicion posicion_destino;
 	t_list* 	pokemones; //list of t_pokemon
 	t_list* 	objetivo; //list of t_pokemon
 	estado_code estado;
