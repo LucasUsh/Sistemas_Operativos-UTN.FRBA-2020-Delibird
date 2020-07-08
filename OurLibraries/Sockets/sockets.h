@@ -37,6 +37,7 @@ typedef enum
 	CAUGHT_POKEMON,
 	GET_POKEMON,
 	LOCALIZED_POKEMON,
+	ID_MENSAJE
 } op_code;
 
 typedef struct

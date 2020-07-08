@@ -372,14 +372,32 @@ t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
 	return localized;
 }
 
+void * serializar_id(t_paquete* paquete, int32_t* bytes){
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
 
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
 
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
+	memcpy(stream + desplazamiento, &(paquete->buffer->stream), sizeof(paquete->buffer->stream));
+	desplazamiento+= sizeof(paquete->buffer->stream);
 
+	return stream;
+}
 
+double * deserializar_id(int32_t* socket_cliente){
+	double* id = malloc (sizeof(double));
 
+	recv (*socket_cliente, &(id), sizeof(id), MSG_WAITALL);
 
-
+	return id;
+}
 
 
 

@@ -48,6 +48,15 @@ double get_id();
 int getMemoriaOcupada();
 int getMemoriaDisponible();
 
+void escucharColaNew();
+void escucharColaAppeared();
+void escucharColaGet();
+void escucharColaLocalized();
+void escucharColaCatch();
+void escucharColaCaught();
+void informarId(int32_t socket_cliente);
+
+
 t_list* suscriptores_New;
 t_list* suscriptores_Appeared;
 t_list* suscriptores_Catch;
