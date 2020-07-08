@@ -18,7 +18,13 @@
 #include "utils.h"
 #include "team.h"
 t_pokemon_team* get_pokemon(char* pokemon_name);
-t_list* 		get_pokemones(t_config* config, int32_t index);
-void 			mostrar_pokemon(t_pokemon_team* pokemon_actual, t_list* objetivo_global);
+t_list* get_pokemones(t_config* config, int32_t index);
+void mostrar_pokemon(t_pokemon_team* pokemon_actual, t_list* objetivo_global);
+int32_t get_cantidad_pokemon(t_list* list_pokemones);
+bool puede_capturar_pokemones(t_entrenador* entrenador);
+t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar);
+t_list* get_nombres_pokemon();
+char* get_nombre_aleatorio(t_list* nombre_pokemones);
+t_list* localized_to_pokemon_team(t_Localized mensaje_localized);
 
 #endif /* POKEMON_UTILS_H_ */

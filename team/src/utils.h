@@ -12,9 +12,19 @@
 #include <stdlib.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include "team.h"
 
 char** get_array_by_index(char** array_from_config, int32_t index);
 int32_t array_length(char** value_array);
 t_config* get_config(char* name);
+int32_t get_algoritmo_code(char* algoritmo);
+t_algoritmo* get_algoritmo(t_config* config);
+t_list* get_objetivos(t_config* config, int32_t index);
+t_posicion get_posicion(t_config* config, int32_t index);
+t_entrenador* get_entrenador(t_config* config, int32_t index);
+t_list* get_entrenadores(t_config* config, int32_t cantidadEntrenadores);
+int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2);
+t_list* get_objetivo_global(t_list* entrenadores);
+t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon);
 
 #endif /* UTILS_H_ */
