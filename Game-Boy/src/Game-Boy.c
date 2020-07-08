@@ -40,10 +40,13 @@ int32_t main(int32_t argc, char *argv[])
 			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
-			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			enviar_catch_pokemon(argv[3], argv[4], argv[5], socket);
 		}
 		if(string_contains(argv[2], "CAUGHT_POKEMON")){
 			enviar_caught_pokemon(argv[3], argv[4], socket);
+		}
+		if(string_contains(argv[2], "GET_POKEMON")){
+			enviar_get_pokemon(argv[3], socket);
 		}
 	}
 
@@ -61,7 +64,7 @@ int32_t main(int32_t argc, char *argv[])
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
 			log_info(logger,"Envio Catch Pokemon");
-			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			enviar_catch_pokemon(argv[3], argv[4], argv[5], socket);
 		}
 		if(string_contains(argv[2], "GET_POKEMON")){
 			log_info(logger,"Envio Get Pokemon");

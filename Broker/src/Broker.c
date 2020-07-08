@@ -13,10 +13,8 @@
 #include "pruebas.h"
 
 
-bool flag_Suscriptores_New, flag_Suscriptores_Appeared, flag_Suscriptores_Catch, flag_Suscriptores_Caught, flag_Suscriptores_Get, flag_Suscriptores_Localized= false;
-bool flag_Mensajes_New, flag_Mensajes_Appeared, flag_Mensajes_Catch, flag_Mensajes_Caught, flag_Mensajes_Get, flag_Mensajes_Localized= false;
 int32_t sizeMemoria, sizeMinParticion;
-int32_t id_mensaje = 0;
+int32_t id_mensaje_global = 0;
 char *IP_BROKER;
 char *PUERTO_BROKER;
 
@@ -35,18 +33,20 @@ int32_t main(void) {
 
 	//pruebaEncontrarBuddyTrasDosParticiones();
 
-	char *IP_BROKER = config_get_string_value(config, "IP_BROKER");
-	char *PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
+	IP_BROKER = config_get_string_value(config, "IP_BROKER");
+	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
 	log_info(logger,"Lei IP_BROKER %s ",IP_BROKER);
 	log_info(logger,"Lei PUERTO_BROKER %s ",PUERTO_BROKER);
 
-	/*
-	* Creamos un hilo que debe estar constantemente escuchando con IP_BROKER y PUERTO_BROKER.
-	* El resto de los procesos se conectan a ese hilo, de a uno.
-	*/
-
-	// esto tendria que ser otro hilo
+	inicializarListas();
 	while (1){
+		//escucharColaNew();
+		//escucharColaAppeared();
+		//escucharColaGet();
+		//escucharColaCatch();
+		//escucharColaCaught(); <--- todas recibiendo bien. Falta chequear escucharColaLocalized que envia solo Game Card
+
+		iniciarColas();
 		//escucharSuscripciones(IP_BROKER, PUERTO_BROKER);
 	}
 
@@ -135,6 +135,7 @@ void escucharColaNew(){
 		if(socket_cliente != -1){
 			printf("Nueva conexion en cola de mensajes New\n");
 			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje;
 			int32_t operacion;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion==NEW_POKEMON){
@@ -145,6 +146,8 @@ void escucharColaNew(){
 
 					t_New* new = NULL;
 					new = deserializar_paquete_new (&socket_cliente);
+					printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
+							new->cant, new->posicion.X, new->posicion.Y);
 					//pedir identificacion del proceso (handshake)
 					//informar id mensaje
 					//asignar id mensaje al mensaje recibido
@@ -177,6 +180,7 @@ void escucharColaAppeared(){
 		if(socket_cliente != -1){
 			printf("Nueva conexion en cola de mensajes Appeared\n");
 			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje;
 			int32_t operacion;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion==APPEARED_POKEMON){
@@ -187,6 +191,9 @@ void escucharColaAppeared(){
 
 					t_Appeared* app = NULL;
 					app = deserializar_paquete_appeared(&socket_cliente);
+					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
+							app->posicion.X, app->posicion.Y, id_mensaje);
+
 					//pedir identificacion del proceso (handshake)
 					//informar id mensaje
 					//asignar id mensaje al mensaje recibido
@@ -220,6 +227,7 @@ void escucharColaGet(){
 		if(socket_cliente != -1){
 			printf("Nueva conexion en cola de mensajes Get\n");
 			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje;
 			int32_t operacion;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion==GET_POKEMON){
@@ -230,6 +238,7 @@ void escucharColaGet(){
 
 					t_Get* get = NULL;
 					get = deserializar_paquete_get(&socket_cliente);
+					printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);
 					//pedir identificacion del proceso (handshake)
 					//informar id mensaje
 					//asignar id mensaje al mensaje recibido
@@ -263,6 +272,7 @@ void escucharColaLocalized(){
 		if(socket_cliente != -1){
 			printf("Nueva conexion en cola de mensajes Localized\n");
 			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje;
 			int32_t operacion;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion==LOCALIZED_POKEMON){
@@ -273,6 +283,13 @@ void escucharColaLocalized(){
 
 					t_Localized* localized = NULL;
 					localized = deserializar_paquete_localized(&socket_cliente);
+					printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
+							localized->pokemon.nombre);
+					int i;
+					for(i=0; i<localized->listaPosiciones->elements_count; i++){
+						t_posicion * posicion = list_get(localized->listaPosiciones, i);
+						printf("%d  %d \n", posicion->X, posicion->Y);
+					}
 					//pedir identificacion del proceso (handshake)
 					//informar id mensaje
 					//asignar id mensaje al mensaje recibido
@@ -306,6 +323,7 @@ void escucharColaCatch(){
 		if(socket_cliente != -1){
 			printf("Nueva conexion en cola de mensajes Catch\n");
 			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje;
 			int32_t operacion;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion==CATCH_POKEMON){
@@ -316,6 +334,8 @@ void escucharColaCatch(){
 
 					t_Catch* catch = NULL;
 					catch = deserializar_paquete_catch(&socket_cliente);
+					printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
+							catch->posicion.X, catch->posicion.Y);
 					//pedir identificacion del proceso (handshake)
 					//informar id mensaje
 					//asignar id mensaje al mensaje recibido
@@ -349,6 +369,7 @@ void escucharColaCaught(){
 		if(socket_cliente != -1){
 			printf("Nueva conexion en cola de mensajes Caught\n");
 			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje;
 			int32_t operacion;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion==CAUGHT_POKEMON){
@@ -359,6 +380,7 @@ void escucharColaCaught(){
 
 					t_Caught* caught = NULL;
 					caught = deserializar_paquete_caught(&socket_cliente);
+					printf("Llego un mensaje Caught Pokemon con los siguientes datos: %d  %d\n",id_mensaje, caught->fueAtrapado);
 					//pedir identificacion del proceso (handshake)
 					//informar id mensaje
 					//asignar id mensaje al mensaje recibido

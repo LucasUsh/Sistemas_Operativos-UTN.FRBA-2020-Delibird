@@ -258,7 +258,7 @@ t_Catch* deserializar_paquete_catch (int32_t* socket_cliente) {
 
 void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get){
 
-	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
 	void *stream = malloc(*bytes);
 	int32_t desplazamiento = 0;
 
@@ -266,6 +266,8 @@ void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get){
 	desplazamiento+= sizeof(paquete->codigo_operacion);
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
 	memcpy(stream + desplazamiento, &(get->pokemon.size_Nombre), sizeof(get->pokemon.size_Nombre));
 	desplazamiento+= sizeof(get->pokemon.size_Nombre);
@@ -290,7 +292,7 @@ t_Get* deserializar_paquete_get (int32_t* socket_cliente) {
 
 void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* caught){
 
-	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
 	void *stream = malloc(*bytes);
 	int32_t desplazamiento = 0;
 
@@ -298,6 +300,8 @@ void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* c
 	desplazamiento+= sizeof(paquete->codigo_operacion);
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
 	memcpy(stream + desplazamiento, &(caught->fueAtrapado), sizeof(caught->fueAtrapado));
 	desplazamiento+= sizeof(caught->fueAtrapado);
@@ -316,7 +320,7 @@ t_Caught* deserializar_paquete_caught (int32_t* socket_cliente) {
 
 void* serializar_paquete_localized (t_paquete* paquete, int32_t* bytes, t_Localized* localized){
 
-	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + paquete->buffer->size;
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
 	void *stream = malloc(*bytes);
 	int32_t desplazamiento = 0;
 
@@ -324,6 +328,8 @@ void* serializar_paquete_localized (t_paquete* paquete, int32_t* bytes, t_Locali
 	desplazamiento+= sizeof(paquete->codigo_operacion);
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
 	memcpy(stream + desplazamiento, &(localized->pokemon.size_Nombre), sizeof(localized->pokemon.size_Nombre));
 	desplazamiento+= sizeof(localized->pokemon.size_Nombre);
