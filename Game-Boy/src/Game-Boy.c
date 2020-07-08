@@ -29,8 +29,10 @@ int32_t main(int32_t argc, char *argv[])
 		socket = conexionBroker();
 		if(socket == 0){
 			log_info(logger,"Error al conectar al Broker");
+			finalizar(logger, config, socket);
 			return 0;
 		}
+		log_info(logger,"Conectado al Broker");
 		if(string_contains(argv[2], "NEW_POKEMON")){
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
 		}
@@ -49,8 +51,10 @@ int32_t main(int32_t argc, char *argv[])
 		socket = conexionGameCard();
 		if(socket == 0){
 			log_info(logger,"Error al conectar con Game-Card");
+			finalizar(logger, config, socket);
 			return 0;
 		}
+		log_info(logger,"Conectado al Game Card");
 		if(string_contains(argv[2], "NEW_POKEMON")){
 			log_info(logger,"Envio new_pokemon");
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], argv[7], socket);
@@ -78,16 +82,16 @@ int32_t main(int32_t argc, char *argv[])
 		if(socket == 0)
 		{
 			log_info(logger,"Error al conectar al Team");
+			finalizar(logger, config, socket);
 			return 0;
 		}
+		log_info(logger,"Conectado al Team");
 		if(string_contains(argv[2], "APPEARED_POKEMON")){
 			enviar_appeared_pokemon(argv[3], argv[4], argv[5], "0", socket);
 		}
 	}
 
-	liberar_conexion(socket);
-	config_destroy(config);
-	log_destroy(logger);
+	finalizar(logger, config, socket);
 	return 0;
 }
 
@@ -99,6 +103,13 @@ void validar_Argc(t_log* logger, int32_t arg)
 		log_destroy(logger);
 		exit(1);
 	}
+}
+
+void finalizar(t_log* logger, t_config* config, int32_t socket)
+{
+	liberar_conexion(socket);
+	config_destroy(config);
+	log_destroy(logger);
 }
 
 

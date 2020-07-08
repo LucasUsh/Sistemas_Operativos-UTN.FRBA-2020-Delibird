@@ -281,7 +281,7 @@ t_Get* deserializar_paquete_get (int32_t* socket_cliente) {
 
 	recv (*socket_cliente, &(get->pokemon.size_Nombre), sizeof(get->pokemon.size_Nombre), MSG_WAITALL);
 
-	get->pokemon.nombre = malloc(get->pokemon.size_Nombre);
+	get->pokemon.nombre = malloc (get->pokemon.size_Nombre);
 
 	recv(*socket_cliente, get->pokemon.nombre, get->pokemon.size_Nombre, MSG_WAITALL);
 

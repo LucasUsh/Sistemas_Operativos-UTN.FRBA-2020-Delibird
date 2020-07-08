@@ -11,6 +11,6 @@
 #include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/src/mensajes.h"
 
 void validar_Argc(t_log* logger, int32_t arg);
-//void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, int32_t socket_cliente);
+void finalizar(t_log* logger, t_config* config, int32_t socket);
 
 #endif
