@@ -33,7 +33,6 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* i
 	free(paquete);
 }
 
-//./gameboy BROKER APPEARED_POKEMON [POKEMON] [POSX] [POSY] [ID_MENSAJE_CORRELATIVO]
 void enviar_appeared_pokemon (char* pokemon, char* x, char* y, char* id_mensaje_correlativo, int32_t socket_cliente)
 {
 	printf("Appeared Pokemon\n");
@@ -69,7 +68,7 @@ void enviar_appeared_pokemon (char* pokemon, char* x, char* y, char* id_mensaje_
 }
 
 
-void enviar_catch_pokemon(char* pokemon, char* x, char* y, int32_t socket_cliente)
+void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id_mensaje, int32_t socket_cliente)
 {
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = CATCH_POKEMON;
@@ -88,8 +87,7 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, int32_t socket_client
 	catch.pokemon = p_pokemon;
 
 	paquete->buffer->size = tamanio_catch(&catch);
-	int32_t id_mensaje = 0;
-	paquete->buffer->id_Mensaje = id_mensaje;
+	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje);
 	paquete->buffer->stream = &catch;
 
 	int32_t bytes_a_enviar;
@@ -109,7 +107,8 @@ void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	t_Caught caught;
-	caught.fueAtrapado = (int32_t) atoi(fueAtrapado);
+	if (strcmp(fueAtrapado, "OK") == 0) caught.fueAtrapado = 1;
+	else if (strcmp(fueAtrapado, "FAIL") == 0) caught.fueAtrapado = 0;
 
 	paquete->buffer->size = tamanio_caught(&caught);
 	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje_correlativo);
@@ -125,7 +124,7 @@ void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int
 	free(paquete);
 }
 
-void enviar_get_pokemon(char* pokemon, int32_t socket_cliente)
+void enviar_get_pokemon(char* pokemon, char* id_mensaje, int32_t socket_cliente)
 {
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = GET_POKEMON;
@@ -139,8 +138,7 @@ void enviar_get_pokemon(char* pokemon, int32_t socket_cliente)
 	get.pokemon = p_pokemon;
 
 	paquete->buffer->size = tamanio_get(&get);
-	int32_t id_mensaje = 0;
-	paquete->buffer->id_Mensaje = id_mensaje;
+	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje);
 	paquete->buffer->stream = &get;
 
 	int32_t bytes_a_enviar;

@@ -12,6 +12,8 @@ int32_t main(int32_t argc, char *argv[])
 
 	printf("GAME BOY iniciando ... \n");
 
+	// BROKER:
+
 	if(string_contains(argv[1], "BROKER")){
 		socket = conexionBroker();
 		if(socket == 0){
@@ -27,15 +29,17 @@ int32_t main(int32_t argc, char *argv[])
 			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
-			enviar_catch_pokemon(argv[3], argv[4], argv[5], socket);
+			enviar_catch_pokemon(argv[3], argv[4], argv[5], "0", socket);
 		}
 		if(string_contains(argv[2], "CAUGHT_POKEMON")){
 			enviar_caught_pokemon(argv[3], argv[4], socket);
 		}
 		if(string_contains(argv[2], "GET_POKEMON")){
-			enviar_get_pokemon(argv[3], socket);
+			enviar_get_pokemon(argv[3], "0", socket);
 		}
 	}
+
+	// GAME-CARD:
 
 	else if(string_contains(argv[1], "GAMECARD")) {
 		socket = conexionGameCard();
@@ -51,21 +55,15 @@ int32_t main(int32_t argc, char *argv[])
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
 			log_info(logger,"Envio Catch Pokemon");
-			enviar_catch_pokemon(argv[3], argv[4], argv[5], socket);
+			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 		}
 		if(string_contains(argv[2], "GET_POKEMON")){
 			log_info(logger,"Envio Get Pokemon");
-			enviar_get_pokemon(argv[3], socket);
-		}
-
-		// SOLO PARA PROBAR DESDE GAME-CARD QUE FUNCIONAN BIEN LAS FUNCIONES:
-		if(string_contains(argv[2], "APPEARED_POKEMON")){
-			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
-		}
-		if(string_contains(argv[2], "CAUGHT_POKEMON")){
-			enviar_caught_pokemon(argv[3], argv[4], socket);
+			enviar_get_pokemon(argv[3], argv[4], socket);
 		}
 	}
+
+	// TEAM:
 
 	else if(string_contains(argv[1], "TEAM")){
 		socket = conexionTeam();
@@ -80,6 +78,7 @@ int32_t main(int32_t argc, char *argv[])
 			enviar_appeared_pokemon(argv[3], argv[4], argv[5], "0", socket);
 		}
 	}
+
 	else if(string_contains(argv[1], "SUSCRIPTOR")){
 		socket = conexionBroker();
 		if(socket == 0){
