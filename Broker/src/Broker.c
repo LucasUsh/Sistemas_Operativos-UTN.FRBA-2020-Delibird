@@ -39,35 +39,86 @@ int32_t main(void) {
 	log_info(logger,"Lei PUERTO_BROKER %s ",PUERTO_BROKER);
 
 	inicializarListas();
-	while (1){
-		//escucharColaNew();
-		//escucharColaAppeared();
-		//escucharColaGet();
-		//escucharColaCatch();
-		//escucharColaCaught(); <--- todas recibiendo bien. Falta chequear escucharColaLocalized que envia solo Game Card
 
-		iniciarColas();
-		//escucharSuscripciones(IP_BROKER, PUERTO_BROKER);
+	printf("Iniciando Broker \n");
+	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	printf("Escuchando conexiones\n");
+
+	while(socketEscucha != -1){
+		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
+
+		if(socket_cliente != -1){
+			printf("Se conecto un cliente\n");
+
+			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje=0;
+			int32_t operacion=0;
+			pthread_t hilo;
+			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				switch(operacion){
+
+				case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED:
+				if (pthread_create(&hilo, NULL, (void*)manejoMensajeSuscripcion, socket_cliente) == 0){
+					printf("Creado el hilo que maneja la suscripcion");
+				}else printf("Fallo al crear el hilo que maneja la suscripcion");
+				break;
+				case NEW_POKEMON:
+					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Nuevo mensaje en cola New \n");
+					if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, socket_cliente) == 0){
+						printf("Creado el hilo que maneja el mensaje New");
+					}else printf("Fallo al crear el hilo que maneja el mensaje New");
+					break;
+				case APPEARED_POKEMON:
+					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Nuevo mensaje en cola Appeared \n");
+					if (pthread_create(&hilo, NULL, (void*)manejoMensajeAppeared, socket_cliente) == 0){
+						printf("Creado el hilo que maneja el mensaje Appeared");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Appeared");
+					break;
+				case GET_POKEMON:
+					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Nuevo mensaje en cola Get \n");
+					if (pthread_create(&hilo, NULL, (void*)manejoMensajeGet, socket_cliente) == 0){
+						printf("Creado el hilo que maneja el mensaje Get");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Get");
+					break;
+				case LOCALIZED_POKEMON:
+					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Nuevo mensaje en cola Localized \n");
+					if (pthread_create(&hilo, NULL, (void*)manejoMensajeLocalized, socket_cliente) == 0){
+						printf("Creado el hilo que maneja el mensaje Localized");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Localized");
+					break;
+				case CATCH_POKEMON:
+					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Nuevo mensaje en cola Catch \n");
+					if (pthread_create(&hilo, NULL, (void*)manejoMensajeCatch, socket_cliente) == 0){
+						printf("Creado el hilo que maneja el mensaje Catch");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Catch");
+					break;
+				case CAUGHT_POKEMON:
+					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Nuevo mensaje en cola Caught \n");
+					if (pthread_create(&hilo, NULL, (void*)manejoMensajeCaught, socket_cliente) == 0){
+						printf("Creado el hilo que maneja el mensaje Caught");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Caught");
+					break;
+				}
+			}else printf("Fallo al recibir codigo de operacion = -1\n");
+			liberar_conexion(socket_cliente);
+		}else printf("Fallo al recibir/aceptar al cliente\n");
 	}
-
-
-
-	/*
-	* Se les asigna un nuevo socket para que envien o reciban mensajes, se agrega el proceso a la
-	* lista de suscriptores a la que solicito unirse, Se verifica si hay mensajes sin ACK en la lista
-	* a la que suscribio un proceso, en caso de que si haya se envia por el nuevo socket y se
-	* los saca del socket de suscripciones para poder seguir atendiendo otras suscripciones.
-	*
-	* Luego, debera haber un hilo por cada proceso suscripto a una cola especficia.
-	* Ejemplo: Team1 se suscribe a mensajes_Appeared, a mensajes_Get y a mensajes_Localized
-	* entonces tiene que tener 3 hilos que manejaran los distintos mensajes que se envien o reciban
-	* por cada socket.
-	* Tenemos que implementar semaforos para asignar los ID de mensajes, agregar, enviar y recibir
-	* mensajes, ya que habra concurrencia entre los distintos hilos
-	*
-	*/
-
-
+	if(socketEscucha == -1){
+		printf("Fallo al crear socket de escucha = -1\n");
+		//return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 
@@ -84,354 +135,132 @@ double get_id(){
 	return id;
 }
 
-void iniciarColas(){
+/*void iniciarColas(){
 
 	pthread_t hilo_new;
 	if (pthread_create(&hilo_new, NULL, (void*)escucharColaNew, NULL) == 0){
-		printf("Creado el hilo que maneja la cola New");
-		pthread_detach(hilo_new); //lo desasocio aunque sigue su curso
-	}else printf("Fallo al crear el hilo de cola New");
+		printf("Creado el hilo que maneja la cola New\n");
+	}else printf("Fallo al crear el hilo de cola New\n");
+
+	escucharColaAppeared();
 
 	pthread_t hilo_appeared;
 	if (pthread_create(&hilo_appeared, NULL, (void*)escucharColaAppeared, NULL) == 0){
-		printf("Creado el hilo que maneja la cola Appeared");
-		pthread_detach(hilo_appeared);
-	}else printf("Fallo al crear el hilo de cola Appeared");
+		printf("Creado el hilo que maneja la cola Appeared\n");
+	}else printf("Fallo al crear el hilo de cola Appeared\n");
 
 	pthread_t hilo_get;
 	if (pthread_create(&hilo_get, NULL, (void*)escucharColaGet, NULL) == 0){
-		printf("Creado el hilo que maneja la cola Get");
-		pthread_detach(hilo_get);
-	}else printf("Fallo al crear el hilo de cola Get");
+		printf("Creado el hilo que maneja la cola Get\n");
+	}else printf("Fallo al crear el hilo de cola Get\n");
 
 	pthread_t hilo_localized;
 	if (pthread_create(&hilo_localized, NULL, (void*)escucharColaLocalized, NULL) == 0){
-		printf("Creado el hilo que maneja la cola Localized");
-		pthread_detach(hilo_localized);
-	}else printf("Fallo al crear el hilo de cola Localized");
+		printf("Creado el hilo que maneja la cola Localized\n");
+	}else printf("Fallo al crear el hilo de cola Localized\n");
 
 	pthread_t hilo_catch;
 	if (pthread_create(&hilo_catch, NULL, (void*)escucharColaCatch, NULL) == 0){
-		printf("Creado el hilo que maneja la cola Catch");
-		pthread_detach(hilo_catch);
-	}else printf("Fallo al crear el hilo de cola Catch");
+		printf("Creado el hilo que maneja la cola Catch\n");
+	}else printf("Fallo al crear el hilo de cola Catch\n");
 
 	pthread_t hilo_caught;
 	if (pthread_create(&hilo_caught, NULL, (void*)escucharColaCaught, NULL) == 0){
-		printf("Creado el hilo que maneja la cola Caught");
-		pthread_detach(hilo_caught);
-	}else printf("Fallo al crear el hilo de cola Caught");
+		printf("Creado el hilo que maneja la cola Caught\n");
+	}else printf("Fallo al crear el hilo de cola Caught\n");
 
+}*/
+
+void manejoMensajeSuscripcion(int32_t socket_cliente){
+	//pedir identificacion del proceso (handshake)
+	informarId(socket_cliente); // falta incorporar semaforo
+	//agregar en lista de colas a la que se suscribio: suscribirProceso(op_code operacion, int32_t * PID)
 }
 
-void escucharColaNew(){
-	printf("Iniciando Cola de mensajes New\n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+void manejoMensajeNew(int32_t socket_cliente){
+	t_New* new = NULL;
+	new = deserializar_paquete_new (&socket_cliente);
+	printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
+			new->cant, new->posicion.X, new->posicion.Y);
+	//pedir identificacion del proceso (handshake)
+	//informar id mensaje
+	//asignar id mensaje al mensaje recibido
+	//agregar mensaje en lista New
 
-	while(socketEscucha != -1){
-		printf("Cola de mensajes New esuchando\n");
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Nueva conexion en cola de mensajes New\n");
-			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje;
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion==NEW_POKEMON){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					printf("Nuevo mensaje en cola New \n");
-					log_info(logger, "Nuevo mensaje en cola New \n");
-
-					t_New* new = NULL;
-					new = deserializar_paquete_new (&socket_cliente);
-					printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
-							new->cant, new->posicion.X, new->posicion.Y);
-					//pedir identificacion del proceso (handshake)
-					//informar id mensaje
-					//asignar id mensaje al mensaje recibido
-					//agregar mensaje en lista New
-
-					//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-					// o se hace en otro hilo)
-				}else printf("El codigo de operacion no era New \n");
-			}else {
-				printf("Fallo al recibir codigo de operacion en cola New = -1\n");
-				}
-			liberar_conexion(socket_cliente);
-			}else {
-				printf("Fallo al recibir/aceptar al cliente\n");
-			}
-	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de cola New = -1\n");
-	}
+	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
+	// o se hace en otro hilo)
 }
 
-void escucharColaAppeared(){
-	printf("Iniciando Cola de mensajes Appeared\n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-
-	while(socketEscucha != -1){
-		printf("Cola de mensajes Appeared esuchando\n");
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Nueva conexion en cola de mensajes Appeared\n");
-			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje;
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion==APPEARED_POKEMON){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					printf("Nuevo mensaje en cola Appeared \n");
-					log_info(logger, "Nuevo mensaje en cola Appeared \n");
-
-					t_Appeared* app = NULL;
-					app = deserializar_paquete_appeared(&socket_cliente);
-					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
-							app->posicion.X, app->posicion.Y, id_mensaje);
-
-					//pedir identificacion del proceso (handshake)
-					//informar id mensaje
-					//asignar id mensaje al mensaje recibido
-					//agregar mensaje en lista Appeared
-
-					//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-					// o se hace en otro hilo)
-
-				}else printf("El codigo de operacion no era Appeared \n");
-			}else {
-				printf("Fallo al recibir codigo de operacion en cola Appeared = -1\n");
-				}
-			liberar_conexion(socket_cliente);
-		}else {
-			printf("Fallo al recibir/aceptar al cliente\n");
-		}
-	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de cola Appeared = -1\n");
-	}
+void manejoMensajeAppeared(int32_t socket_cliente){
+	t_Appeared* app = NULL;
+	app = deserializar_paquete_appeared(&socket_cliente);
+	printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
+			app->posicion.X, app->posicion.Y);
+	//pedir identificacion del proceso (handshake)
+	//informar id mensaje
+	//asignar id mensaje al mensaje recibido
+	//agregar mensaje en lista Appeared
+	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
+	// o se hace en otro hilo)
 }
 
-void escucharColaGet(){
-	printf("Iniciando Cola de mensajes Get\n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+void manejoMensajeGet(int32_t socket_cliente){
+	t_Get* get = NULL;
+	get = deserializar_paquete_get(&socket_cliente);
+	printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);
+	//pedir identificacion del proceso (handshake)
+	//informar id mensaje
+	//asignar id mensaje al mensaje recibido
+	//agregar mensaje en lista Get
 
-	while(socketEscucha != -1){
-		printf("Cola de mensajes Get esuchando\n");
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Nueva conexion en cola de mensajes Get\n");
-			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje;
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion==GET_POKEMON){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					printf("Nuevo mensaje en cola Get \n");
-					log_info(logger, "Nuevo mensaje en cola Get \n");
-
-					t_Get* get = NULL;
-					get = deserializar_paquete_get(&socket_cliente);
-					printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);
-					//pedir identificacion del proceso (handshake)
-					//informar id mensaje
-					//asignar id mensaje al mensaje recibido
-					//agregar mensaje en lista Get
-
-					//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-					// o se hace en otro hilo)
-
-				}else printf("El codigo de operacion no era Get \n");
-			}else {
-				printf("Fallo al recibir codigo de operacion en cola Get = -1\n");
-				}
-			liberar_conexion(socket_cliente);
-		}else {
-			printf("Fallo al recibir/aceptar al cliente\n");
-		}
-	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de cola Get = -1\n");
-	}
+	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
+	// o se hace en otro hilo)
 }
 
-void escucharColaLocalized(){
-	printf("Iniciando Cola de mensajes Localized\n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-
-	while(socketEscucha != -1){
-		printf("Cola de mensajes Localized esuchando\n");
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Nueva conexion en cola de mensajes Localized\n");
-			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje;
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion==LOCALIZED_POKEMON){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					printf("Nuevo mensaje en cola Localized \n");
-					log_info(logger, "Nuevo mensaje en cola Localized \n");
-
-					t_Localized* localized = NULL;
-					localized = deserializar_paquete_localized(&socket_cliente);
-					printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
-							localized->pokemon.nombre);
-					int i;
-					for(i=0; i<localized->listaPosiciones->elements_count; i++){
-						t_posicion * posicion = list_get(localized->listaPosiciones, i);
-						printf("%d  %d \n", posicion->X, posicion->Y);
-					}
-					//pedir identificacion del proceso (handshake)
-					//informar id mensaje
-					//asignar id mensaje al mensaje recibido
-					//agregar mensaje en lista Localized
-
-					//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-					// o se hace en otro hilo)
-
-				}else printf("El codigo de operacion no era Localized \n");
-			}else {
-				printf("Fallo al recibir codigo de operacion en cola Localized = -1\n");
-				}
-			liberar_conexion(socket_cliente);
-		}else {
-			printf("Fallo al recibir/aceptar al cliente\n");
-		}
+void manejoMensajeLocalized(int32_t socket_cliente){
+	t_Localized* localized = NULL;
+	localized = deserializar_paquete_localized(&socket_cliente);
+	printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
+			localized->pokemon.nombre);
+	int i;
+	for(i=0; i<localized->listaPosiciones->elements_count; i++){
+		t_posicion * posicion = list_get(localized->listaPosiciones, i);
+		printf("%d  %d \n", posicion->X, posicion->Y);
 	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de cola Localized = -1\n");
-	}
+	//pedir identificacion del proceso (handshake)
+	//informar id mensaje
+	//asignar id mensaje al mensaje recibido
+	//agregar mensaje en lista Localized
+
+	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
+	// o se hace en otro hilo)
 }
 
-void escucharColaCatch(){
-	printf("Iniciando Cola de mensajes Catch\n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+void manejoMensajeCatch(int32_t socket_cliente){
+	t_Catch* catch = NULL;
+	catch = deserializar_paquete_catch(&socket_cliente);
+	printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
+			catch->posicion.X, catch->posicion.Y);
+	//pedir identificacion del proceso (handshake)
+	//informar id mensaje
+	//asignar id mensaje al mensaje recibido
+	//agregar mensaje en lista Catch
 
-	while(socketEscucha != -1){
-		printf("Cola de mensajes Catch esuchando\n");
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Nueva conexion en cola de mensajes Catch\n");
-			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje;
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion==CATCH_POKEMON){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					printf("Nuevo mensaje en cola Catch \n");
-					log_info(logger, "Nuevo mensaje en cola Catch \n");
-
-					t_Catch* catch = NULL;
-					catch = deserializar_paquete_catch(&socket_cliente);
-					printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
-							catch->posicion.X, catch->posicion.Y);
-					//pedir identificacion del proceso (handshake)
-					//informar id mensaje
-					//asignar id mensaje al mensaje recibido
-					//agregar mensaje en lista Catch
-
-					//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-					// o se hace en otro hilo)
-
-				}else printf("El codigo de operacion no era Catch \n");
-			}else {
-				printf("Fallo al recibir codigo de operacion en cola Catch = -1\n");
-				}
-			liberar_conexion(socket_cliente);
-		}else {
-			printf("Fallo al recibir/aceptar al cliente\n");
-		}
-	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de cola Catch = -1\n");
-	}
+	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
+	// o se hace en otro hilo)
 }
 
-void escucharColaCaught(){
-	printf("Iniciando Cola de mensajes Caught\n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+void manejoMensajeCaught(int32_t socket_cliente){
+	t_Caught* caught = NULL;
+	caught = deserializar_paquete_caught(&socket_cliente);
+	printf("Llego un mensaje Caught Pokemon con los siguientes datos:  %d\n", caught->fueAtrapado);
+	//pedir identificacion del proceso (handshake)
+	//informar id mensaje
+	//asignar id mensaje al mensaje recibido
+	//agregar mensaje en lista Caught
 
-	while(socketEscucha != -1){
-		printf("Cola de mensajes Caught esuchando\n");
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Nueva conexion en cola de mensajes Caught\n");
-			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje;
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion==CAUGHT_POKEMON){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					printf("Nuevo mensaje en cola Caught \n");
-					log_info(logger, "Nuevo mensaje en cola Caught \n");
-
-					t_Caught* caught = NULL;
-					caught = deserializar_paquete_caught(&socket_cliente);
-					printf("Llego un mensaje Caught Pokemon con los siguientes datos: %d  %d\n",id_mensaje, caught->fueAtrapado);
-					//pedir identificacion del proceso (handshake)
-					//informar id mensaje
-					//asignar id mensaje al mensaje recibido
-					//agregar mensaje en lista Caught
-
-					//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-					// o se hace en otro hilo)
-
-				}else printf("El codigo de operacion no era Caught \n");
-			}else {
-				printf("Fallo al recibir codigo de operacion en cola Caught = -1\n");
-				}
-			liberar_conexion(socket_cliente);
-		}else {
-			printf("Fallo al recibir/aceptar al cliente\n");
-		}
-	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de cola Caught = -1\n");
-	}
-}
-
-void escucharSuscripciones(){
-	printf("Iniciando socket de suscripciones \n");
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	printf("Escuchando suscripciones\n");
-
-	while(socketEscucha != -1){
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			printf("Se conecto un cliente\n");
-
-			int32_t operacion;
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion== SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED){
-
-					//pedir identificacion del proceso (handshake)
-					informarId(socket_cliente); // falta incorporar semaforo
-					//agregar en lista de colas a la que se suscribio: suscribirProceso(op_code operacion, int32_t * PID)
-					//informar socket de la lista a la que se suscribio para que envie los mensajes alli
-
-				}else printf("El codigo de operacion no era una suscripcion \n");
-			}else printf("Fallo al recibir codigo de operacion en escucharSuscripcion = -1\n");
-			liberar_conexion(socket_cliente);
-		}else printf("Fallo al recibir/aceptar al cliente\n");
-	}
-	if(socketEscucha == -1){
-		printf("Fallo al crear socket de escucha de suscripciones = -1\n");
-		//return EXIT_FAILURE;
-	}
+	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
+	// o se hace en otro hilo)
 }
 
 void informarId(int32_t socket_cliente){

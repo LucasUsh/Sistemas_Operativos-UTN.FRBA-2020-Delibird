@@ -49,13 +49,13 @@ int getMemoriaOcupada();
 int getMemoriaDisponible();
 
 void iniciarColas();
-void escucharColaNew();
-void escucharColaAppeared();
-void escucharColaGet();
-void escucharColaLocalized();
-void escucharColaCatch();
-void escucharColaCaught();
-void escucharSuscripciones();
+void manejoMensajeSuscripcion(int32_t socket_cliente);
+void manejoMensajeNew(int32_t socket_cliente);
+void manejoMensajeAppeared(int32_t socket_cliente);
+void manejoMensajeGet(int32_t socket_cliente);
+void manejoMensajeLocalized(int32_t socket_cliente);
+void manejoMensajeCatch(int32_t socket_cliente);
+void manejoMensajeCaught(int32_t socket_cliente);
 void informarId(int32_t socket_cliente);
 void inicializarListas();
 

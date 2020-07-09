@@ -73,6 +73,8 @@ void* serializar_paquete_catch (t_paquete* paquete, int32_t* bytes, t_Catch* cat
 t_Catch* deserializar_paquete_catch (int32_t* socket_cliente);
 void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get);
 t_Get* deserializar_paquete_get (int32_t* socket_cliente);
+void * serializar_id(t_paquete* paquete, int32_t* bytes);
+double * deserializar_id(int32_t* socket_cliente);
 
 
 #endif /* SOCKETS_H_ */
