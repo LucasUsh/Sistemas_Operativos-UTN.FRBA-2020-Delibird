@@ -191,7 +191,6 @@ void* serializar_paquete_appeared (t_paquete* paquete, int32_t* bytes, t_Appeare
 	memcpy(stream + desplazamiento, &(app->posicion.X), sizeof(app->posicion.X));
 	desplazamiento+= sizeof(app->posicion.X);
 	memcpy(stream + desplazamiento, &(app->posicion.Y), sizeof(app->posicion.Y));
-	desplazamiento+= sizeof(app->posicion.Y);
 
 	return stream;
 }
@@ -234,7 +233,6 @@ void* serializar_paquete_catch (t_paquete* paquete, int32_t* bytes, t_Catch* cat
 	memcpy(stream + desplazamiento, &(catch->posicion.X), sizeof(catch->posicion.X));
 	desplazamiento+= sizeof(catch->posicion.X);
 	memcpy(stream + desplazamiento, &(catch->posicion.Y), sizeof(catch->posicion.Y));
-	desplazamiento+= sizeof(catch->posicion.Y);
 
 	return stream;
 }
@@ -272,7 +270,6 @@ void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get){
 	memcpy(stream + desplazamiento, &(get->pokemon.size_Nombre), sizeof(get->pokemon.size_Nombre));
 	desplazamiento+= sizeof(get->pokemon.size_Nombre);
 	memcpy(stream + desplazamiento, get->pokemon.nombre, get->pokemon.size_Nombre);
-	desplazamiento+= get->pokemon.size_Nombre;
 
 	return stream;
 }
@@ -304,7 +301,6 @@ void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* c
 	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
 	memcpy(stream + desplazamiento, &(caught->fueAtrapado), sizeof(caught->fueAtrapado));
-	desplazamiento+= sizeof(caught->fueAtrapado);
 
 	return stream;
 }
@@ -348,7 +344,7 @@ void* serializar_paquete_localized (t_paquete* paquete, int32_t* bytes, t_Locali
 		desplazamiento+= sizeof(posicion->X);
 		memcpy(stream + desplazamiento, &(posicion->Y), sizeof(posicion->Y));
 		desplazamiento+= sizeof(posicion->Y);
-		}
+	}
 
 	return stream;
 }
@@ -373,7 +369,7 @@ t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
 		recv(*socket_cliente, &(posicion.X), sizeof(posicion.X), MSG_WAITALL);
 		recv(*socket_cliente, &(posicion.Y), sizeof(posicion.Y), MSG_WAITALL);
 		list_add(localized->listaPosiciones, &posicion);
-		}
+	}
 
 	return localized;
 }
@@ -392,7 +388,6 @@ void * serializar_id(t_paquete* paquete, int32_t* bytes){
 	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
 	memcpy(stream + desplazamiento, &(paquete->buffer->stream), sizeof(paquete->buffer->stream));
-	desplazamiento+= sizeof(paquete->buffer->stream);
 
 	return stream;
 }
@@ -400,7 +395,7 @@ void * serializar_id(t_paquete* paquete, int32_t* bytes){
 double * deserializar_id(int32_t* socket_cliente){
 	double* id = malloc (sizeof(double));
 
-	recv (*socket_cliente, &(id), sizeof(id), MSG_WAITALL);
+	recv (*socket_cliente, id, sizeof(double), MSG_WAITALL);
 
 	return id;
 }
