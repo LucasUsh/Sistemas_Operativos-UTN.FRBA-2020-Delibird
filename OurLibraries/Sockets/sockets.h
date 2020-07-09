@@ -54,17 +54,11 @@ typedef struct
 } t_paquete;
 
 int32_t crear_conexion(char* ip, char* puerto);
-void enviar_mensaje(char* mensaje, int32_t socket_cliente);
-void enviar_mensaje_con_opCode(op_code codOperacion, int32_t idMensaje, void* mensaje, int32_t socket_cliente);
-char* recibir_mensaje(int32_t socket_cliente);
 void liberar_conexion(int32_t socket_cliente);
-
 
 int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor);
 int32_t recibir_cliente(int32_t);
 
-
-void* serializar_paquete(t_paquete* paquete, int32_t *bytes);
 void* serializar_paquete_new (t_paquete*, int32_t*, t_New*);
 t_New* deserializar_paquete_new (int32_t* socket_cliente);
 void* serializar_paquete_appeared (t_paquete* paquete, int32_t* bytes, t_Appeared* appeared);
@@ -73,6 +67,8 @@ void* serializar_paquete_catch (t_paquete* paquete, int32_t* bytes, t_Catch* cat
 t_Catch* deserializar_paquete_catch (int32_t* socket_cliente);
 void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get);
 t_Get* deserializar_paquete_get (int32_t* socket_cliente);
+void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* caught);
+t_Caught* deserializar_paquete_caught (int32_t* socket_cliente);
 void * serializar_id(t_paquete* paquete, int32_t* bytes);
 double * deserializar_id(int32_t* socket_cliente);
 
