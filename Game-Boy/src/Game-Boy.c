@@ -2,20 +2,7 @@
 
 t_log* logger;
 t_config* config;
-/*
- * Ojo que los mensajes estos son los mismos pero con distinta cantidad de argumentos.
 
-./gameboy BROKER CATCH_POKEMON [POKEMON] [POSX] [POSY]
-./gameboy GAMECARD CATCH_POKEMON [POKEMON] [POSX] [POSY] [ID_MENSAJE]
-
-./gameboy BROKER CAUGHT_POKEMON [ID_MENSAJE_CORRELATIVO] [OK/FAIL]
-
-./gameboy BROKER GET_POKEMON [POKEMON]
-./gameboy GAMECARD GET_POKEMON [POKEMON] [ID_MENSAJE]
-
- * Lo que se puede hacer es meterle un "0" a los que piden el ID_MENSAJE
- * (ver enviar_new_pokemon del broker como ejemplo)
- */
 int32_t main(int32_t argc, char *argv[])
 {
 	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.log", "Game-Boy", 1, LOG_LEVEL_INFO);
@@ -92,6 +79,15 @@ int32_t main(int32_t argc, char *argv[])
 		if(string_contains(argv[2], "APPEARED_POKEMON")){
 			enviar_appeared_pokemon(argv[3], argv[4], argv[5], "0", socket);
 		}
+	}
+	else if(string_contains(argv[1], "SUSCRIPTOR")){
+		socket = conexionBroker();
+		if(socket == 0){
+			log_info(logger,"Error al conectar al Broker");
+			finalizar(logger, config, socket);
+			return 0;
+		}
+		//Obtener los mensajes de una cola
 	}
 
 	finalizar(logger, config, socket);
