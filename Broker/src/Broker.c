@@ -42,10 +42,11 @@ int32_t main(void) {
 
 	printf("Iniciando Broker \n");
 	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	printf("Escuchando conexiones\n");
+	printf("Creado el socket de escucha\n");
 
 	while(socketEscucha != -1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
+		printf("Esperando conexiones\n");
 
 		if(socket_cliente != -1){
 			printf("Se conecto un cliente\n");
@@ -58,57 +59,66 @@ int32_t main(void) {
 				switch(operacion){
 
 				case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED:
-				if (pthread_create(&hilo, NULL, (void*)manejoMensajeSuscripcion, socket_cliente) == 0){
+				/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeSuscripcion, socket_cliente) == 0){
 					printf("Creado el hilo que maneja la suscripcion");
-				}else printf("Fallo al crear el hilo que maneja la suscripcion");
+				}else printf("Fallo al crear el hilo que maneja la suscripcion");*/
+				//manejoMensajeSuscripcion(socket_cliente);
 				break;
 				case NEW_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola New \n");
-					if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje New");
-					}else printf("Fallo al crear el hilo que maneja el mensaje New");
+					}else printf("Fallo al crear el hilo que maneja el mensaje New");*/
+					manejoMensajeNew(socket_cliente);
 					break;
 				case APPEARED_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Appeared \n");
-					if (pthread_create(&hilo, NULL, (void*)manejoMensajeAppeared, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeAppeared, socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Appeared");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Appeared");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Appeared");*/
+					manejoMensajeAppeared(socket_cliente);
+					printf("El id mensaje era: %d \n", id_mensaje);
 					break;
 				case GET_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Get \n");
-					if (pthread_create(&hilo, NULL, (void*)manejoMensajeGet, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeGet, socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Get");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Get");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Get");*/
+					manejoMensajeGet(socket_cliente);
 					break;
 				case LOCALIZED_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Localized \n");
-					if (pthread_create(&hilo, NULL, (void*)manejoMensajeLocalized, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeLocalized, socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Localized");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Localized");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Localized");*/
+					manejoMensajeLocalized(socket_cliente);
 					break;
 				case CATCH_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Catch \n");
-					if (pthread_create(&hilo, NULL, (void*)manejoMensajeCatch, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeCatch, socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Catch");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Catch");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Catch");*/
+					manejoMensajeCatch(socket_cliente);
 					break;
 				case CAUGHT_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Caught \n");
-					if (pthread_create(&hilo, NULL, (void*)manejoMensajeCaught, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeCaught, socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Caught");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Caught");
+					}else printf("Fallo al crear el hilo que maneja el mensaje Caught");*/
+					manejoMensajeCaught(socket_cliente);
+					printf("El id mensaje era: %d \n", id_mensaje);
 					break;
 				}
 			}else printf("Fallo al recibir codigo de operacion = -1\n");
