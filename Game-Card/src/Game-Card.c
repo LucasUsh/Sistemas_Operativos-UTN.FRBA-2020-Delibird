@@ -3,7 +3,7 @@
 int32_t main(void)
 {
 	instalar_filesystem ();
-
+/*
 	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
@@ -13,29 +13,43 @@ int32_t main(void)
 	// Una vez suscripto tendríamos entonces 3 sockets modo cliente,
 	// cuando llega un mensaje informar al Broker la recepción del mismo (ACK) y hacer lo que corresponda
 
-/*
-	pthread_t h1;
-	int32_t socket;
-	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
 
-    pthread_create(&h1, NULL, (void*) &conexionBroker, &socket);
+	//pthread_t h1;
+	//int32_t socket;
+	//logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
 
+    //pthread_create(&h1, NULL, (void*) &conexionBroker, &socket);
 
-    pthread_join(h1,NULL);
-    liberar_conexion(socket);
-    config_destroy(config_GC);
-    log_destroy(logger_GC);
- */
+    //pthread_join(h1,NULL);
+    //liberar_conexion(socket);
+    //config_destroy(config_GC);
+    //log_destroy(logger_GC);
+
 	pthread_join(hilo_servidor_GC, NULL);
+*/
     return 0;
 }
 
 void instalar_filesystem (){
 	t_config* config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	char* punto_de_montaje = config_get_string_value(config_GC,"PUNTO_MONTAJE_TALLGRASS");
+
+	//Creación de carpetas:
+
+	if (mkdir (punto_de_montaje, S_IRWXU) != 0) salir("Error al crear la carpeta TallGrass");
+
+	char carpeta_Metadata[strlen (punto_de_montaje) + strlen ("/Metadata") + 1];
+	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
+	char carpeta_Files[strlen (punto_de_montaje) + strlen ("/Files") + 1];
+	strcat(strcpy(carpeta_Files, punto_de_montaje), "/Files");
+	char carpeta_Blocks[strlen (punto_de_montaje) + strlen ("/Blocks") + 1];
+	strcat(strcpy(carpeta_Blocks, punto_de_montaje), "/Blocks");
+
+	if (mkdir (carpeta_Metadata, S_IRWXU) != 0) salir("Error al crear la carpeta Metadata");
+	if (mkdir (carpeta_Files, S_IRWXU) != 0) salir("Error al crear la carpeta Files");
+	if (mkdir (carpeta_Blocks, S_IRWXU) != 0) salir("Error al crear la carpeta Blocks");
+
 	config_destroy(config_GC);
-
-
 }
 
 void crear_servidor_GC() {
@@ -121,6 +135,11 @@ void conexionBroker(int32_t *socket)
 	log_info(logger_GC,"Conectado al Broker");
 }
 
+
+void salir (const char* mensaje) {
+	perror (mensaje);
+	exit (EXIT_FAILURE);
+}
 
 /*
 log_debug (debug, "***Estructura t_New recibida*** \n");
