@@ -19,29 +19,28 @@
 
 typedef struct {
 	op_code codigo_operacion; //de la cola a la que pertenece el mensaje
-	int id_Mensaje;
-	int posicion_inicial;
-	int posicion_final;
-	int size;
+	int32_t posicion_inicial;
+	int32_t posicion_final;
+	int32_t size;
 	bool ocupada;
 	double id; //valor que asigna Broker a partir de una variable global
-	int ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
+	int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
 } t_particion;
 
 typedef enum {
 	BS    = 1,
 	PARTICIONES = 2
-} particion_code;
+} algoritmoMemoria;
 
 typedef enum {
 	FIFO    = 1,
 	LRU = 2
-} reemplazo_code;
+} algoritmoReemplazo;
 
 typedef enum {
 	FF    = 1,
 	BF = 2
-} seleccion_particion_code;
+} algoritmoParticionLibre;
 
 t_list* tabla_particiones;
 
@@ -51,14 +50,20 @@ bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
 t_particion* getParticionFirstFit(int32_t sizeMensaje);
 t_particion* getParticionBestFit(int32_t sizeMensaje);
 void dividirParticionDinamica(int indiceParticion, t_particion* particionOriginal, int32_t sizeMsg);
+
 bool particionCandidataVictima(t_particion* particion);
-t_particion * seleccionarVictimaFIFO();
-t_particion * seleccionarVictimaLRU();
+void liberar(char algoritmoReemplazo);
+void algoritmoFIFO();
+void algoritmoLRU();
 int obtenerPosicion(t_particion * particion);
 t_particion * consolidarParticion(t_particion * particion);
-int tamanioMinimo(int tamanioSolicitadoEnBytes);
-void inicializarMemoriaBS(t_config* config);
+void decidirCompactacion(int32_t frecuenciaCompactacion);
+int32_t tamanioMinimo(int32_t sizeMsg);
 void generarParticionBS(t_particion* particionInicial);
+
+void algoritmoBuddySystem(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo);
+void algoritmoParticionDinamica(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre);
+void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo);
 
 
 

@@ -22,13 +22,14 @@ int32_t main(void) {
 
 	logger = iniciar_logger();
 	config = leer_config();
-	tabla_particiones = list_create();
+
 
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
 
 	int inicioMemoria = (int)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
 	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false, 0);
+	tabla_particiones = list_create();
 	list_add(tabla_particiones, particionInicial);
 
 	//pruebaEncontrarBuddyTrasDosParticiones();
@@ -46,7 +47,6 @@ int32_t main(void) {
 
 	while(socketEscucha != -1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-		printf("Esperando conexiones\n");
 
 		if(socket_cliente != -1){
 			printf("Se conecto un cliente\n");
@@ -68,16 +68,16 @@ int32_t main(void) {
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola New \n");
-					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, &socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje New");
 					}else printf("Fallo al crear el hilo que maneja el mensaje New");*/
-					manejoMensajeNew(socket_cliente);
+					recibirMensajeNew(socket_cliente);
 					break;
 				case APPEARED_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Appeared \n");
-					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeAppeared, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeAppeared, (void*)socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Appeared");
 					}else printf("Fallo al crear el hilo que maneja el mensaje Appeared");*/
 					manejoMensajeAppeared(socket_cliente);
@@ -87,7 +87,7 @@ int32_t main(void) {
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Get \n");
-					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeGet, socket_cliente) == 0){
+					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeGet, (void*)socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje Get");
 					}else printf("Fallo al crear el hilo que maneja el mensaje Get");*/
 					manejoMensajeGet(socket_cliente);
@@ -187,7 +187,7 @@ void manejoMensajeSuscripcion(int32_t socket_cliente){
 	//agregar en lista de colas a la que se suscribio: suscribirProceso(op_code operacion, int32_t * PID)
 }
 
-void manejoMensajeNew(int32_t socket_cliente){
+void recibirMensajeNew(int32_t socket_cliente){
 	t_New* new = NULL;
 	new = deserializar_paquete_new (&socket_cliente);
 	printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
@@ -195,11 +195,15 @@ void manejoMensajeNew(int32_t socket_cliente){
 	//pedir identificacion del proceso (handshake)
 	//informar id mensaje
 	//asignar id mensaje al mensaje recibido
-	//agregar mensaje en lista New
+}
+
+void manejoMensaje(info_mensaje* mensaje){
+	//agregar mensaje en lista de mensaje
 
 	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
 	// o se hace en otro hilo)
 }
+
 
 void manejoMensajeAppeared(int32_t socket_cliente){
 	t_Appeared* app = NULL;

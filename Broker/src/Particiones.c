@@ -18,7 +18,7 @@ t_particion* crearParticion(int inicio, int size, bool ocupada, int ramaBuddy){
 	newParticion->id = get_id();
 	newParticion->ramaBuddy = ramaBuddy;
 	newParticion->codigo_operacion = NEW_POKEMON;
-	newParticion->id_Mensaje = 0;
+	//newParticion->id_Mensaje = 0;
 
 	return newParticion;
 }
@@ -43,6 +43,14 @@ t_particion generarParticionDinamicamente(int32_t sizeMensaje, int32_t sizeMinPa
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
 	return !particion->ocupada && sizeMensaje <= particion->size;
+}
+
+bool hayParticionesCandidatas(int32_t sizeMsg){
+	bool _particionCandidata(void* element){
+		return particionCandidata((t_particion*)element, sizeMsg);
+	}
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
+	return particionesCandidatas->elements_count != 0;
 }
 
 t_particion* getParticionFirstFit(int32_t sizeMensaje){
@@ -131,32 +139,23 @@ bool particionCandidataVictima(t_particion* particion){
 	return particion->ocupada;
 }
 
-t_particion * seleccionarVictimaFIFO(){
-	int i;
-	t_particion* particionAEliminar = malloc(sizeof(t_particion));
-
-	bool _particionCandidataVictima(void* element){
-			return particionCandidataVictima((t_particion*)element);
-		}
-
-	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataVictima);
-
-	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
-
-	for(i = 1; i < particionesCandidatas->elements_count; i++){
-		t_particion* particionActual = list_get(particionesCandidatas, i);
-
-		if(particionAEliminar->id > particionActual->id){
-			particionAEliminar = particionActual;
-		}
+void liberar(char algoritmoReemplazo){
+	switch(algoritmoReemplazo){
+	case FIFO: //(strcmp(algoritmoReemplazo, "FIFO") == 0):
+		algoritmoFIFO();
+		break;
+	case LRU: //(strcmp(algoritmoReemplazo, "LRU") == 0):
+		algoritmoLRU();
+		break;
+	default:
+		printf("Ese algoritmo no esta implementado\n");
+		return;
 	}
-
-	return particionAEliminar;
 }
 
-t_particion * seleccionarVictimaLRU(){
+void algoritmoFIFO(){ //debemos tomar la de id mas chico
 	int i;
-	t_particion* particionAEliminar = malloc(sizeof(t_particion));
+	t_particion* particionAEliminar;// = malloc(sizeof(t_particion));
 
 	bool _particionCandidataVictima(void* element){
 		return particionCandidataVictima((t_particion*)element);
@@ -165,16 +164,47 @@ t_particion * seleccionarVictimaLRU(){
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataVictima);
 
 	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
-
-	for(i = 1; i < particionesCandidatas->elements_count; i++){
+	for(i = 1; i < particionesCandidatas->elements_count; i++){ //comparo con la que sigue
 		t_particion* particionActual = list_get(particionesCandidatas, i);
+		if(particionAEliminar->id > particionActual->id){
+			particionAEliminar = particionActual;
+		}
+	}
+	particionAEliminar->ocupada = false;
+	particionAEliminar->codigo_operacion =0;
+	particionAEliminar->id=0;
+	int posicion = obtenerPosicion(particionAEliminar);
+	list_remove(tabla_particiones, posicion);
+	list_add_in_index(tabla_particiones,posicion, particionAEliminar);
+	free(particionAEliminar);
+	//consolidar
+}
 
+void algoritmoLRU(){ //debemos tomar la de id mas grande
+	int i;
+	t_particion* particionAEliminar;// = malloc(sizeof(t_particion));
+
+	bool _particionCandidataVictima(void* element){
+		return particionCandidataVictima((t_particion*)element);
+	}
+
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataVictima);
+
+	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
+	for(i = 1; i < particionesCandidatas->elements_count; i++){ //comparo con la que sigue
+		t_particion* particionActual = list_get(particionesCandidatas, i);
 		if(particionAEliminar->id < particionActual->id){
 			particionAEliminar = particionActual;
 		}
 	}
-
-	return particionAEliminar;
+	particionAEliminar->ocupada = false;
+	particionAEliminar->codigo_operacion =0;
+	particionAEliminar->id=0;
+	int posicion = obtenerPosicion(particionAEliminar);
+	list_remove(tabla_particiones, posicion);
+	list_add_in_index(tabla_particiones,posicion, particionAEliminar);
+	free(particionAEliminar);
+	//consolidar
 }
 
 int obtenerPosicion(t_particion * particion){
@@ -215,11 +245,19 @@ t_particion * consolidarParticion(t_particion * particion){
 	return particion;
 }
 
-int tamanioMinimo(int sizeMsg){
+int32_t algoritmoCompactacion(int32_t frecuenciaCompactacion){
+	if(frecuenciaCompactacion!=-1){
+		//compactar
+		frecuenciaCompactacion=frecuenciaCompactacion-1;
+		return frecuenciaCompactacion;
+	}else return frecuenciaCompactacion;
+}
+
+int32_t tamanioMinimo(int32_t sizeMsg){
 ///algoritmo para calcular la menor potencia de 2 en la que entra un mensaje; Buddy System
 
 	if(sizeMsg !=1){
-		int menorPotenciaDeDos=2;
+		int32_t menorPotenciaDeDos=2;
 		while(menorPotenciaDeDos < sizeMsg){
 			menorPotenciaDeDos = menorPotenciaDeDos*2;
 		}
@@ -245,34 +283,96 @@ void generarParticionBS(t_particion* particionInicial){
 }
 
 // En Buddy System una particion es candidata si su tamaño es el de la menor potencia de dos
-bool particionCandidataBS(t_particion* particion, int tamanioMinimo){
+bool particionCandidataBS(t_particion* particion, int32_t tamanioMinimo){
 	return !particion->ocupada && tamanioMinimo <= particion->size;
 }
 
-t_particion* getParticionBS(int tamanioMinimo){
+bool hayParticionesCandidatasBS(int32_t sizeMsg){
+	bool _particionCandidataBS(void* element){
+		return particionCandidataBS((t_particion*)element, sizeMsg);
+	}
+	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataBS);
+	return particionesCandidatas->elements_count != 0;
+}
 
+t_particion* getParticionBS(int32_t tamanioMinimo){
 	bool _particionCandidataBS(void* element){
 		return particionCandidata((t_particion*)element, tamanioMinimo);
 	}
-
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataBS);
-	if(particionesCandidatas->elements_count == 0){
-			printf("NO HABIA PARTICIONES CANDIDATAS \n ");
-			return EXIT_FAILURE;
-		}
 	return list_get(particionesCandidatas, 0);
 }
 
-void algoritmo_particion(char* algoritmo_particion, info_mensaje mensaje){
 
-	//manejar el size a partir de aca?
+int algoritmoParticion(char algoritmoMemoria, info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre){
+	int i;
+	for(i=0; i<tabla_particiones->elements_count; i++){
+		switch(algoritmoMemoria){
+		case BS:
+			algoritmoBuddySystem(mensaje, frecuenciaCompactacion, algoritmoReemplazo);
+			break;
+		case PARTICIONES:
+			algoritmoParticionDinamica(mensaje, frecuenciaCompactacion, algoritmoReemplazo, algoritmoParticionLibre);
+			break;
+			}
+		}
+	return 0;
+}
 
-	if(string_equals_ignore_case(algoritmo_particion, "BS")){
-
-	} else if (string_equals_ignore_case(algoritmo_particion, "PARTICIONES")){
-
+void algoritmoBuddySystem(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo){
+	int32_t tamanio= tamanioMinimo(mensaje.sizeMsg);
+	if(hayParticionesCandidatasBS(tamanio) == true){ //hay una particion libre del tamanio exacto que necesito?
+		t_particion * particion = getParticionBS(tamanio);
+		//guardo el mensaje
+	}else {if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
+		while(hayParticionesCandidatasBS(tamanio) != true){
+			t_particion * particion = getParticionFirstFit(tamanio);
+			generarParticionBS(particion);
+			}
+		//guardo el mensaje
+		}else algoritmoLiberacion(frecuenciaCompactacion, algoritmoReemplazo);
 	}
+}
 
+void algoritmoParticionDinamica(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre){
+	int32_t tamanio= mensaje.sizeMsg;
+	t_particion * particion;
+	if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
+		switch(algoritmoParticionLibre){
+		case FF:
+			particion = getParticionFirstFit(tamanio);
+			//genero particion
+			//guardo el mensaje
+			break;
+		case BF:
+			particion = getParticionBestFit(tamanio);
+			//genero particion
+			//guardo el mensaje
+			break;
+		default:
+			printf("Ese algoritmo no esta implementado\n");
+			return;
+		}
+		}else algoritmoLiberacion(frecuenciaCompactacion, algoritmoReemplazo);
+}
+
+void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo){
+	int liberadas;
+	switch(frecuenciaCompactacion){
+	case -1:
+		liberar(algoritmoReemplazo);
+		break;
+	case 0 || 1:
+		liberar(algoritmoReemplazo);
+		//compactar
+		break;
+	default:
+		for(liberadas=0; liberadas<frecuenciaCompactacion;liberadas++){
+			liberar(algoritmoReemplazo);
+			}
+		//compactar
+		return;
+		}
 }
 
 

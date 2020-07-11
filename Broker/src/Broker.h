@@ -23,8 +23,9 @@
 typedef struct {
 	op_code op_code;
 	int32_t id_mensaje;
-	void * mensaje;
 	int32_t process_id; // ID del proceso que mando el mensaje
+	void * mensaje;
+	int32_t sizeMsg;
 	t_list * suscriptoresALosQueSeEnvio;
 	t_list * suscriptoresQueRecibieron; // estos serian los que devolvieron el ACK
 } info_mensaje;
@@ -50,7 +51,8 @@ int getMemoriaDisponible();
 
 void iniciarColas();
 void manejoMensajeSuscripcion(int32_t socket_cliente);
-void manejoMensajeNew(int32_t socket_cliente);
+void recibirMensajeNew(int32_t socket_cliente);
+void manejoMensajeNew(int32_t * socket_cliente);
 void manejoMensajeAppeared(int32_t socket_cliente);
 void manejoMensajeGet(int32_t socket_cliente);
 void manejoMensajeLocalized(int32_t socket_cliente);
