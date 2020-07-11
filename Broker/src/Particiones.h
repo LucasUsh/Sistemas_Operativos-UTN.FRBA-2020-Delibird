@@ -45,25 +45,29 @@ typedef enum {
 t_list* tabla_particiones;
 
 t_particion* crearParticion(int inicio, int fin, bool ocupada, int ramaBuddy);
-t_particion generarParticionDinamicamente(int32_t sizeMensaje, int32_t sizeMinParticion);
+
+void administrarMensaje(char algoritmoMemoria, info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre);
+
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
 t_particion* getParticionFirstFit(int32_t sizeMensaje);
 t_particion* getParticionBestFit(int32_t sizeMensaje);
-void dividirParticionDinamica(int indiceParticion, t_particion* particionOriginal, int32_t sizeMsg);
 
+void generarParticionDinamica(t_particion* particionOriginal, int32_t sizeMsg);
 bool particionCandidataVictima(t_particion* particion);
 void liberar(char algoritmoReemplazo);
-void algoritmoFIFO();
-void algoritmoLRU();
+t_particion * algoritmoFIFO();
+t_particion * algoritmoLRU();
+
 int obtenerPosicion(t_particion * particion);
-t_particion * consolidarParticion(t_particion * particion);
-void decidirCompactacion(int32_t frecuenciaCompactacion);
+t_particion * consolidarParticion(t_particion * particion, int posicion);
+t_particion * consolidarParticionBS(t_particion * particion, int posicion);
+
 int32_t tamanioMinimo(int32_t sizeMsg);
 void generarParticionBS(t_particion* particionInicial);
-
-void algoritmoBuddySystem(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo);
+void algoritmoBuddySystem(info_mensaje mensaje, char algoritmoReemplazo);
 void algoritmoParticionDinamica(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre);
 void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo);
+void algoritmoLiberacionBS(char algoritmoReemplazo);
 
 
 
