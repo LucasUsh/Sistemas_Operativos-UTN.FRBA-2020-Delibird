@@ -16,8 +16,8 @@ int32_t cantidadEntrenadores = 0;
 t_list* cola_ready;
 t_list* mensajes_localized_a_planificar;
 t_list* objetivo_global;
-
-
+t_algoritmo algoritmo;
+sem_t s_cola_ready_con_items;
 
 
 t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
@@ -28,6 +28,10 @@ t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
 	posicion.Y = nuevaPosicionY;
 
 	return posicion;
+}
+
+void actualizar_estado(t_entrenador* entrenador, estado_code estado){
+
 }
 
 void planificar_fifo(){
@@ -64,7 +68,7 @@ void simular_fifo(t_list* entrenadores)
 	posPok.X = 3;
 	posPok.Y = 5;
 
-	t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, posPok);
+	t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, posPok);
 
 	entrenador_mas_cercano->estado = READY;
 	entrenador_mas_cercano->posicion_destino = posPok;
@@ -80,7 +84,7 @@ void simular_fifo(t_list* entrenadores)
 
 }
 
-void planificar_rr(){
+void planificar_rr(t_list* entrenadores){
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
 	printf("planificando RR...\n");
 	while(cola_ready->elements_count > 0){
@@ -96,6 +100,13 @@ void planificar_rr(){
 
 	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
+
+
+	t_entrenador* entrenador_actual = list_get(entrenadores, entrenador->id);
+	entrenador->estado = BLOCKED;
+
+
+
 	//una vez que lo muevo llamo al broker y hago el catch
 	}
 
@@ -110,15 +121,15 @@ void planificar_sjfcd(){
 	return;
 }
 
-void planificar(t_algoritmo* algoritmo)
+void planificar(t_algoritmo algoritmo, t_list* entrenadores)
 {
 
-	switch(algoritmo->algoritmo_code){
+	switch(algoritmo.algoritmo_code){
 	case FIFO:
 		planificar_fifo();
 		break;
 	case RR:
-		planificar_rr();
+		planificar_rr(entrenadores);
 		break;
 	case SJFSD:
 		planificar_sjfsd();
@@ -132,8 +143,8 @@ void planificar(t_algoritmo* algoritmo)
 
 }
 
-void show_entrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* objetivo_global){
-	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo->algoritmo_string, algoritmo->quantum);
+void show_entrenadores(t_algoritmo algoritmo, t_list* entrenadores, t_list* objetivo_global){
+	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
 	    printf("********************\n");
 
 
@@ -163,6 +174,21 @@ void show_entrenadores(t_algoritmo* algoritmo, t_list* entrenadores, t_list* obj
 
 		printf("|OBJETIVO GLOBAL:\n");
 		list_iterate(objetivo_global, _mostrar_pokemon);
+
+/*
+		t_posicion* posicion;
+		posicion->X = 4;
+		posicion->Y = 4;
+*/
+		t_posicion posicion;
+			posicion.X = 4;
+			posicion.Y = 4;
+
+
+		t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, posicion);
+
+		printf("XXXXXXXXxx: %d", entrenador_mas_cercano->posicion.X);
+		printf("XXXXXXXXxx: %d", entrenador_mas_cercano->posicion.Y);
 
 		printf("********************\n");
 }
@@ -202,7 +228,7 @@ t_Localized* generar_localized(char* pokemon, int cant_posiciones){
 	return mensaje;
 }
 
-t_list* simular_localized(int cant_mensajes){
+t_list* simular_list_localized(int cant_mensajes){
 	/*
 	 * El objetivo de esta funcion es generar mensajes localized de forma aleatoria
 	 * */
@@ -214,7 +240,7 @@ t_list* simular_localized(int cant_mensajes){
 	for(int i = 0; i < cant_mensajes; i++){
 		//el nombre lo obtengo de forma aleatoria
 		char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
-
+		printf("%s\n", nombre_pokemon);
 		//con el nombre, genero tambien X cantidad de posiciones aleatorias
 		t_Localized* mensaje_localized = generar_localized(nombre_pokemon, 1);
 
@@ -222,6 +248,21 @@ t_list* simular_localized(int cant_mensajes){
 	}
 
 	return mensajes_localized;
+
+}
+
+t_Localized* simular_localized(int cantidad_posiciones){
+	/*
+	 * El objetivo de esta funcion es generar un mensaje localized de forma aleatoria
+	 * */
+
+	srand(time(NULL));
+
+	t_list* nombre_pokemones = get_nombres_pokemon();
+	char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
+	t_Localized* mensaje = generar_localized(nombre_pokemon, cantidad_posiciones);
+
+	return mensaje;
 
 }
 
@@ -258,7 +299,7 @@ t_list* filtrar_localized_repetidos(t_list* mensajes_localized){
 
 t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* objetivo_global){
 	t_list* mensajes_filtrados = list_create();
-	printf("%d\n", objetivo_global->elements_count);
+
 	for(int i = 0; i < mensajes_localized->elements_count; i++){
 		t_Localized* mensaje = list_get(mensajes_localized, i);
 
@@ -288,23 +329,145 @@ void show_cola_ready(){
 	}
 }
 
-void hilo_generador_mensajes_localized(){
+
+void simulacion_localized(t_list* entrenadores){
+		generar_y_enviar_get(objetivo_global);
+
+	    t_list* mensajes_localized_parseados = simular_list_localized(3);
+
+	    mensajes_localized_a_planificar = filtrar(mensajes_localized_parseados, objetivo_global);
+
+
+
+	    printf("***************************************** LLEGARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
+
+	   for(int j = 0; j < mensajes_localized_parseados->elements_count ; j++){
+		t_Localized* mensaje = list_get(mensajes_localized_parseados, j);
+		printf("pokemon: %s\n", mensaje->pokemon.nombre);
+		printf("cant de posiciones: %d\n", mensaje->listaPosiciones->elements_count);
+
+		for(int m=0; m < mensaje->listaPosiciones->elements_count; m++){
+			t_posicion* posicion = list_get(mensaje->listaPosiciones, m);
+			printf("Pos %d:\n", m);
+			printf("posX: %d\n", posicion->X);
+			printf("posY: %d\n", posicion->Y);
+		}
+
+		printf("*****************************************\n");
+
+	   }
+
+
+	   printf("***************************************** SE FILTRARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
+
+	   for(int j = 0; j < mensajes_localized_a_planificar->elements_count ; j++){
+		t_Localized* mensaje_filtrado = list_get(mensajes_localized_a_planificar, j);
+		printf("pokemon: %s\n", mensaje_filtrado->pokemon.nombre);
+		printf("cant de posiciones: %d\n", mensaje_filtrado->listaPosiciones->elements_count);
+
+		for(int m=0; m < mensaje_filtrado->listaPosiciones->elements_count; m++){
+			t_posicion* posicion = list_get(mensaje_filtrado->listaPosiciones, m);
+			printf("Pos %d:\n", m);
+			printf("posX: %d\n", posicion->X);
+			printf("posY: %d\n", posicion->Y);
+		}
+
+		printf("*****************************************\n");
+
+	   }
+
+	   for(int n = 0; n < mensajes_localized_a_planificar->elements_count; n++){
+		 t_Localized* mensaje = list_get(mensajes_localized_a_planificar, n);
+		 t_posicion* posicion = list_get(mensaje->listaPosiciones, 0);
+
+	 	 t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
+
+	     entrenador_mas_cercano->estado = READY;
+	 	 entrenador_mas_cercano->posicion_destino = *posicion;
+
+		 list_add(cola_ready, entrenador_mas_cercano);
+
+	   }
+
+	   //show_cola_ready();
+
+
+	   planificar(algoritmo, entrenadores);
+
+}
+
+void hilo_planificador(void* l_entrenadores){
+
 	while(1){
-		//cada 30 segs agrego un mensaje localized
-		t_list* mensajes_localized = simular_localized(1);
-
-		//filtro los mensajes que me interesan
-		list_add(mensajes_localized_a_planificar, list_get(filtrar(mensajes_localized, objetivo_global), 0));
-
-		sleep(30);//espera de 30 segs
+		printf("esperando que llegue algo a la cola de ready....\n");
+		sem_wait(&s_cola_ready_con_items);
+		printf("arrancó el planificador: %s (%d)\n", algoritmo.algoritmo_string, algoritmo.algoritmo_code);
+		planificar(algoritmo, (t_list*)l_entrenadores);
 	}
 }
+
+void hilo_recibidor_mensajes(void* l_entrenadores){
+	t_list* entrenadores = (t_list*)l_entrenadores;
+
+	while(1){
+
+		// esto simula que recibí un mensaje localized
+		t_Localized* mensaje = simular_localized(1); // puede haber mas de 1
+		t_posicion* posicion = list_get(mensaje->listaPosiciones, 0); // puede haber mas de 1
+
+		t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
+
+		if(entrenador_mas_cercano != NULL){
+			entrenador_mas_cercano->estado = READY;
+			entrenador_mas_cercano->posicion_destino = *posicion;
+
+			list_add(cola_ready, entrenador_mas_cercano);
+			sem_post(&s_cola_ready_con_items);
+		}
+
+
+		sleep(1);
+
+
+
+/*
+		t_list* elem_filtrados = filtrar(mensajes_localized, objetivo_global);
+		if(cola_ready->elements_count < 10 && elem_filtrados->elements_count > 0){
+
+			t_Localized* mensaje = list_get(elem_filtrados, 0);
+			t_posicion* posicion = list_get(mensaje->listaPosiciones, 0);
+
+			printf("XX: %d\n", posicion->X);
+			printf("YY: %d\n", posicion->Y);
+			t_posicion pos;
+
+			pos.X = posicion->X;
+			pos.Y = posicion->Y;
+
+			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, pos);
+			printf("XXXXXXXXXXX: %d\n", entrenador_mas_cercano->posicion.X);
+			printf("YYYYYYYYYYY: %d\n", entrenador_mas_cercano->posicion.Y);
+
+			entrenador_mas_cercano->estado = READY;
+			entrenador_mas_cercano->posicion_destino = *posicion;
+
+			list_add(cola_ready, entrenador_mas_cercano);
+			sem_post(&s_cola_ready_con_items);
+
+			printf("*******se agregó un mensaje*****\n");
+		}
+*/
+
+	}
+}
+
 
 int32_t main(int32_t argc, char** argv)
 {
 	cola_ready = list_create();
 	objetivo_global = list_create();
-
+	mensajes_localized_a_planificar = list_create();
+	sem_init(&s_cola_ready_con_items, 0, 0);
 
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
     //char* config_name = argv[1];
@@ -314,83 +477,31 @@ int32_t main(int32_t argc, char** argv)
 
 
     int32_t cantidadEntrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
-    printf("En este team hay %d entrenadores\n", cantidadEntrenadores);
 
-    t_algoritmo* algoritmo = get_algoritmo(entrenador_config);
+
+    algoritmo = get_algoritmo(entrenador_config);
     t_list* entrenadores = get_entrenadores(entrenador_config, cantidadEntrenadores);
+
+    printf("En este team hay %d entrenadores\n", cantidadEntrenadores);
 
 
     objetivo_global = get_objetivo_global(entrenadores);
     //show_entrenadores(algoritmo, entrenadores, objetivo_global);
 
 
+    pthread_t p_generador_mensajes;
+    pthread_create(&p_generador_mensajes, NULL, (void*)hilo_recibidor_mensajes, (void*)entrenadores);
+
+    pthread_t p_planificador;
+	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
+
     //hilo_generador_de_mensajes
-    generar_y_enviar_get(objetivo_global);
+    while(1){
+    }
 
-    t_list* mensajes_localized_parseados = simular_localized(3);
+    printf("End");
 
-    mensajes_localized_a_planificar = filtrar(mensajes_localized_parseados, objetivo_global);
-
-
-
-    printf("***************************************** LLEGARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
-
-   for(int j = 0; j < mensajes_localized_parseados->elements_count ; j++){
-	t_Localized* mensaje = list_get(mensajes_localized_parseados, j);
-	printf("pokemon: %s\n", mensaje->pokemon.nombre);
-	printf("cant de posiciones: %d\n", mensaje->listaPosiciones->elements_count);
-
-	for(int m=0; m < mensaje->listaPosiciones->elements_count; m++){
-		t_posicion* posicion = list_get(mensaje->listaPosiciones, m);
-		printf("Pos %d:\n", m);
-		printf("posX: %d\n", posicion->X);
-		printf("posY: %d\n", posicion->Y);
-	}
-
-	printf("*****************************************\n");
-
-   }
-
-
-   printf("***************************************** SE FILTRARON LOS SIGUIENTES MENSAJES LOCALIZED \n");
-
-   for(int j = 0; j < mensajes_localized_a_planificar->elements_count ; j++){
-	t_Localized* mensaje_filtrado = list_get(mensajes_localized_a_planificar, j);
-	printf("pokemon: %s\n", mensaje_filtrado->pokemon.nombre);
-	printf("cant de posiciones: %d\n", mensaje_filtrado->listaPosiciones->elements_count);
-
-	for(int m=0; m < mensaje_filtrado->listaPosiciones->elements_count; m++){
-		t_posicion* posicion = list_get(mensaje_filtrado->listaPosiciones, m);
-		printf("Pos %d:\n", m);
-		printf("posX: %d\n", posicion->X);
-		printf("posY: %d\n", posicion->Y);
-	}
-
-	printf("*****************************************\n");
-
-   }
-
-   for(int n = 0; n < mensajes_localized_a_planificar->elements_count; n++){
-	 t_Localized* mensaje = list_get(mensajes_localized_a_planificar, n);
-	 t_posicion* posicion = list_get(mensaje->listaPosiciones, 0);
-
- 	 t_entrenador* entrenador_mas_cercano = get_entrenador_mas_cercano(entrenadores, *posicion);
-
-     entrenador_mas_cercano->estado = READY;
- 	 entrenador_mas_cercano->posicion_destino = *posicion;
-
-	 list_add(cola_ready, entrenador_mas_cercano);
-
-   }
-
-   //show_cola_ready();
-
-
-   planificar(algoritmo);
-
-   printf("End");
-
-   return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 

@@ -18,6 +18,8 @@
 #include <pthread.h>
 #include <math.h>
 #include <time.h>
+#include <semaphore.h>
+
 
 typedef enum {
 	RR    = 1,
@@ -40,6 +42,7 @@ typedef struct {
 	t_list* 	pokemones; //list of t_pokemon
 	t_list* 	objetivo; //list of t_pokemon
 	estado_code estado;
+	int32_t id;
 
 } t_entrenador;
 

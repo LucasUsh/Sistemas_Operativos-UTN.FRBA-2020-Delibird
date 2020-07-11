@@ -55,20 +55,20 @@ int32_t get_algoritmo_code(char* algoritmo){
 	return 0;
 }
 
-t_algoritmo* get_algoritmo(t_config* config){
-	t_algoritmo* algoritmo = (t_algoritmo*)malloc(sizeof(t_algoritmo));
+t_algoritmo get_algoritmo(t_config* config){
+	t_algoritmo algoritmo;
 
 	char* algoritmo_string = config_get_string_value(config, "ALGORITMO_PLANIFICACION");
 
-	algoritmo->algoritmo_string = algoritmo_string;
-	algoritmo->algoritmo_code = get_algoritmo_code(algoritmo_string);
-	algoritmo->retardo = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
+	algoritmo.algoritmo_string = algoritmo_string;
+	algoritmo.algoritmo_code = get_algoritmo_code(algoritmo_string);
+	algoritmo.retardo = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
 
 
-	if(algoritmo->algoritmo_code == RR){
-		algoritmo->quantum = atoi(config_get_string_value(config, "QUANTUM"));
+	if(algoritmo.algoritmo_code == RR){
+		algoritmo.quantum = atoi(config_get_string_value(config, "QUANTUM"));
 	} else {
-		algoritmo->quantum = 0;
+		algoritmo.quantum = 0;
 	}
 
 	return algoritmo;
@@ -114,6 +114,7 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 
 	entrenador->pokemones = sumarizar_pokemones(get_pokemones(config, index));
 	entrenador->objetivo = sumarizar_pokemones(get_objetivos(config, index));
+	entrenador->id = index;
 
 	return entrenador;
 }
@@ -169,7 +170,7 @@ t_list* get_objetivo_global(t_list* entrenadores){
 	return objetivo_global;
 }
 
-t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
+t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
 
 	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
 	t_entrenador* entrenador= malloc(sizeof(t_entrenador));
@@ -191,6 +192,9 @@ t_entrenador* get_entrenador_mas_cercano(t_list* entrenadores, t_posicion posici
 			}
 		}
 	}
+
+	if(distancia_mas_chica == -1) return NULL;
+
 	return entrenador_cercano;
 }
 
