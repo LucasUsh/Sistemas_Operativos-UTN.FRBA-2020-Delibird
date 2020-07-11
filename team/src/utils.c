@@ -198,3 +198,70 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 	return entrenador_cercano;
 }
 
+
+t_list* filtrar_localized_repetidos(t_list* mensajes_localized){
+
+	//								**************************************
+	// EN REALIDAD, PUEDEN LLEGAR REPETIDOS, HAY QUE COMPARAR SI SE PUEDE SACIAR O NO EL OBJETIVO GLOBAL
+	//								**************************************
+
+	t_list* mensajes_filtrados = list_create();
+		for(int i = 0; i < mensajes_localized->elements_count; i++){
+			t_Localized* mensaje = list_get(mensajes_localized, i);
+			bool mensaje_encontrado = false;
+
+			if(mensajes_filtrados->elements_count == 0){
+				list_add(mensajes_filtrados, mensaje);
+			} else {
+
+				for(int j = 0; j < mensajes_filtrados->elements_count; j++){
+					t_Localized* mensaje_filtrado = list_get(mensajes_filtrados, j);
+					if(string_equals_ignore_case(mensaje_filtrado->pokemon.nombre, mensaje->pokemon.nombre)){
+						mensaje_encontrado=true;
+					}
+				}
+
+				if(!mensaje_encontrado){
+					list_add(mensajes_filtrados, mensaje);
+				}
+			}
+		}
+
+		return mensajes_filtrados;
+}
+
+t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* objetivo_global){
+	t_list* mensajes_filtrados = list_create();
+
+	for(int i = 0; i < mensajes_localized->elements_count; i++){
+		t_Localized* mensaje = list_get(mensajes_localized, i);
+
+		for(int j = 0; j < objetivo_global->elements_count; j++){
+			t_pokemon_team* objetivo_actual = list_get(objetivo_global, j);
+			if(string_equals_ignore_case(mensaje->pokemon.nombre, objetivo_actual->nombre)){
+				list_add(mensajes_filtrados, mensaje);
+				break;
+			}
+		}
+	}
+
+	return mensajes_filtrados;
+}
+
+bool es_respuesta(int id, t_list* lista_ids){
+
+	for(int i = 0; i < lista_ids->elements_count; i++){
+		int* id_lista = list_get(lista_ids, i);
+		if(id == id_lista){
+			list_remove(lista_ids, i);
+			printf("elementos en la lista: %d\n",lista_ids->elements_count);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+t_list* filtrar(t_list* mensajes_localized,t_list* objetivo_global){
+	return filtrar_localized_objetivo_global(filtrar_localized_repetidos(mensajes_localized), objetivo_global);
+}
