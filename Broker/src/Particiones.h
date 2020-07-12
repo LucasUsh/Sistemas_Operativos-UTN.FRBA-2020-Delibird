@@ -23,30 +23,31 @@ typedef struct {
 	int32_t posicion_final;
 	int32_t size;
 	bool ocupada;
+	int32_t id_mensaje;
 	double id; //valor que asigna Broker a partir de una variable global
 	int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
 } t_particion;
 
 typedef enum {
-	BS    = 1,
-	PARTICIONES = 2
+	BS,
+	PARTICIONES
 } algoritmoMemoria;
 
 typedef enum {
-	FIFO    = 1,
-	LRU = 2
+	FIFO,
+	LRU
 } algoritmoReemplazo;
 
 typedef enum {
-	FF    = 1,
-	BF = 2
+	FF,
+	BF
 } algoritmoParticionLibre;
 
 t_list* tabla_particiones;
 
 t_particion* crearParticion(int inicio, int fin, bool ocupada, int ramaBuddy);
 
-void administrarMensaje(char algoritmoMemoria, info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre);
+void administrarMensaje(int32_t algMemoria, info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre);
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
 t_particion* getParticionFirstFit(int32_t sizeMensaje);
@@ -64,10 +65,12 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion);
 
 int32_t tamanioMinimo(int32_t sizeMsg);
 void generarParticionBS(t_particion* particionInicial);
-void algoritmoBuddySystem(info_mensaje mensaje, char algoritmoReemplazo);
-void algoritmoParticionDinamica(info_mensaje mensaje, int32_t frecuenciaCompactacion, char algoritmoReemplazo, char algoritmoParticionLibre);
+void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo);
+void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo, int32_t algoritmoParticionLibre);
 void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo);
 void algoritmoLiberacionBS(char algoritmoReemplazo);
+
+void guardarMensaje(info_mensaje * mensaje, t_particion * particion);
 
 
 

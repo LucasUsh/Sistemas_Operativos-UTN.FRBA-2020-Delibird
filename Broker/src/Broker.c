@@ -14,9 +14,14 @@
 
 
 int32_t sizeMemoria, sizeMinParticion;
+int32_t algMemoria;
+int32_t frecuenciaCompactacion;
+int32_t algReemplazo;
+int32_t algParticionLibre;
 int32_t id_mensaje_global = 0;
 char *IP_BROKER;
 char *PUERTO_BROKER;
+char * LOG_FILE;
 
 int32_t main(void) {
 
@@ -26,6 +31,13 @@ int32_t main(void) {
 
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
+	algMemoria= atoi(config_get_string_value(config, "ALGORITMO_MEMORIA"));
+	algReemplazo = atoi(config_get_string_value(config, "ALGORITMO_REEMPLAZO"));
+	algParticionLibre = atoi(config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE"));
+	IP_BROKER = config_get_string_value(config, "IP_BROKER");
+	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
+	frecuenciaCompactacion = atoi(config_get_string_value(config, "FRECUENCIA_COMPACTACION"));
+	LOG_FILE = config_get_string_value(config, "LOG_FILE");
 
 	int inicioMemoria = (int)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
 	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false, 0);
@@ -34,8 +46,7 @@ int32_t main(void) {
 
 	//pruebaEncontrarBuddyTrasDosParticiones();
 
-	IP_BROKER = config_get_string_value(config, "IP_BROKER");
-	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
+
 	log_info(logger,"Lei IP_BROKER %s ",IP_BROKER);
 	log_info(logger,"Lei PUERTO_BROKER %s ",PUERTO_BROKER);
 
@@ -199,7 +210,7 @@ void recibirMensajeNew(int32_t socket_cliente){
 
 void manejoMensaje(info_mensaje* mensaje){
 	//agregar mensaje en lista de mensaje
-
+	administrarMensaje(algMemoria, mensaje, frecuenciaCompactacion, algReemplazo, algParticionLibre);
 	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
 	// o se hace en otro hilo)
 }

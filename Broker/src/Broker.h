@@ -52,7 +52,7 @@ int getMemoriaDisponible();
 void iniciarColas();
 void manejoMensajeSuscripcion(int32_t socket_cliente);
 void recibirMensajeNew(int32_t socket_cliente);
-void manejoMensajeNew(int32_t * socket_cliente);
+void manejoMensajeNew(info_mensaje* mensaje);
 void manejoMensajeAppeared(int32_t socket_cliente);
 void manejoMensajeGet(int32_t socket_cliente);
 void manejoMensajeLocalized(int32_t socket_cliente);
