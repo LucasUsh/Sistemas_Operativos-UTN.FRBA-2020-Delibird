@@ -3,7 +3,7 @@
 int32_t main(void)
 {
 	instalar_filesystem ();
-
+/*
 	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
@@ -26,6 +26,8 @@ int32_t main(void)
     //log_destroy(logger_GC);
 
 	pthread_join(hilo_servidor_GC, NULL);
+*/
+	free(mapa_de_bloques.bitarray);
 
     return 0;
 }
@@ -36,8 +38,8 @@ void instalar_filesystem (){
 	punto_de_montaje = config_get_string_value(config_GC,"PUNTO_MONTAJE_TALLGRASS");
 	tam_bloque = config_get_string_value(config_GC,"BLOCK_SIZE");
 	cant_bloques = config_get_string_value(config_GC,"BLOCKS");
+	int32_t cant_bloques_i = (int32_t) atoi (cant_bloques);
 	magic_number = config_get_string_value(config_GC,"MAGIC_NUMBER");
-	config_destroy(config_GC);
 
 	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
 
@@ -68,12 +70,21 @@ void instalar_filesystem (){
 	fprintf (file_auxiliar, "BLOCK_SIZE=%s\n", magic_number);
 	fclose(file_auxiliar);
 
+	if (cant_bloques_i % 8 == 0) mapa_de_bloques.size = (size_t) cant_bloques_i / 8;
+	else mapa_de_bloques.size = (size_t) (cant_bloques_i / 8 + 1);
+	mapa_de_bloques.mode = LSB_FIRST;
+	mapa_de_bloques.bitarray = malloc (mapa_de_bloques.size);
+	int32_t i;
+	for (i=0; i < cant_bloques_i; i++) bitarray_clean_bit(&mapa_de_bloques, i);
+	if (cant_bloques_i % 8 != 0) {
+		int32_t bits_de_mas = cant_bloques_i % 8;
+		for (; bits_de_mas > 0; bits_de_mas--, i++) bitarray_set_bit(&mapa_de_bloques, i);
+	}
 	file_auxiliar = fopen (ruta_archivo_bitmap, "w+");
-	int32_t tam_bitmap = ((int32_t) atoi (tam_bloque)) / 8;
-
-
-
+	fwrite (mapa_de_bloques.bitarray, sizeof(char), mapa_de_bloques.size, file_auxiliar);
 	fclose(file_auxiliar);
+
+	config_destroy(config_GC);
 }
 
 void crear_servidor_GC() {
