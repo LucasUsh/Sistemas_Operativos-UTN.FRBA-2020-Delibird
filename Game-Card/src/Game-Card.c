@@ -3,7 +3,7 @@
 int32_t main(void)
 {
 	instalar_filesystem ();
-/*
+
 	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
@@ -26,35 +26,63 @@ int32_t main(void)
     //log_destroy(logger_GC);
 
 	pthread_join(hilo_servidor_GC, NULL);
-*/
+
     return 0;
 }
 
 void instalar_filesystem (){
-	t_config* config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
-	char* punto_de_montaje = config_get_string_value(config_GC,"PUNTO_MONTAJE_TALLGRASS");
+	//Información del archivo de configuración:
+	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	punto_de_montaje = config_get_string_value(config_GC,"PUNTO_MONTAJE_TALLGRASS");
+	tam_bloque = config_get_string_value(config_GC,"BLOCK_SIZE");
+	cant_bloques = config_get_string_value(config_GC,"BLOCKS");
+	magic_number = config_get_string_value(config_GC,"MAGIC_NUMBER");
+	config_destroy(config_GC);
+
+	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
 
 	//Creación de carpetas:
 
-	if (mkdir (punto_de_montaje, S_IRWXU) != 0) salir("Error al crear la carpeta TallGrass");
+	if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta TallGrass");
 
-	char carpeta_Metadata[strlen (punto_de_montaje) + strlen ("/Metadata") + 1];
+	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
 	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
-	char carpeta_Files[strlen (punto_de_montaje) + strlen ("/Files") + 1];
+	char carpeta_Files[tam_punto_de_montaje + strlen ("/Files") + 1];
 	strcat(strcpy(carpeta_Files, punto_de_montaje), "/Files");
-	char carpeta_Blocks[strlen (punto_de_montaje) + strlen ("/Blocks") + 1];
+	char carpeta_Blocks[tam_punto_de_montaje + strlen ("/Blocks") + 1];
 	strcat(strcpy(carpeta_Blocks, punto_de_montaje), "/Blocks");
 
-	if (mkdir (carpeta_Metadata, S_IRWXU) != 0) salir("Error al crear la carpeta Metadata");
-	if (mkdir (carpeta_Files, S_IRWXU) != 0) salir("Error al crear la carpeta Files");
-	if (mkdir (carpeta_Blocks, S_IRWXU) != 0) salir("Error al crear la carpeta Blocks");
+	if (mkdir (carpeta_Metadata, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta Metadata");
+	if (mkdir (carpeta_Files, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta Files");
+	if (mkdir (carpeta_Blocks, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta Blocks");
 
-	config_destroy(config_GC);
+	//Creacion de archivos administrativos:
+	char ruta_archivo_metadata[strlen(carpeta_Metadata) + strlen ("/Metadata.bin") + 1];
+	strcat(strcpy(ruta_archivo_metadata, carpeta_Metadata), "/Metadata.bin");
+	char ruta_archivo_bitmap[strlen(carpeta_Metadata) + strlen ("/Bitmap.bin") + 1];
+	strcat(strcpy(ruta_archivo_bitmap, carpeta_Metadata), "/Bitmap.bin");
+
+	FILE* file_auxiliar = fopen (ruta_archivo_metadata, "w+");
+	fprintf (file_auxiliar, "BLOCK_SIZE=%s\n", tam_bloque);
+	fprintf (file_auxiliar, "BLOCKS=%s\n", cant_bloques);
+	fprintf (file_auxiliar, "BLOCK_SIZE=%s\n", magic_number);
+	fclose(file_auxiliar);
+
+	file_auxiliar = fopen (ruta_archivo_bitmap, "w+");
+	int32_t tam_bitmap = ((int32_t) atoi (tam_bloque)) / 8;
+
+
+
+	fclose(file_auxiliar);
 }
 
 void crear_servidor_GC() {
+	t_config* config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	char* ip_gamecard = config_get_string_value(config_GC,"IP_GAMECARD");
+	char* puerto_gamecard = config_get_string_value(config_GC,"PUERTO_GAMECARD");
+	config_destroy(config);
 
-	int32_t socket_servidor_GC = crear_socket_escucha(IP_GAME_CARD, PUERTO_GAME_CARD);
+	int32_t socket_servidor_GC = crear_socket_escucha(ip_gamecard, puerto_gamecard);
 	int32_t socket_cliente_entrante;
 
     while(1) {
