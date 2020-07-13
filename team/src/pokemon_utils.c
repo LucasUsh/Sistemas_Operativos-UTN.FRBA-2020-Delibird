@@ -59,12 +59,14 @@ bool puede_capturar_pokemones(t_entrenador* entrenador){
 }
 
 t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
+
 	t_list* lista_sumarizada = list_create();
 	for(int32_t i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
 		t_pokemon_team* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
 		int32_t pokemon_encontrado = 0;
 
 		if(lista_sumarizada->elements_count == 0){
+			//////////// AL HACER ESTO, AMBOS REFERENCIAN AL MISMO POKEMON
 			list_add(lista_sumarizada, pokemon);
 		} else {
 
@@ -72,6 +74,9 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 				t_pokemon_team* pokemon_sumarizado = list_get(lista_sumarizada, j);
 
 				if(string_equals_ignore_case(pokemon_sumarizado->nombre, pokemon->nombre)){
+
+					///// O SEA QUE EN ESTE PUNTO ESTOY MODIFICANDO TANTO EL SUMARIZADO COMO EL QUE TENGO EN LA LISTA
+					//// HAY QUE CREAR UN NUEVO OBJETO POKEMON
 					pokemon_sumarizado->cantidad++;
 					pokemon_encontrado = 1;
 				}

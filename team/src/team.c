@@ -218,6 +218,20 @@ t_Localized* generar_localized(char* pokemon, int cant_posiciones){
 	return mensaje;
 }
 
+t_Appeared* generar_appeared(char* pokemon){
+	t_Appeared* mensaje = malloc(sizeof(t_Appeared)); // reemplazar por funcion get size Localized de broker
+
+	t_posicion posicion;
+	posicion.X = (rand() % (10)) + 1; // numero random entre 1 y 10
+	posicion.Y = (rand() % (10)) + 1;
+
+	mensaje-> posicion = posicion;
+	mensaje->pokemon.nombre = pokemon;
+	mensaje->pokemon.size_Nombre = string_length(pokemon); // creo que hay que sumar 1
+
+	return mensaje;
+}
+
 t_list* simular_list_localized(int cant_mensajes){
 	/*
 	 * El objetivo de esta funcion es generar mensajes localized de forma aleatoria
@@ -256,6 +270,21 @@ t_Localized* simular_localized(int cantidad_posiciones){
 
 }
 
+t_Appeared* simular_appeared(){
+	/*
+	 * El objetivo de esta funcion es generar un mensaje localized de forma aleatoria
+	 * */
+
+	srand(time(NULL));
+
+	t_list* nombre_pokemones = get_nombres_pokemon();
+	char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
+	t_Appeared* mensaje = generar_appeared(nombre_pokemon);
+
+	return mensaje;
+
+}
+
 void show_cola_ready(){
 	for(int i = 0; i < cola_ready->elements_count; i++){
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
@@ -289,7 +318,13 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 
 		if(es_respuesta(id, mensajes_get_esperando_respuesta)){ // esto tendria que estar afuera, donde tengo el id
 			printf("Es respuesta\n");
-			t_posicion* posicion = list_get(mensaje->listaPosiciones, 0); // puede haber mas de 1
+			t_posicion* posicion = list_remove(mensaje->listaPosiciones, 0); // puede haber mas de 1
+
+			if(mensaje->listaPosiciones > 0){
+				// tengo una "reserva" de pokemones por si llega a fallar el catch
+				list_add(mensajes_posiciones_planificables, mensaje);
+			}
+
 			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
 
 			if(entrenador_mas_cercano != NULL){
@@ -304,9 +339,40 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 	}
 }
 
-void hilo_recibidor_mensajes_full(void* l_entrenadores, t_paquete* paquete){
+
+
+void hilo_recibidor_mensajes_appeared(void* l_entrenadores){
 	t_list* entrenadores = (t_list*)l_entrenadores;
 
+	while(1){
+
+		t_Appeared* mensaje = simular_appeared();
+		printf("se generó un mensaje: %s\n", mensaje->pokemon.nombre);
+		printf("***************************************\n");
+		//deberia filtrar el mensaje por especie que necesito y si todavia quedan pendientes de capturar
+
+		if(filtrar_appeared(mensaje, entrenadores, objetivo_global) != NULL){
+			printf("Appeared que sirve\n");
+
+			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, mensaje->posicion);
+
+			if(entrenador_mas_cercano != NULL){
+				entrenador_mas_cercano->estado = READY;
+				entrenador_mas_cercano->posicion_destino = mensaje->posicion;
+
+				list_add(cola_ready, entrenador_mas_cercano);
+				sem_post(&s_cola_ready_con_items);
+			}
+		}
+
+		printf("***************************************\n");
+
+		sleep(5);
+
+	}
+}
+
+void hilo_recibidor_mensajes_full(void* l_entrenadores, t_paquete* paquete){
 	while(1){
 		switch(paquete->codigo_operacion){
 		case APPEARED_POKEMON:
@@ -359,7 +425,7 @@ int32_t main(int32_t argc, char** argv)
 
 
     pthread_t p_generador_mensajes;
-    pthread_create(&p_generador_mensajes, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
+    pthread_create(&p_generador_mensajes, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
 
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);

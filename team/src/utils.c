@@ -170,6 +170,33 @@ t_list* get_objetivo_global(t_list* entrenadores){
 	return objetivo_global;
 }
 
+t_list* get_pokemones_capturados(t_list* entrenadores){
+
+	t_list* pokemones_capturados = list_create();
+
+    for(int i = 0; i < entrenadores->elements_count; i++){
+		t_entrenador* entrenador_actual = list_get(entrenadores, i);
+		printf("*************************************************************\n");
+		printf("*entrenador actual: %d\n", entrenador_actual->id);
+		for(int j = 0; j < entrenador_actual->pokemones->elements_count; j++){
+			t_pokemon_team* pokemon_actual = list_get(entrenador_actual->pokemones, j);
+
+			printf("**pokemon actual: %s\n", pokemon_actual->nombre);
+			printf("**cantidad: %d\n", pokemon_actual->cantidad);
+
+			list_add(pokemones_capturados, pokemon_actual);
+		}
+	}
+    printf("*************************************************************\n");
+    if(pokemones_capturados->elements_count > 0){
+    	pokemones_capturados = sumarizar_pokemones(pokemones_capturados);
+    }
+
+
+	return pokemones_capturados;
+}
+
+
 t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
 
 	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
@@ -180,7 +207,7 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 
 		entrenador = list_get(entrenadores, i);
 
-		if(entrenador->estado == BLOCKED || entrenador->estado == NEW ){
+		if((entrenador->estado == BLOCKED || entrenador->estado == NEW) && (puede_capturar_pokemones(entrenador))){
 			int32_t distancia_entrenador = get_distancia_entre_puntos(entrenador->posicion, posicion_pokemon);
 
 			if(distancia_mas_chica == -1){
@@ -262,6 +289,64 @@ bool es_respuesta(int id, t_list* lista_ids){
 	return false;
 }
 
-t_list* filtrar(t_list* mensajes_localized,t_list* objetivo_global){
-	return filtrar_localized_objetivo_global(filtrar_localized_repetidos(mensajes_localized), objetivo_global);
+
+
+
+
+int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* objetivo_global){
+	for(int j = 0; j < objetivo_global->elements_count; j++){
+		t_pokemon_team* objetivo_actual = list_get(objetivo_global, j);
+
+		if(string_equals_ignore_case(pokemon, objetivo_actual->nombre)){
+			return objetivo_actual->cantidad;
+		}
+	}
+
+	return 0;
+};
+
+bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
+
+	t_list* pokemones_capturados = get_pokemones_capturados(entrenadores);
+
+	for(int j = 0; j < pokemones_capturados->elements_count; j++){
+		t_pokemon_team* pokemon_actual = list_get(pokemones_capturados, j);
+		if(string_equals_ignore_case(pokemon, pokemon_actual->nombre)){
+			printf("tengo capturados: %d\n", pokemon_actual->cantidad);
+			return pokemon_actual->cantidad < necesito_capturar;
+		}
+	}
+
+	return true;
+};
+
+t_Appeared* filtrar_appeared(t_Appeared* mensaje, t_list* entrenadores, t_list* objetivo_global){
+
+	int necesito_capturar = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
+
+	printf("necesito capturar: %d\n", necesito_capturar);
+
+	if(necesito_capturar > 0 && puedo_capturar(mensaje->pokemon.nombre, entrenadores, necesito_capturar)){
+		return mensaje;
+	}
+
+	//hay que considerar tambien los que ya estan en el mapa
+
+	return NULL;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
