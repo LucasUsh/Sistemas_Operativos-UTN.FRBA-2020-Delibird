@@ -71,6 +71,10 @@ t_list* suscriptores_Catch;
 t_list* suscriptores_Caught;
 t_list* suscriptores_Get;
 t_list* suscriptores_Localized;
+
+t_list* list_mensajes;
+
+
 t_list* mensajes_New;
 t_list* mensajes_Appeared;
 t_list* mensajes_Catch;

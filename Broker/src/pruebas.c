@@ -95,9 +95,11 @@ void pruebaMostrarEstadoMemoria(){
 		int i;
 		for(i=0; i < tabla_particiones->elements_count; i++){
 				t_particion * particion = list_get(tabla_particiones, i);
+				/*info_mensaje * mensaje;
+				mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);*/
 				printf("Index lista: %d \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n "
-						"id de particion: %f \n codigo de operacion: %d \n ocupada %d \n \n", i,particion->posicion_inicial,
-						particion->posicion_final, particion->size, particion->id, particion->codigo_operacion, particion->ocupada);
+						"id de particion: %f \n codigo de operacion: %d \n ocupada: %d \n id_mensaje: %d \n \n", i,particion->posicion_inicial,
+						particion->posicion_final, particion->size, particion->id, particion->codigo_operacion, particion->ocupada, particion->id_mensaje);
 				}
 		}
 }

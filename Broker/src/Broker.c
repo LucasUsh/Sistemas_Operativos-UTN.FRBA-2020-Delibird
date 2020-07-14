@@ -9,7 +9,6 @@
  */
 
 #include "Broker.h"
-#include "Particiones.h"
 #include "pruebas.h"
 
 
@@ -22,6 +21,8 @@ int32_t id_mensaje_global = 0;
 char *IP_BROKER;
 char *PUERTO_BROKER;
 char * LOG_FILE;
+
+pthread_mutex_t mutex_guardar_en_memoria;
 
 int32_t main(void) {
 
@@ -45,6 +46,7 @@ int32_t main(void) {
 	list_add(tabla_particiones, particionInicial);
 
 	//pruebaEncontrarBuddyTrasDosParticiones();
+	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
 
 
 	log_info(logger,"Lei IP_BROKER %s ",IP_BROKER);
@@ -81,10 +83,13 @@ int32_t main(void) {
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola New \n");
 					mensaje = recibirMensajeNew(socket_cliente);
-					manejoMensaje(mensaje);
-					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, &socket_cliente) == 0){
+					//manejoMensaje(mensaje);
+					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 						printf("Creado el hilo que maneja el mensaje New");
-					}else printf("Fallo al crear el hilo que maneja el mensaje New");*/
+					}else printf("Fallo al crear el hilo que maneja el mensaje New");
+					pruebaMostrarEstadoMemoria();
+					//info_mensaje * mensaje;
+					//mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);
 					break;
 				case APPEARED_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -206,20 +211,22 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
 			new->cant, new->posicion.X, new->posicion.Y);
 	//pedir identificacion del proceso (handshake)
-	double id = get_id();
 	//informar id mensaje
 	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeNew = malloc(sizeof(info_mensaje));
-	mensajeNew->id_mensaje =id;
 	mensajeNew->op_code = NEW_POKEMON;
+	mensajeNew->id_mensaje = get_id();
 	mensajeNew->process_id = 1;
+	mensajeNew->mensaje = new;
 	mensajeNew->sizeMsg = getSizeMensajeNew(*new);
+	list_add(list_mensajes, mensajeNew);
 	return mensajeNew;
 }
 
 void manejoMensaje(info_mensaje* mensaje){
-	//agregar mensaje en lista de mensaje
-	administrarMensaje(algMemoria, mensaje, frecuenciaCompactacion, algReemplazo, algParticionLibre);
+	pthread_mutex_lock(&mutex_guardar_en_memoria);
+	administrarMensaje(mensaje, algMemoria, frecuenciaCompactacion, algReemplazo, algParticionLibre);
+	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
 	// o se hace en otro hilo)
 }
@@ -297,6 +304,33 @@ void manejoMensajeCaught(int32_t socket_cliente){
 	// o se hace en otro hilo)
 }
 
+info_mensaje* getInfoMensaje(op_code codigo_operacion, double id_mensaje){
+	info_mensaje * mensaje = NULL;
+
+
+
+	return mensaje;
+}
+
+bool esElMensaje(t_particion* particion, op_code codigo_operacion, double id_mensaje){
+	return !particion->ocupada && particion->codigo_operacion == codigo_operacion && particion->id_mensaje == id_mensaje;
+}
+
+info_mensaje * obtenerMensaje(op_code codigo_operacion, double id_mensaje){
+	info_mensaje * mensaje = NULL;
+	bool _esElMensaje(void* element){
+		return esElMensaje((t_particion*)element, codigo_operacion, id_mensaje);
+	}
+	t_list* mensajesConEseID = list_filter(list_mensajes, _esElMensaje);
+	if(mensajesConEseID->elements_count == 1){
+		mensaje = list_get(mensajesConEseID, 0);
+		return mensaje;
+	}else {
+		printf("Mas de un mensaje con el mismo id. Cantidad: %d \n", mensajesConEseID->elements_count);
+		return mensaje;
+	}
+}
+
 void informarId(int32_t socket_cliente){
 	double id = get_id();
 
@@ -324,6 +358,7 @@ void inicializarListas(){
 	suscriptores_Caught = list_create();
 	suscriptores_Get = list_create();
 	suscriptores_Localized = list_create();
+	list_mensajes = list_create();
 }
 
 void suscribirProceso(op_code operacion, int32_t * PID){

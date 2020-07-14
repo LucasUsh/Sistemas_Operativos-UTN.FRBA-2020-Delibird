@@ -17,7 +17,7 @@ t_particion* crearParticion(int inicio, int size, bool ocupada){
 	newParticion->size = size;
 	newParticion->id = get_id();
 	//newParticion->ramaBuddy = ramaBuddy;
-	newParticion->codigo_operacion = NEW_POKEMON;
+	newParticion->codigo_operacion = 0;
 	newParticion->id_mensaje = 0;
 
 	return newParticion;
@@ -313,7 +313,7 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 }
 
 
-void administrarMensaje(int32_t algMemoria, info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre){
+void administrarMensaje(info_mensaje * mensaje, int32_t algMemoria, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre){
 	switch(algMemoria){
 	case BS:
 		algoritmoBuddySystem(mensaje, algReemplazo);

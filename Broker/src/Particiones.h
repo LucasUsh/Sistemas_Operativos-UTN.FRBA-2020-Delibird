@@ -47,7 +47,7 @@ t_list* tabla_particiones;
 
 t_particion* crearParticion(int inicio, int size, bool ocupada);
 
-void administrarMensaje(int32_t algMemoria, info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre);
+void administrarMensaje(info_mensaje * mensaje, int32_t algMemoria, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre);
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
 t_particion* getParticionFirstFit(int32_t sizeMensaje);
@@ -71,6 +71,8 @@ void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo
 void algoritmoLiberacionBS(char algoritmoReemplazo);
 
 void guardarMensaje(info_mensaje * mensaje, t_particion * particion);
+bool esElMensaje(t_particion* particion, op_code codigo_operacion, double id_mensaje);
+info_mensaje * obtenerMensaje(op_code codigo_operacion, double id_mensaje);
 
 
 
