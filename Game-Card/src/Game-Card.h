@@ -17,6 +17,7 @@
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.h"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.h"
+#include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/src/funciones.h"
 
 //Punteros globales:
 t_log* logger_GC = NULL;

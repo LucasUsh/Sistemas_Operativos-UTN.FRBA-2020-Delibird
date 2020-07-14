@@ -127,7 +127,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 			;
 			t_New* new = NULL;
 			new = deserializar_paquete_new (socket_cliente);
-
+			funcion_new_pokemon(&new);
 
 			break;
 
