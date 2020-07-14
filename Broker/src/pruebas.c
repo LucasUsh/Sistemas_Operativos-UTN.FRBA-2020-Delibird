@@ -96,8 +96,8 @@ void pruebaMostrarEstadoMemoria(){
 		for(i=0; i < tabla_particiones->elements_count; i++){
 				t_particion * particion = list_get(tabla_particiones, i);
 				printf("Index lista: %d \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n "
-						"id de particion: %f \n Rama buddy: %d \n \n", i,particion->posicion_inicial,
-						particion->posicion_final, particion->size, particion->id, particion->ramaBuddy);
+						"id de particion: %f \n codigo de operacion: %d \n ocupada %d \n \n", i,particion->posicion_inicial,
+						particion->posicion_final, particion->size, particion->id, particion->codigo_operacion, particion->ocupada);
 				}
 		}
 }
@@ -163,9 +163,8 @@ void pruebaBuscarParticionDeSizeMsg(int sizeMsg){
 
 	printf("La particion candidata es: \n");
 	printf("Index lista: %d \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n id de particion: %f \n "
-			"Rama buddy: %d \n \n", obtenerPosicion(particionCandidata), particionCandidata->posicion_inicial,
-			particionCandidata->posicion_final, particionCandidata->size, particionCandidata->id,
-			particionCandidata->ramaBuddy);
+			"\n", obtenerPosicion(particionCandidata), particionCandidata->posicion_inicial,
+			particionCandidata->posicion_final, particionCandidata->size, particionCandidata->id);
 }
 
 void pruebaEncontrarBuddyTrasUnaParticion(){ // Debe imprimir buddyLoco = 1

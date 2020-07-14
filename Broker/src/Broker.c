@@ -39,8 +39,8 @@ int32_t main(void) {
 	frecuenciaCompactacion = atoi(config_get_string_value(config, "FRECUENCIA_COMPACTACION"));
 	LOG_FILE = config_get_string_value(config, "LOG_FILE");
 
-	int inicioMemoria = (int)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
-	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false, 0);
+	int32_t inicioMemoria = (int32_t)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
+	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false);
 	tabla_particiones = list_create();
 	list_add(tabla_particiones, particionInicial);
 
@@ -66,6 +66,7 @@ int32_t main(void) {
 			int32_t id_mensaje=0;
 			int32_t operacion=0;
 			pthread_t hilo;
+			info_mensaje * mensaje;
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				switch(operacion){
 
@@ -79,10 +80,11 @@ int32_t main(void) {
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola New \n");
+					mensaje = recibirMensajeNew(socket_cliente);
+					manejoMensaje(mensaje);
 					/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeNew, &socket_cliente) == 0){
 						printf("Creado el hilo que maneja el mensaje New");
 					}else printf("Fallo al crear el hilo que maneja el mensaje New");*/
-					recibirMensajeNew(socket_cliente);
 					break;
 				case APPEARED_POKEMON:
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -198,14 +200,21 @@ void manejoMensajeSuscripcion(int32_t socket_cliente){
 	//agregar en lista de colas a la que se suscribio: suscribirProceso(op_code operacion, int32_t * PID)
 }
 
-void recibirMensajeNew(int32_t socket_cliente){
+info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	t_New* new = NULL;
 	new = deserializar_paquete_new (&socket_cliente);
 	printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
 			new->cant, new->posicion.X, new->posicion.Y);
 	//pedir identificacion del proceso (handshake)
+	double id = get_id();
 	//informar id mensaje
 	//asignar id mensaje al mensaje recibido
+	info_mensaje * mensajeNew = malloc(sizeof(info_mensaje));
+	mensajeNew->id_mensaje =id;
+	mensajeNew->op_code = NEW_POKEMON;
+	mensajeNew->process_id = 1;
+	mensajeNew->sizeMsg = getSizeMensajeNew(*new);
+	return mensajeNew;
 }
 
 void manejoMensaje(info_mensaje* mensaje){

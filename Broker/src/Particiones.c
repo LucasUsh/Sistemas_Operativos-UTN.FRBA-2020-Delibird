@@ -9,16 +9,16 @@
 
 #include<commons/string.h>
 
-t_particion* crearParticion(int inicio, int size, bool ocupada, int ramaBuddy){
+t_particion* crearParticion(int inicio, int size, bool ocupada){
 	t_particion* newParticion = malloc(sizeof(t_particion));
 	newParticion->ocupada = false;
 	newParticion->posicion_inicial = inicio;
 	newParticion->posicion_final = inicio+size-1; //para contemplar el 0. Ej: si es de 128bytes arranca en 0 y va a 127
 	newParticion->size = size;
 	newParticion->id = get_id();
-	newParticion->ramaBuddy = ramaBuddy;
+	//newParticion->ramaBuddy = ramaBuddy;
 	newParticion->codigo_operacion = NEW_POKEMON;
-	//newParticion->id_Mensaje = 0;
+	newParticion->id_mensaje = 0;
 
 	return newParticion;
 }
@@ -50,7 +50,7 @@ t_particion* getParticionFirstFit(int32_t sizeMensaje){
 
 t_particion* getParticionBestFit(int32_t sizeMensaje){
 	int i;
-	t_particion* mejorParticion = malloc(sizeof(t_particion));
+	t_particion* mejorParticion; // = malloc(sizeof(t_particion));
 
 	bool _particionCandidata(void* element){
 		return particionCandidata((t_particion*)element, sizeMensaje);
@@ -82,9 +82,9 @@ void generarParticionDinamica(t_particion* particionOriginal, int32_t sizeMsg){
 	int inicioIzquierda = particionOriginal->posicion_inicial;
 	int inicioDerecha = particionOriginal->posicion_inicial + sizeMsg;
 
-	t_particion* primeraParticion = crearParticion(inicioIzquierda, sizeMsg, false, 0);
+	t_particion* primeraParticion = crearParticion(inicioIzquierda, sizeMsg, false);
 	sleep(0.25);
-	t_particion* segundaParticion = crearParticion(inicioDerecha, particionOriginal->size-primeraParticion->size, false, 0);
+	t_particion* segundaParticion = crearParticion(inicioDerecha, particionOriginal->size-primeraParticion->size, false);
 
 	posicion = obtenerPosicion(particionOriginal);
 	list_remove(tabla_particiones, posicion);
@@ -219,9 +219,11 @@ void generarParticionBS(t_particion* particionInicial){
 	int inicioIzquierda = particionInicial->posicion_inicial;
 	int inicioDerecha = particionInicial->posicion_inicial+((particionInicial->size)*0.5);
 
-	t_particion *particionIzquierda = crearParticion(inicioIzquierda, halfSize, false, 1);
+	t_particion *particionIzquierda = crearParticion(inicioIzquierda, halfSize, false);
+	particionIzquierda->id = get_id();
 	sleep(0.25);
-	t_particion *particionDerecha = crearParticion(inicioDerecha, halfSize, false, 2);
+	t_particion *particionDerecha = crearParticion(inicioDerecha, halfSize, false);
+	particionDerecha->id = get_id();
 
 	int posicion = obtenerPosicion(particionInicial);
 	list_remove(tabla_particiones, posicion);
@@ -232,7 +234,7 @@ void generarParticionBS(t_particion* particionInicial){
 
 // En Buddy System una particion es candidata si su tamaño es el de la menor potencia de dos
 bool particionCandidataBS(t_particion* particion, int32_t tamanioMinimo){
-	return !particion->ocupada && tamanioMinimo <= particion->size;
+	return !particion->ocupada && tamanioMinimo == particion->size;
 }
 
 bool hayParticionesCandidatasBS(int32_t sizeMsg){
@@ -330,7 +332,7 @@ void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 		guardarMensaje(mensaje, particion);
 	}else {if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
 		while(hayParticionesCandidatasBS(tamanio) != true){
-			t_particion * particion = getParticionFirstFit(tamanio);
+			particion = getParticionFirstFit(tamanio);
 			generarParticionBS(particion);
 			}
 		particion = getParticionBS(tamanio);

@@ -22,7 +22,7 @@
 
 typedef struct {
 	op_code op_code;
-	int32_t id_mensaje;
+	double id_mensaje;
 	int32_t process_id; // ID del proceso que mando el mensaje
 	void * mensaje;
 	int32_t sizeMsg;
@@ -51,7 +51,8 @@ int getMemoriaDisponible();
 
 void iniciarColas();
 void manejoMensajeSuscripcion(int32_t socket_cliente);
-void recibirMensajeNew(int32_t socket_cliente);
+info_mensaje * recibirMensajeNew(int32_t socket_cliente);
+void manejoMensaje(info_mensaje* mensaje);
 void manejoMensajeNew(info_mensaje* mensaje);
 void manejoMensajeAppeared(int32_t socket_cliente);
 void manejoMensajeGet(int32_t socket_cliente);
@@ -60,6 +61,8 @@ void manejoMensajeCatch(int32_t socket_cliente);
 void manejoMensajeCaught(int32_t socket_cliente);
 void informarId(int32_t socket_cliente);
 void inicializarListas();
+
+int32_t getSizeMensajeNew(t_New msgNew);
 
 
 t_list* suscriptores_New;

@@ -23,9 +23,9 @@ typedef struct {
 	int32_t posicion_final;
 	int32_t size;
 	bool ocupada;
-	int32_t id_mensaje;
+	double id_mensaje;
 	double id; //valor que asigna Broker a partir de una variable global
-	int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
+	//int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
 } t_particion;
 
 typedef enum {
@@ -45,7 +45,7 @@ typedef enum {
 
 t_list* tabla_particiones;
 
-t_particion* crearParticion(int inicio, int fin, bool ocupada, int ramaBuddy);
+t_particion* crearParticion(int inicio, int size, bool ocupada);
 
 void administrarMensaje(int32_t algMemoria, info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre);
 
