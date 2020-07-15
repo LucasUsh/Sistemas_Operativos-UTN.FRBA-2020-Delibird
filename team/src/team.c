@@ -326,12 +326,12 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 	while(1){
 
 		// esto simula que recibí un mensaje localized
-		t_Localized* mensaje = simular_localized(1); // puede haber mas de 1
-		int id = (rand() % (15)) + 1; // supongo que llega con un id random, el if debe estar donde lo recibo posta
+		t_Localized* mensaje = simular_localized(1);
+		int id = (rand() % (15)) + 1; // genero el id acá para probar
 
 		printf("llego el mensaje con id: %d\n", id);
 
-		//filtro los mensajes que son una respuesta a un GET
+		//filtro los mensajes que son una respuesta a un GET (una vez que funcione lo otro sacarlo de acá)
 		if(es_respuesta(id, mensajes_get_esperando_respuesta)){
 			printf("Es respuesta\n");
 
@@ -412,6 +412,7 @@ void hilo_recibidor_mensajes_full(void* l_entrenadores, t_paquete* paquete){
 		switch(paquete->codigo_operacion){
 		case APPEARED_POKEMON:
 			printf("Recibí un APPEARED\n");
+			hilo_recibidor_mensajes_appeared(l_entrenadores);
 			break;
 		case LOCALIZED_POKEMON:
 			printf("Recibí un LOCALIZED\n");
@@ -440,10 +441,18 @@ int32_t main(int32_t argc, char** argv)
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	srand(time(NULL));
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
-    //char* config_name = argv[1];
 
-    //t_config* entrenador_config = config_create(argv[1]);
-    t_config* entrenador_config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/team/config/entrenador1.config");
+
+    if(argv[1] == NULL){
+    	printf("falta definir el team\n");
+    	return 0;
+    }
+
+    char* unaPalabra = string_new();
+    string_append(&unaPalabra, "/home/utnso/workspace/tp-2020-1c-5rona/team/config/");
+    string_append(&unaPalabra, argv[1]);
+    string_append(&unaPalabra, ".config");
+    t_config* entrenador_config = config_create(unaPalabra);
 
 
     int32_t cantidad_entrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
