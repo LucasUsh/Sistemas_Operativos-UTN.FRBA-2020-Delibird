@@ -277,11 +277,11 @@ bool es_respuesta(int id, t_list* lista_ids){
 		int* id_lista = list_get(lista_ids, i);
 		if(id == id_lista){
 			list_remove(lista_ids, i);
-			printf("elementos en la lista: %d\n",lista_ids->elements_count);
 			return true;
 		}
 	}
 
+	printf("No es respuesta, lo voy a rechazar\n");
 	return false;
 }
 
@@ -301,6 +301,33 @@ int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* objetivo_global){
 	return 0;
 };
 
+bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
+	for(int i = 0; i < objetivo_global->elements_count; i++){
+		t_pokemon_team* objetivo_actual = list_get(objetivo_global, i);
+
+		if(string_equals_ignore_case(pokemon, objetivo_actual->nombre)){
+			printf("Está en objetivos globales\n");
+			return true;
+		}
+	}
+	printf("No está en objetivos globales, lo voy a rechazar\n");
+	return false;
+};
+
+
+bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
+	for(int i = 0; i < pokemones_recibidos->elements_count; i++){
+		char* pokemon_actual = list_get(pokemones_recibidos, i);
+		if(string_equals_ignore_case(pokemon, pokemon_actual)){
+			printf("ya recibí un mensaje con el pokemon %s, lo voy a rechazar\n", pokemon);
+			return true;
+		}
+	}
+
+	printf("nunca recibí un mensaje con este pokemon\n");
+	return false;
+};
+
 bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
 
 	t_list* pokemones_capturados = get_pokemones_capturados(entrenadores);
@@ -316,28 +343,24 @@ bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
 	return false;
 };
 
-t_Appeared* filtrar_appeared(t_Appeared* mensaje, t_list* entrenadores, t_list* objetivo_global){
+bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* objetivo_global){
 
+	bool en_objetivo = esta_en_objetivos_globales(mensaje->pokemon.nombre, objetivo_global);
+	bool recibido = fue_recibido(mensaje->pokemon.nombre, pokemones_recibidos);
 
-	//el pokemon tiene que estar en los objetivos globales y tienen que quedar pendientes de capturar
-
-
-	//verifica que esté en mis objetivos y me devuelve la cantidad que tengo que capturar
-	int necesito_capturar = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
-
-	printf("necesito capturar: %d\n", necesito_capturar);
-
-	if(necesito_capturar > 0 && puedo_capturar(mensaje->pokemon.nombre, entrenadores, necesito_capturar)){
-		return mensaje;
-	}
-
-	//hay que considerar tambien los que ya estan en el mapa
-
-	return NULL;
+	return en_objetivo && !recibido;
 }
 
 
 
+bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos){
+
+	//en realidad el filtro de id ya se hizo antes, lo dejo pa probar
+	bool respuesta = es_respuesta(id, gets_recibidos);
+	bool recibido = fue_recibido(mensaje->pokemon.nombre, pokemones_recibidos);
+
+	return respuesta && !recibido;
+}
 
 
 

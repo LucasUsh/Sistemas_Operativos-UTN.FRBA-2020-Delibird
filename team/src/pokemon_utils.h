@@ -26,5 +26,5 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar);
 t_list* get_nombres_pokemon();
 char* get_nombre_aleatorio(t_list* nombre_pokemones);
 t_list* localized_to_pokemon_team(t_Localized mensaje_localized);
-
+t_pokemon_team* get_pokemon_team(char* nombre, t_posicion posicion);
 #endif /* POKEMON_UTILS_H_ */

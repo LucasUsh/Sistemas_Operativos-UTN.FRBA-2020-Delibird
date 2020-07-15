@@ -131,3 +131,11 @@ t_list* localized_to_pokemon_team(t_Localized mensaje_localized){
 	return pokemones;
 }
 
+t_pokemon_team* get_pokemon_team(char* nombre, t_posicion posicion){
+	t_pokemon_team* pokemon_team = malloc(sizeof(t_pokemon_team));
+	pokemon_team->cantidad = 1;
+	pokemon_team->nombre = nombre;
+	pokemon_team->posicion = posicion;
+
+	return pokemon_team;
+}
