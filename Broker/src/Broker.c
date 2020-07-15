@@ -11,58 +11,22 @@
 #include "Broker.h"
 #include "pruebas.h"
 
-
-int32_t sizeMemoria, sizeMinParticion;
-int32_t algMemoria;
-int32_t frecuenciaCompactacion;
-int32_t algReemplazo;
-int32_t algParticionLibre;
 int32_t id_mensaje_global = 0;
-char *IP_BROKER;
-char *PUERTO_BROKER;
-char * LOG_FILE;
 
 pthread_mutex_t mutex_guardar_en_memoria;
 
 int32_t main(void) {
-
-	logger = iniciar_logger();
-	config = leer_config();
-
-
-	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
-	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
-	algMemoria= atoi(config_get_string_value(config, "ALGORITMO_MEMORIA"));
-	algReemplazo = atoi(config_get_string_value(config, "ALGORITMO_REEMPLAZO"));
-	algParticionLibre = atoi(config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE"));
-	IP_BROKER = config_get_string_value(config, "IP_BROKER");
-	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
-	frecuenciaCompactacion = atoi(config_get_string_value(config, "FRECUENCIA_COMPACTACION"));
-	LOG_FILE = config_get_string_value(config, "LOG_FILE");
-
-	int32_t inicioMemoria = (int32_t)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
-	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false);
-	tabla_particiones = list_create();
-	list_add(tabla_particiones, particionInicial);
-
-	//pruebaEncontrarBuddyTrasDosParticiones();
+	iniciarBroker();
 	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
 
-
-	log_info(logger,"Lei IP_BROKER %s ",IP_BROKER);
-	log_info(logger,"Lei PUERTO_BROKER %s ",PUERTO_BROKER);
-
-	inicializarListas();
-
-	printf("Iniciando Broker \n");
 	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	printf("Creado el socket de escucha\n");
+	log_info(logger, "Creado socket de escucha \n \n");
 
 	while(socketEscucha != -1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
 
 		if(socket_cliente != -1){
-			printf("Se conecto un cliente\n");
+			log_info(logger, "Se conecto un proceso \n"); //pedir ACK aca?
 
 			int32_t tamanio_estructura = 0;
 			int32_t id_mensaje=0;
@@ -73,12 +37,14 @@ int32_t main(void) {
 				switch(operacion){
 
 				case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED:
+				log_info(logger, "Se suscribio un proceso a una cola de mensajes \n");
 				/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeSuscripcion, socket_cliente) == 0){
 					printf("Creado el hilo que maneja la suscripcion");
 				}else printf("Fallo al crear el hilo que maneja la suscripcion");*/
 				//manejoMensajeSuscripcion(socket_cliente);
 				break;
 				case NEW_POKEMON:
+					log_info(logger, "Llego un mensaje NEW_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola New \n");
@@ -87,11 +53,11 @@ int32_t main(void) {
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 						printf("Creado el hilo que maneja el mensaje New");
 					}else printf("Fallo al crear el hilo que maneja el mensaje New");
-					pruebaMostrarEstadoMemoria();
 					//info_mensaje * mensaje;
 					//mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);
 					break;
 				case APPEARED_POKEMON:
+					log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Appeared \n");
@@ -102,6 +68,7 @@ int32_t main(void) {
 					printf("El id mensaje era: %d \n", id_mensaje);
 					break;
 				case GET_POKEMON:
+					log_info(logger, "Llego un mensaje GET_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Get \n");
@@ -111,6 +78,7 @@ int32_t main(void) {
 					manejoMensajeGet(socket_cliente);
 					break;
 				case LOCALIZED_POKEMON:
+					log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Localized \n");
@@ -120,6 +88,7 @@ int32_t main(void) {
 					manejoMensajeLocalized(socket_cliente);
 					break;
 				case CATCH_POKEMON:
+					log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Catch \n");
@@ -129,6 +98,7 @@ int32_t main(void) {
 					manejoMensajeCatch(socket_cliente);
 					break;
 				case CAUGHT_POKEMON:
+					log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					log_info(logger, "Nuevo mensaje en cola Caught \n");
@@ -227,6 +197,7 @@ void manejoMensaje(info_mensaje* mensaje){
 	pthread_mutex_lock(&mutex_guardar_en_memoria);
 	administrarMensaje(mensaje, algMemoria, frecuenciaCompactacion, algReemplazo, algParticionLibre);
 	pthread_mutex_unlock(&mutex_guardar_en_memoria);
+	pruebaMostrarEstadoMemoria();
 	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
 	// o se hace en otro hilo)
 }
@@ -351,7 +322,28 @@ void informarId(int32_t socket_cliente){
 	free(paquete);
 }
 
-void inicializarListas(){
+void iniciarBroker(){
+	log_info(logger, "Iniciando Broker \n");
+	//Lectura de archivo de configuracion
+	logger = iniciar_logger();
+	config = leer_config();
+	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
+	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
+	algMemoria= atoi(config_get_string_value(config, "ALGORITMO_MEMORIA"));
+	algReemplazo = atoi(config_get_string_value(config, "ALGORITMO_REEMPLAZO"));
+	algParticionLibre = atoi(config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE"));
+	IP_BROKER = config_get_string_value(config, "IP_BROKER");
+	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
+	frecuenciaCompactacion = atoi(config_get_string_value(config, "FRECUENCIA_COMPACTACION"));
+	LOG_FILE = config_get_string_value(config, "LOG_FILE");
+
+	//Inicializar memoria
+	int32_t inicioMemoria = (int32_t)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
+	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false);
+	tabla_particiones = list_create();
+	list_add(tabla_particiones, particionInicial);
+
+	//Crear listas de suscriptores y mensajes
 	suscriptores_New = list_create();
 	suscriptores_Appeared = list_create();
 	suscriptores_Catch = list_create();
@@ -359,6 +351,7 @@ void inicializarListas(){
 	suscriptores_Get = list_create();
 	suscriptores_Localized = list_create();
 	list_mensajes = list_create();
+
 }
 
 void suscribirProceso(op_code operacion, int32_t * PID){

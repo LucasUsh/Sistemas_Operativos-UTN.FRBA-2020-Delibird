@@ -67,8 +67,8 @@ int32_t tamanioMinimo(int32_t sizeMsg);
 void generarParticionBS(t_particion* particionInicial);
 void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo);
 void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo, int32_t algoritmoParticionLibre);
-void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo);
-void algoritmoLiberacionBS(char algoritmoReemplazo);
+void algoritmoLiberacion(int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo);
+void algoritmoLiberacionBS(int32_t algoritmoReemplazo);
 
 void guardarMensaje(info_mensaje * mensaje, t_particion * particion);
 bool esElMensaje(t_particion* particion, op_code codigo_operacion, double id_mensaje);

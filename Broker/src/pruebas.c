@@ -98,7 +98,7 @@ void pruebaMostrarEstadoMemoria(){
 				/*info_mensaje * mensaje;
 				mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);*/
 				printf("Index lista: %d \n Posicion inicial: %d \n Posicion final: %d \n Size: %d \n "
-						"id de particion: %f \n codigo de operacion: %d \n ocupada: %d \n id_mensaje: %d \n \n", i,particion->posicion_inicial,
+						"id de particion: %f \n codigo de operacion: %d \n ocupada: %d \n id_mensaje: %f \n \n", i,particion->posicion_inicial,
 						particion->posicion_final, particion->size, particion->id, particion->codigo_operacion, particion->ocupada, particion->id_mensaje);
 				}
 		}

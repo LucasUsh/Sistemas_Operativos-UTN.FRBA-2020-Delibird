@@ -109,7 +109,7 @@ void liberar(char algoritmoReemplazo){
 		posicion = obtenerPosicion(particion);
 		particion=consolidarParticion(particion, posicion);
 		particion->ocupada= false;
-		particion->codigo_operacion =0;
+		particion->codigo_operacion =-1;
 		particion->id=0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
@@ -119,13 +119,13 @@ void liberar(char algoritmoReemplazo){
 		posicion = obtenerPosicion(particion);
 		particion=consolidarParticion(particion, posicion);
 		particion->ocupada= false;
-		particion->codigo_operacion =0;
+		particion->codigo_operacion =-1;
 		particion->id=0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
 		break;
 	default:
-		printf("Ese algoritmo no esta implementado\n");
+		printf("Ese algoritmo de liberacion no esta implementado\n");
 		return;
 	}
 }
@@ -145,6 +145,38 @@ t_particion * consolidarParticion(t_particion * particion, int posicion){
 		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
 			particion->posicion_final = particionAMirar->posicion_final;
 			particion->size += particionAMirar->size;
+		}
+	}
+	return particion;
+}
+
+t_particion * consolidarParticionBS(t_particion * particion, int posicion){
+	t_particion* particionAMirar;
+
+	if(posicion !=0){//si tiene una particion antes
+		particionAMirar = list_get(tabla_particiones, posicion-1);
+		if(!particionAMirar->ocupada){//si la particion anterior esta libre
+			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
+				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
+					particion->posicion_inicial = particionAMirar->posicion_inicial;
+					particion->size += particionAMirar->size;
+					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d. "
+							"Posicion de inicio particion 2: %d \n", particion->posicion_inicial, particionAMirar->posicion_inicial);
+				}
+			}
+		}
+	}
+	if(posicion != (tabla_particiones->elements_count)-1){//si tiene una particion despues
+		particionAMirar = list_get(tabla_particiones, posicion+1);
+		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
+			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
+				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
+					particion->posicion_final = particionAMirar->posicion_final;
+					particion->size += particionAMirar->size;
+					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d."
+							"Posicion de inicio particion 2: %d \n", particion->posicion_inicial, particionAMirar->posicion_inicial);
+				}
+			}
 		}
 	}
 	return particion;
@@ -202,6 +234,13 @@ int obtenerPosicion(t_particion * particion){
 	return -1;
 }
 
+void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
+	particion->codigo_operacion = mensaje->op_code;
+	particion->ocupada = true;
+	particion->id_mensaje = mensaje->id_mensaje;
+	log_info(logger, "Se guardo un mensaje en la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
+}
+
 int32_t tamanioMinimo(int32_t sizeMsg){
 ///algoritmo para calcular la menor potencia de 2 en la que entra un mensaje; Buddy System
 	if(sizeMsg !=1){
@@ -253,7 +292,26 @@ t_particion* getParticionBS(int32_t tamanioMinimo){
 	return list_get(particionesCandidatas, 0);
 }
 
-void algoritmoLiberacionBS(char algoritmoReemplazo){
+void algoritmoLiberacion(int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo){
+	int liberadas;
+	switch(frecuenciaCompactacion){
+	case -1:
+		liberar(algoritmoReemplazo);
+		break;
+	case 0 || 1:
+		liberar(algoritmoReemplazo);
+		//compactar
+		break;
+	default:
+		for(liberadas=0; liberadas<frecuenciaCompactacion;liberadas++){
+			liberar(algoritmoReemplazo);
+			}
+		//compactar
+		return;
+		}
+}
+
+void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 	t_particion * particion;
 	int posicion;
 
@@ -263,86 +321,79 @@ void algoritmoLiberacionBS(char algoritmoReemplazo){
 		posicion = obtenerPosicion(particion);
 		particion=consolidarParticionBS(particion, posicion);
 		particion->ocupada= false;
-		particion->codigo_operacion =0;
+		particion->codigo_operacion =-1;
 		particion->id=0;
+		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		break;
 	case LRU: //(strcmp(algoritmoReemplazo, "LRU") == 0):
 		particion = algoritmoLRU();
 		posicion = obtenerPosicion(particion);
 		particion=consolidarParticionBS(particion, posicion);
 		particion->ocupada= false;
-		particion->codigo_operacion =0;
+		particion->codigo_operacion =-1;
 		particion->id=0;
+		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		break;
 	default:
-		printf("Ese algoritmo no esta implementado\n");
+		printf("Ese algoritmo de liberacion no esta implementado\n");
 		return;
 	}
 }
 
-t_particion * consolidarParticionBS(t_particion * particion, int posicion){
-	t_particion* particionAMirar;
-
-	if(posicion !=0){//si tiene una particion antes
-		particionAMirar = list_get(tabla_particiones, posicion-1);
-		if(!particionAMirar->ocupada){//si la particion anterior esta libre
-			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
-					particion->posicion_inicial = particionAMirar->posicion_inicial;
-					particion->size += particionAMirar->size;
-				}
-			}
-		}
-	}
-	if(posicion != (tabla_particiones->elements_count)-1){//si tiene una particion despues
-		particionAMirar = list_get(tabla_particiones, posicion+1);
-		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
-			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
-					particion->posicion_final = particionAMirar->posicion_final;
-					particion->size += particionAMirar->size;
-				}
-			}
-		}
-	}
-	return particion;
-}
-
-
-void administrarMensaje(info_mensaje * mensaje, int32_t algMemoria, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre){
-	switch(algMemoria){
-	case BS:
-		algoritmoBuddySystem(mensaje, algReemplazo);
-		break;
-	case PARTICIONES:
-		algoritmoParticionDinamica(mensaje, frecuenciaCompactacion, algReemplazo, algParticionLibre);
-		break;
-		}
+int32_t algoritmoCompactacion(int32_t frecuenciaCompactacion){
+	if(frecuenciaCompactacion!=-1){
+		//compactar
+		frecuenciaCompactacion=frecuenciaCompactacion-1;
+		return frecuenciaCompactacion;
+	}else return frecuenciaCompactacion;
 }
 
 void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 	int32_t tamanio= tamanioMinimo(mensaje->sizeMsg);
+	if(tamanio <sizeMinParticion){
+		tamanio = sizeMinParticion;
+	}
 	t_particion * particion;
-	if(hayParticionesCandidatasBS(tamanio) == true){ //hay una particion libre del tamanio exacto que necesito?
-		particion = getParticionBS(tamanio);
-		guardarMensaje(mensaje, particion);
-	}else {if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
-		while(hayParticionesCandidatasBS(tamanio) != true){
-			particion = getParticionFirstFit(tamanio);
-			generarParticionBS(particion);
+	bool buscar = true;
+	int32_t liberadas = 0;
+
+	while(buscar){
+		if(liberadas < tabla_particiones->elements_count){
+			if(hayParticionesCandidatasBS(tamanio) == true){ //hay una particion libre del tamanio exacto que necesito?
+				particion = getParticionBS(tamanio);
+				guardarMensaje(mensaje, particion);
+				buscar = false;
+			}else {if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
+				while(hayParticionesCandidatasBS(tamanio) != true){
+					particion = getParticionFirstFit(tamanio);
+					generarParticionBS(particion);
+					}
+				particion = getParticionBS(tamanio);
+				guardarMensaje(mensaje, particion);
+				buscar= false;
+				}else {
+					algoritmoLiberacionBS(algoritmoReemplazo);
+					liberadas++;
+				}
 			}
-		particion = getParticionBS(tamanio);
-		guardarMensaje(mensaje, particion);
-		}else algoritmoLiberacionBS(algoritmoReemplazo);
+		}else {
+			buscar=false;
+			printf("Libere todas las particiones y no encontre un lugar para guardar el mensaje\n");
+		}
 	}
 }
-
+//algoritmoLiberacionBS(algoritmoReemplazo);
 void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo, int32_t algoritmoParticionLibre){
 	int32_t tamanio= mensaje->sizeMsg;
+	if(tamanio<sizeMinParticion){
+		tamanio = sizeMinParticion;
+	}
 	t_particion * particion;
 
 	if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
@@ -374,37 +425,15 @@ void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompac
 		}else algoritmoLiberacion(frecuenciaCompactacion, algoritmoReemplazo);
 }
 
-void algoritmoLiberacion(int32_t frecuenciaCompactacion, char algoritmoReemplazo){
-	int liberadas;
-	switch(frecuenciaCompactacion){
-	case -1:
-		liberar(algoritmoReemplazo);
+void administrarMensaje(info_mensaje * mensaje, int32_t algMemoria, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre){
+	switch(algMemoria){
+	case BS:
+		algoritmoBuddySystem(mensaje, algReemplazo);
 		break;
-	case 0 || 1:
-		liberar(algoritmoReemplazo);
-		//compactar
+	case PARTICIONES:
+		algoritmoParticionDinamica(mensaje, frecuenciaCompactacion, algReemplazo, algParticionLibre);
 		break;
-	default:
-		for(liberadas=0; liberadas<frecuenciaCompactacion;liberadas++){
-			liberar(algoritmoReemplazo);
-			}
-		//compactar
-		return;
 		}
-}
-
-int32_t algoritmoCompactacion(int32_t frecuenciaCompactacion){
-	if(frecuenciaCompactacion!=-1){
-		//compactar
-		frecuenciaCompactacion=frecuenciaCompactacion-1;
-		return frecuenciaCompactacion;
-	}else return frecuenciaCompactacion;
-}
-
-void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
-	particion->codigo_operacion = mensaje->op_code;
-	particion->ocupada = true;
-	particion->id_mensaje = mensaje->id_mensaje;
 }
 
 

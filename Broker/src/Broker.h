@@ -38,6 +38,15 @@ typedef struct {
 
 t_log* logger;
 t_config* config;
+int32_t sizeMemoria, sizeMinParticion;
+int32_t algMemoria;
+int32_t frecuenciaCompactacion;
+int32_t algReemplazo;
+int32_t algParticionLibre;
+
+char *IP_BROKER;
+char *PUERTO_BROKER;
+char * LOG_FILE;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
@@ -49,7 +58,8 @@ double get_id();
 int getMemoriaOcupada();
 int getMemoriaDisponible();
 
-void iniciarColas();
+void iniciarBroker();
+
 void manejoMensajeSuscripcion(int32_t socket_cliente);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 void manejoMensaje(info_mensaje* mensaje);
@@ -60,7 +70,6 @@ void manejoMensajeLocalized(int32_t socket_cliente);
 void manejoMensajeCatch(int32_t socket_cliente);
 void manejoMensajeCaught(int32_t socket_cliente);
 void informarId(int32_t socket_cliente);
-void inicializarListas();
 
 int32_t getSizeMensajeNew(t_New msgNew);
 
