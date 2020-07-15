@@ -176,18 +176,14 @@ t_list* get_pokemones_capturados(t_list* entrenadores){
 
     for(int i = 0; i < entrenadores->elements_count; i++){
 		t_entrenador* entrenador_actual = list_get(entrenadores, i);
-		printf("*************************************************************\n");
-		printf("*entrenador actual: %d\n", entrenador_actual->id);
+
 		for(int j = 0; j < entrenador_actual->pokemones->elements_count; j++){
 			t_pokemon_team* pokemon_actual = list_get(entrenador_actual->pokemones, j);
-
-			printf("**pokemon actual: %s\n", pokemon_actual->nombre);
-			printf("**cantidad: %d\n", pokemon_actual->cantidad);
 
 			list_add(pokemones_capturados, pokemon_actual);
 		}
 	}
-    printf("*************************************************************\n");
+
     if(pokemones_capturados->elements_count > 0){
     	pokemones_capturados = sumarizar_pokemones(pokemones_capturados);
     }
@@ -312,16 +308,20 @@ bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
 	for(int j = 0; j < pokemones_capturados->elements_count; j++){
 		t_pokemon_team* pokemon_actual = list_get(pokemones_capturados, j);
 		if(string_equals_ignore_case(pokemon, pokemon_actual->nombre)){
-			printf("tengo capturados: %d\n", pokemon_actual->cantidad);
 			return pokemon_actual->cantidad < necesito_capturar;
 		}
 	}
 
-	return true;
+	return false;
 };
 
 t_Appeared* filtrar_appeared(t_Appeared* mensaje, t_list* entrenadores, t_list* objetivo_global){
 
+
+	//el pokemon tiene que estar en los objetivos globales y tienen que quedar pendientes de capturar
+
+
+	//verifica que esté en mis objetivos y me devuelve la cantidad que tengo que capturar
 	int necesito_capturar = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
 
 	printf("necesito capturar: %d\n", necesito_capturar);

@@ -57,7 +57,7 @@ typedef struct {
 	//uint32_t size_Nombre;
 	char * 	 	nombre;
 	int32_t 	cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
-	t_posicion* posicion; //supongo que pasará lo mismo con esto jajajaja
+	t_posicion posicion; //supongo que pasará lo mismo con esto jajajaja
 }t_pokemon_team;
 
 

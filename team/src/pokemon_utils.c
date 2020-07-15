@@ -63,11 +63,18 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 	t_list* lista_sumarizada = list_create();
 	for(int32_t i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
 		t_pokemon_team* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
+
+
+		t_pokemon_team* clone = malloc(sizeof(t_pokemon_team));
+		clone->cantidad = 1;
+		clone->nombre = pokemon->nombre;
+		clone->posicion = pokemon->posicion;
+
 		int32_t pokemon_encontrado = 0;
 
 		if(lista_sumarizada->elements_count == 0){
-			//////////// AL HACER ESTO, AMBOS REFERENCIAN AL MISMO POKEMON
-			list_add(lista_sumarizada, pokemon);
+
+			list_add(lista_sumarizada, clone);
 		} else {
 
 			for(int32_t j = 0; j < lista_sumarizada->elements_count; j++){
@@ -75,15 +82,15 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 
 				if(string_equals_ignore_case(pokemon_sumarizado->nombre, pokemon->nombre)){
 
-					///// O SEA QUE EN ESTE PUNTO ESTOY MODIFICANDO TANTO EL SUMARIZADO COMO EL QUE TENGO EN LA LISTA
-					//// HAY QUE CREAR UN NUEVO OBJETO POKEMON
+
 					pokemon_sumarizado->cantidad++;
 					pokemon_encontrado = 1;
+
 				}
 			}
 
 			if(!pokemon_encontrado){
-				list_add(lista_sumarizada, pokemon);
+				list_add(lista_sumarizada, clone);
 			}
 		}
 	}
@@ -117,7 +124,7 @@ t_list* localized_to_pokemon_team(t_Localized mensaje_localized){
 		t_pokemon_team* pokemon;
 		pokemon->cantidad = 1;
 		pokemon->nombre = mensaje_localized.pokemon.nombre;
-		pokemon->posicion = list_get(mensaje_localized.listaPosiciones, i);
+		pokemon->posicion = *(t_posicion*)(list_get(mensaje_localized.listaPosiciones, i));
 
 		list_add(pokemones, pokemon);
 	}
