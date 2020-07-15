@@ -61,17 +61,23 @@ int getMemoriaDisponible();
 void iniciarBroker();
 
 void manejoMensajeSuscripcion(int32_t socket_cliente);
-info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 void manejoMensaje(info_mensaje* mensaje);
-void manejoMensajeNew(info_mensaje* mensaje);
-void manejoMensajeAppeared(int32_t socket_cliente);
-void manejoMensajeGet(int32_t socket_cliente);
-void manejoMensajeLocalized(int32_t socket_cliente);
-void manejoMensajeCatch(int32_t socket_cliente);
-void manejoMensajeCaught(int32_t socket_cliente);
+info_mensaje * recibirMensajeNew(int32_t socket_cliente);
+info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);
+info_mensaje * recibirMensajeGet(int32_t socket_cliente);
+info_mensaje * recibirMensajeLocalized(int32_t socket_cliente);
+info_mensaje * recibirMensajeCatch(int32_t socket_cliente);
+info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
+
+
 void informarId(int32_t socket_cliente);
 
 int32_t getSizeMensajeNew(t_New msgNew);
+int32_t getSizeMensajeAppeared(t_Appeared msgAppeared);
+int32_t getSizeMensajeGet(t_Get msgGet);
+int32_t getSizeMensajeLocalized(t_Localized msgLocalized);
+int32_t getSizeMensajeCatch(t_Catch msgCatch);
+int32_t getSizeMensajeCaught(t_Caught msgCaught);
 
 
 t_list* suscriptores_New;

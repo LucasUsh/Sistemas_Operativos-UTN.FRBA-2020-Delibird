@@ -47,8 +47,6 @@ t_list* tabla_particiones;
 
 t_particion* crearParticion(int inicio, int size, bool ocupada);
 
-void administrarMensaje(info_mensaje * mensaje, int32_t algMemoria, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre);
-
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
 t_particion* getParticionFirstFit(int32_t sizeMensaje);
 t_particion* getParticionBestFit(int32_t sizeMensaje);

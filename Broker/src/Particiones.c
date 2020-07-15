@@ -356,7 +356,7 @@ int32_t algoritmoCompactacion(int32_t frecuenciaCompactacion){
 
 void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 	int32_t tamanio= tamanioMinimo(mensaje->sizeMsg);
-	if(tamanio <sizeMinParticion){
+	if(tamanio < sizeMinParticion){
 		tamanio = sizeMinParticion;
 	}
 	t_particion * particion;
@@ -391,52 +391,52 @@ void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 //algoritmoLiberacionBS(algoritmoReemplazo);
 void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo, int32_t algoritmoParticionLibre){
 	int32_t tamanio= mensaje->sizeMsg;
-	if(tamanio<sizeMinParticion){
+	if(tamanio < sizeMinParticion){
 		tamanio = sizeMinParticion;
 	}
 	t_particion * particion;
+	bool buscar = true;
+	int32_t liberadas = 0;
 
-	if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
-		switch(algoritmoParticionLibre){
-		case FF:
-			particion = getParticionFirstFit(tamanio);
-			if(particion->size == tamanio){
-				guardarMensaje(mensaje, particion);
+	while(buscar){
+		if(liberadas < tabla_particiones->elements_count){
+
+			if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
+				switch(algoritmoParticionLibre){
+				case FF:
+					particion = getParticionFirstFit(tamanio);
+					if(particion->size == tamanio){
+						guardarMensaje(mensaje, particion);
+					}else {
+						generarParticionDinamica(particion, tamanio);
+						particion = getParticionFirstFit(tamanio);
+						guardarMensaje(mensaje, particion);
+					}
+					break;
+				case BF:
+					particion = getParticionBestFit(tamanio);
+					if(particion->size == tamanio){
+						guardarMensaje(mensaje, particion);
+					}else{
+						generarParticionDinamica(particion, tamanio);
+						particion = getParticionBestFit(tamanio);
+						guardarMensaje(mensaje, particion);
+					}
+					break;
+				default:
+					printf("Ese algoritmo no esta implementado\n");
+					return;
+				}
 			}else {
-				generarParticionDinamica(particion, tamanio);
-				particion = getParticionFirstFit(tamanio);
-				guardarMensaje(mensaje, particion);
+				algoritmoLiberacion(frecuenciaCompactacion, algoritmoReemplazo);
+				liberadas++;
 			}
-			break;
-		case BF:
-			particion = getParticionBestFit(tamanio);
-			if(particion->size == tamanio){
-				guardarMensaje(mensaje, particion);
-			}else{
-				generarParticionDinamica(particion, tamanio);
-				particion = getParticionBestFit(tamanio);
-				guardarMensaje(mensaje, particion);
-			}
-			break;
-		default:
-			printf("Ese algoritmo no esta implementado\n");
-			return;
+		} else{
+			buscar=false;
+			printf("Libere todas las particiones y no encontre un lugar para guardar el mensaje\n");
 		}
-		}else algoritmoLiberacion(frecuenciaCompactacion, algoritmoReemplazo);
+	}
 }
-
-void administrarMensaje(info_mensaje * mensaje, int32_t algMemoria, int32_t frecuenciaCompactacion, int32_t algReemplazo, int32_t algParticionLibre){
-	switch(algMemoria){
-	case BS:
-		algoritmoBuddySystem(mensaje, algReemplazo);
-		break;
-	case PARTICIONES:
-		algoritmoParticionDinamica(mensaje, frecuenciaCompactacion, algReemplazo, algParticionLibre);
-		break;
-		}
-}
-
-
 
 
 
