@@ -308,6 +308,7 @@ bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
 	for(int j = 0; j < pokemones_capturados->elements_count; j++){
 		t_pokemon_team* pokemon_actual = list_get(pokemones_capturados, j);
 		if(string_equals_ignore_case(pokemon, pokemon_actual->nombre)){
+			printf("tengo %d capturados\n", pokemon_actual->cantidad);
 			return pokemon_actual->cantidad < necesito_capturar;
 		}
 	}

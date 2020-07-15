@@ -23,8 +23,9 @@ t_list* cola_ready;
 sem_t s_cola_ready_con_items;
 
 //colas de mensajes
-t_list* mensajes_posiciones_planificables;
+t_list* mensajes_posiciones_planificables; // podría ser pokemones en el mapa
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
+t_list* pokemones_en_mapa;
 
 t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
 	int32_t nuevaPosicionX = posicion.X + posX;
@@ -305,6 +306,20 @@ void hilo_planificador(void* l_entrenadores){
 	}
 }
 
+
+void ubicar_pokemones(t_Localized* pokemones_a_ubicar){
+	for(int i = 0; i < pokemones_a_ubicar->listaPosiciones->elements_count; i++){
+		t_pokemon_team* pokemon_ubicado = malloc(sizeof(t_pokemon));
+		t_posicion* posicion = list_get(pokemones_a_ubicar->listaPosiciones, i);
+
+		pokemon_ubicado->cantidad = 1;
+		pokemon_ubicado->posicion = *posicion;
+		pokemon_ubicado->nombre = pokemones_a_ubicar->pokemon.nombre;
+
+		list_add(pokemones_en_mapa, pokemon_ubicado);
+	}
+}
+
 void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 	t_list* entrenadores = (t_list*)l_entrenadores;
 
@@ -312,27 +327,40 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 
 		// esto simula que recibí un mensaje localized
 		t_Localized* mensaje = simular_localized(1); // puede haber mas de 1
-		int id = (rand() % (15)) + 1; // supongo que llega con un id random
-		//deberia filtrar el mensaje por id
+		int id = (rand() % (15)) + 1; // supongo que llega con un id random, el if debe estar donde lo recibo posta
+
 		printf("llego el mensaje con id: %d\n", id);
 
-		if(es_respuesta(id, mensajes_get_esperando_respuesta)){ // esto tendria que estar afuera, donde tengo el id
+		//filtro los mensajes que son una respuesta a un GET
+		if(es_respuesta(id, mensajes_get_esperando_respuesta)){
 			printf("Es respuesta\n");
-			t_posicion* posicion = list_remove(mensaje->listaPosiciones, 0); // puede haber mas de 1
 
-			if(mensaje->listaPosiciones > 0){
-				// tengo una "reserva" de pokemones por si llega a fallar el catch
-				list_add(mensajes_posiciones_planificables, mensaje);
-			}
+			// No sé si debería comparar todas las posiciones, con todos los entrenadores
+			//y obtener el de distancia mas corta entre todas las posiciones y todos los entrenadores.
+			t_posicion* posicion = list_get(mensaje->listaPosiciones, 0);
 
+
+			//por ahora vamos con la primera
 			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
 
 			if(entrenador_mas_cercano != NULL){
+
+				//Si hay entrenadores planificables, planifico esa posicion
+				list_remove(mensaje->listaPosiciones, 0);
+
+
+				//agrego a mi mapa todas las otras posiciones
+				if(mensaje->listaPosiciones > 0){
+					ubicar_pokemones(mensaje);
+				}
+
 				entrenador_mas_cercano->estado = READY;
 				entrenador_mas_cercano->posicion_destino = *posicion;
 
 				list_add(cola_ready, entrenador_mas_cercano);
 				sem_post(&s_cola_ready_con_items);
+			} else {
+				ubicar_pokemones(mensaje);
 			}
 		}
 		sleep(5);
@@ -362,6 +390,13 @@ void hilo_recibidor_mensajes_appeared(void* l_entrenadores){
 
 				list_add(cola_ready, entrenador_mas_cercano);
 				sem_post(&s_cola_ready_con_items);
+			} else {
+				t_pokemon_team* pokemon_ubicado = malloc(sizeof(t_pokemon_team));
+				pokemon_ubicado->cantidad = 1;
+				pokemon_ubicado->nombre = mensaje->pokemon.nombre;
+				pokemon_ubicado->posicion = mensaje->posicion;
+
+				list_add(pokemones_en_mapa, pokemon_ubicado);
 			}
 		}
 
@@ -401,6 +436,7 @@ int32_t main(int32_t argc, char** argv)
 	objetivo_global = list_create();
 	mensajes_posiciones_planificables = list_create();
 	mensajes_get_esperando_respuesta = list_create();
+	pokemones_en_mapa = list_create();
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	srand(time(NULL));
     printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );

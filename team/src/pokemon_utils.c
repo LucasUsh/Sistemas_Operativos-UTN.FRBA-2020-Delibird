@@ -64,9 +64,8 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 	for(int32_t i = 0; i < lista_pokemones_sin_sumarizar->elements_count; i++){
 		t_pokemon_team* pokemon = list_get(lista_pokemones_sin_sumarizar, i);
 
-
 		t_pokemon_team* clone = malloc(sizeof(t_pokemon_team));
-		clone->cantidad = 1;
+		clone->cantidad = pokemon->cantidad;
 		clone->nombre = pokemon->nombre;
 		clone->posicion = pokemon->posicion;
 
