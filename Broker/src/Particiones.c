@@ -98,31 +98,34 @@ bool particionCandidataVictima(t_particion* particion){
 	return particion->ocupada;
 }
 
-// ALGORITMOS DE REEMPLAZO
-void liberar(char algoritmoReemplazo){
+void algoritmoLiberacion(int32_t algoritmoReemplazo){
 	t_particion * particion;
 	int posicion;
 
 	switch(algoritmoReemplazo){
-	case FIFO: //(strcmp(algoritmoReemplazo, "FIFO") == 0):
+	case FIFO:
 		particion = algoritmoFIFO();
 		posicion = obtenerPosicion(particion);
-		particion=consolidarParticion(particion, posicion);
+		particion=consolidarParticionBS(particion, posicion);
 		particion->ocupada= false;
 		particion->codigo_operacion =-1;
 		particion->id=0;
+		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		break;
-	case LRU: //(strcmp(algoritmoReemplazo, "LRU") == 0):
+	case LRU:
 		particion = algoritmoLRU();
 		posicion = obtenerPosicion(particion);
-		particion=consolidarParticion(particion, posicion);
+		particion=consolidarParticionBS(particion, posicion);
 		particion->ocupada= false;
 		particion->codigo_operacion =-1;
 		particion->id=0;
+		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		break;
 	default:
 		printf("Ese algoritmo de liberacion no esta implementado\n");
@@ -180,6 +183,52 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		}
 	}
 	return particion;
+}
+
+void algoritmoCompactacion(){
+	int i;
+	t_list * particionesOcupadas = list_create();
+	t_list * particionesLibres = list_create();
+	t_particion * particionActual;
+	int32_t posicion = inicioMemoria;
+
+	for(i=0; i<tabla_particiones->elements_count; i++){
+		particionActual = list_get(tabla_particiones, i);
+		if(particionActual->ocupada){
+			list_add(particionesOcupadas, particionActual);
+		} else list_add(particionesLibres, particionActual);
+	}
+	list_clean(tabla_particiones);
+
+	// GUARDAMOS LAS PARTICIONES OCUPADAS
+	for(i=0; i<particionesOcupadas->elements_count; i++){
+		particionActual = list_get(particionesOcupadas, i);
+		particionActual->posicion_inicial = posicion;
+		particionActual->posicion_final = posicion+particionActual->size-1;
+		posicion += particionActual->size;
+		list_add(tabla_particiones, particionActual);
+	}
+
+	// GUARDAMOS LAS PARTICIONES LIBRES
+	for(i=0; i<particionesLibres->elements_count; i++){
+		particionActual = list_get(particionesLibres, i);
+		particionActual->posicion_inicial = posicion;
+		particionActual->posicion_final = posicion+particionActual->size-1;
+		posicion += particionActual->size;
+		list_add(tabla_particiones, particionActual);
+	}
+
+	// CONSOLIDAMOS LAS PARTICIONES LIBRES
+	int posicionParticion = particionesOcupadas->elements_count; // inicio de las particiones libres, para saber desde donde consolidar
+	for(i=0; i < particionesLibres->elements_count-1; i++){
+		particionActual = list_get(tabla_particiones, posicionParticion);
+		consolidarParticion(particionActual, posicionParticion);
+	}
+
+	list_clean(particionesOcupadas);
+	list_destroy(particionesOcupadas);
+	list_clean(particionesLibres);
+	list_destroy(particionesLibres);
 }
 
 t_particion * algoritmoFIFO(){ //debemos tomar la de id mas chico
@@ -292,68 +341,6 @@ t_particion* getParticionBS(int32_t tamanioMinimo){
 	return list_get(particionesCandidatas, 0);
 }
 
-void algoritmoLiberacion(int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo){
-	int liberadas;
-	switch(frecuenciaCompactacion){
-	case -1:
-		liberar(algoritmoReemplazo);
-		break;
-	case 0 || 1:
-		liberar(algoritmoReemplazo);
-		//compactar
-		break;
-	default:
-		for(liberadas=0; liberadas<frecuenciaCompactacion;liberadas++){
-			liberar(algoritmoReemplazo);
-			}
-		//compactar
-		return;
-		}
-}
-
-void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
-	t_particion * particion;
-	int posicion;
-
-	switch(algoritmoReemplazo){
-	case FIFO: //(strcmp(algoritmoReemplazo, "FIFO") == 0):
-		particion = algoritmoFIFO();
-		posicion = obtenerPosicion(particion);
-		particion=consolidarParticionBS(particion, posicion);
-		particion->ocupada= false;
-		particion->codigo_operacion =-1;
-		particion->id=0;
-		particion->id_mensaje =0;
-		list_remove(tabla_particiones, posicion);
-		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
-		break;
-	case LRU: //(strcmp(algoritmoReemplazo, "LRU") == 0):
-		particion = algoritmoLRU();
-		posicion = obtenerPosicion(particion);
-		particion=consolidarParticionBS(particion, posicion);
-		particion->ocupada= false;
-		particion->codigo_operacion =-1;
-		particion->id=0;
-		particion->id_mensaje =0;
-		list_remove(tabla_particiones, posicion);
-		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
-		break;
-	default:
-		printf("Ese algoritmo de liberacion no esta implementado\n");
-		return;
-	}
-}
-
-int32_t algoritmoCompactacion(int32_t frecuenciaCompactacion){
-	if(frecuenciaCompactacion!=-1){
-		//compactar
-		frecuenciaCompactacion=frecuenciaCompactacion-1;
-		return frecuenciaCompactacion;
-	}else return frecuenciaCompactacion;
-}
-
 void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 	int32_t tamanio= tamanioMinimo(mensaje->sizeMsg);
 	if(tamanio < sizeMinParticion){
@@ -378,7 +365,7 @@ void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 				guardarMensaje(mensaje, particion);
 				buscar= false;
 				}else {
-					algoritmoLiberacionBS(algoritmoReemplazo);
+					algoritmoLiberacion(algoritmoReemplazo);
 					liberadas++;
 				}
 			}
@@ -388,7 +375,7 @@ void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 		}
 	}
 }
-//algoritmoLiberacionBS(algoritmoReemplazo);
+
 void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompactacion, int32_t algoritmoReemplazo, int32_t algoritmoParticionLibre){
 	int32_t tamanio= mensaje->sizeMsg;
 	if(tamanio < sizeMinParticion){
@@ -400,7 +387,6 @@ void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompac
 
 	while(buscar){
 		if(liberadas < tabla_particiones->elements_count){
-
 			if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
 				switch(algoritmoParticionLibre){
 				case FF:
@@ -428,8 +414,20 @@ void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompac
 					return;
 				}
 			}else {
-				algoritmoLiberacion(frecuenciaCompactacion, algoritmoReemplazo);
+				algoritmoLiberacion(algoritmoReemplazo);
 				liberadas++;
+				switch(frecuenciaCompactacion){
+				case -1:
+					break;
+				case 0 || 1:
+					algoritmoCompactacion();
+					break;
+				default:
+					if(liberadas == frecuenciaCompactacion){
+						algoritmoCompactacion();
+					}
+					break;
+				}
 			}
 		} else{
 			buscar=false;

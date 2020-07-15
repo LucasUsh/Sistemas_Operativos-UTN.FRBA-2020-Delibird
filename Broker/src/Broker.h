@@ -43,6 +43,7 @@ int32_t algMemoria;
 int32_t frecuenciaCompactacion;
 int32_t algReemplazo;
 int32_t algParticionLibre;
+int32_t inicioMemoria;
 
 char *IP_BROKER;
 char *PUERTO_BROKER;

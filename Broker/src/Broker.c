@@ -362,7 +362,7 @@ void iniciarBroker(){
 	LOG_FILE = config_get_string_value(config, "LOG_FILE");
 
 	//Inicializar memoria
-	int32_t inicioMemoria = (int32_t)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
+	inicioMemoria = (int32_t)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
 	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false);
 	tabla_particiones = list_create();
 	list_add(tabla_particiones, particionInicial);
