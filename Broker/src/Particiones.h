@@ -28,21 +28,6 @@ typedef struct {
 	//int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
 } t_particion;
 
-typedef enum {
-	BS,
-	PARTICIONES
-} algoritmoMemoria;
-
-typedef enum {
-	FIFO,
-	LRU
-} algoritmoReemplazo;
-
-typedef enum {
-	FF,
-	BF
-} algoritmoParticionLibre;
-
 t_list* tabla_particiones;
 
 t_particion* crearParticion(int inicio, int size, bool ocupada);

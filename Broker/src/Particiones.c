@@ -229,6 +229,7 @@ void algoritmoCompactacion(){
 	list_destroy(particionesOcupadas);
 	list_clean(particionesLibres);
 	list_destroy(particionesLibres);
+	log_info(logger, "Se ejecuto una compactacion.\n");
 }
 
 t_particion * algoritmoFIFO(){ //debemos tomar la de id mas chico

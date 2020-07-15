@@ -30,11 +30,26 @@ typedef struct {
 	t_list * suscriptoresQueRecibieron; // estos serian los que devolvieron el ACK
 } info_mensaje;
 
-
 typedef struct {
 	bool ACK;
 	double id;
 } t_suscriptor;
+
+typedef enum {
+	BS,
+	PARTICIONES
+} algoritmoMemoria;
+
+typedef enum {
+	FIFO,
+	LRU
+} algoritmoReemplazo;
+
+typedef enum {
+	FF,
+	BF
+} algoritmoParticionLibre;
+
 
 t_log* logger;
 t_config* config;

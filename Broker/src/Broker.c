@@ -20,7 +20,7 @@ int32_t main(void) {
 	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
 
 	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	log_info(logger, "Creado socket de escucha \n \n");
+	log_info(logger, "Creado socket de escucha \n");
 
 	while(socketEscucha != -1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
@@ -47,7 +47,6 @@ int32_t main(void) {
 					log_info(logger, "Llego un mensaje NEW_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Nuevo mensaje en cola New \n");
 					mensaje = recibirMensajeNew(socket_cliente);
 
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -60,7 +59,6 @@ int32_t main(void) {
 					log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Nuevo mensaje en cola Appeared \n");
 					mensaje = recibirMensajeAppeared(socket_cliente);
 
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -71,7 +69,6 @@ int32_t main(void) {
 					log_info(logger, "Llego un mensaje GET_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Nuevo mensaje en cola Get \n");
 					mensaje = recibirMensajeGet(socket_cliente);
 
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -82,7 +79,6 @@ int32_t main(void) {
 					log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Nuevo mensaje en cola Localized \n");
 					mensaje = recibirMensajeLocalized(socket_cliente);
 
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -93,7 +89,6 @@ int32_t main(void) {
 					log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Nuevo mensaje en cola Catch \n");
 					mensaje = recibirMensajeCatch(socket_cliente);
 
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -104,7 +99,6 @@ int32_t main(void) {
 					log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Nuevo mensaje en cola Caught \n");
 					mensaje = recibirMensajeCaught(socket_cliente);
 
 					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -353,9 +347,26 @@ void iniciarBroker(){
 	//Lectura de archivo de configuracion
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
 	sizeMinParticion = atoi(config_get_string_value(config, "TAMANO_MINIMO_PARTICION"));
-	algMemoria= atoi(config_get_string_value(config, "ALGORITMO_MEMORIA"));
-	algReemplazo = atoi(config_get_string_value(config, "ALGORITMO_REEMPLAZO"));
-	algParticionLibre = atoi(config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE"));
+
+	char * value;
+	value= config_get_string_value(config, "ALGORITMO_MEMORIA");
+	if(strcmp(value,"BS") == 0){
+		algMemoria=BS;
+	}else algMemoria=PARTICIONES;
+
+	value = config_get_string_value(config, "ALGORITMO_REEMPLAZO");
+	if(strcmp(value,"FIFO") == 0){
+		algReemplazo=FIFO;
+	}else algReemplazo=LRU;
+
+	value = config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE");
+	if(strcmp(value,"FF") == 0){
+		algParticionLibre=FF;
+	}else algParticionLibre=BF;
+	//algMemoria = atoi(config_get_string_value(config, "ALGORITMO_MEMORIA"));
+	//algReemplazo = atoi(config_get_string_value(config, "ALGORITMO_REEMPLAZO"));
+	//algParticionLibre = atoi(config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE"));
+
 	IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
 	frecuenciaCompactacion = atoi(config_get_string_value(config, "FRECUENCIA_COMPACTACION"));
