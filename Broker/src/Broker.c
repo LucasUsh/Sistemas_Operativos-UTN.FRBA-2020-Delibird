@@ -19,6 +19,8 @@ int32_t main(void) {
 	iniciarBroker();
 	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
 
+	signal(SIGUSR1, rutina);
+
 	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 	log_info(logger, "Creado socket de escucha \n");
 
@@ -338,7 +340,11 @@ void informarId(int32_t socket_cliente, double id_mensaje){
 void iniciarBroker(){
 	logger = iniciar_logger();
 	config = leer_config();
+	dump = iniciar_dump();
+
 	log_info(logger, "Iniciando Broker \n");
+	unsigned int miPid= process_getpid();
+	log_info(logger, "El PID de Broker es %d \n", miPid);
 
 	//Lectura de archivo de configuracion
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
@@ -462,6 +468,17 @@ t_config * leer_config(void){
 	return config;
 }
 
+t_log* iniciar_dump(void){
+	t_log* dump;
+	dump = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/Broker-dump.log", "Broker", 1, LOG_LEVEL_INFO);
+	if(dump == NULL){
+		printf("No pude iniciar el dump\n");
+		exit(1);
+	}
+	log_info(dump, "Inicio dump");
+	return dump;
+}
+
 int getMemoriaOcupada(){
 	int memoriaOcupada = 0;
 
@@ -569,4 +586,35 @@ int32_t getSizeMensajeCaught(t_Caught msgCaught){
 
 	return sizeof(typeof(sizeof(msgCaught.fueAtrapado)));
 }
+
+void rutina (int n){
+	if(n == SIGUSR1){
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		hacerDump();
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+	}else printf("Signal no reconocida. \n");
+}
+
+void hacerDump(){
+	t_particion *particion;
+    time_t tiempo = time(0);
+    struct tm *tlocal = localtime(&tiempo);
+    char fecha[128];
+    strftime(fecha,128,"%d/%m/%y %H:%M:%S",tlocal);
+
+	log_info(dump, "Dump: %s \n", fecha);
+	int i;
+	for(i=0; i<tabla_particiones->elements_count; i++){
+		particion = list_get(tabla_particiones, i);
+		log_info(dump, "Particion %d: %p - %p.	[%d]	Size: %db	LRU: %f	COLA: %d		ID_MENSAJE: %f \n",
+				i, particion->posicion_inicial, particion->posicion_final, particion->ocupada, particion->size, particion->id,
+				particion->codigo_operacion, particion->id_mensaje);
+	}
+}
+
+
+
+
+
+
 

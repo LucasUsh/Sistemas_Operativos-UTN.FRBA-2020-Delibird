@@ -16,6 +16,7 @@
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
+#include<commons/process.h>
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.h"
 #include "../../OurLibraries/UniversoPokemon/universo.h"
@@ -53,6 +54,7 @@ typedef enum {
 
 t_log* logger;
 t_config* config;
+t_log* dump;
 int32_t sizeMemoria, sizeMinParticion;
 int32_t algMemoria;
 int32_t frecuenciaCompactacion;
@@ -66,6 +68,9 @@ char * LOG_FILE;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
+t_log* iniciar_dump(void);
+
+void hacerDump();
 
 void suscribirProceso(op_code operacion, int32_t* PID);
 void agregarMensaje(t_paquete* paquete);
@@ -109,5 +114,7 @@ t_list* mensajes_Catch;
 t_list* mensajes_Caught;
 t_list* mensajes_Get;
 t_list* mensajes_Localized;
+
+void rutina (int n);
 
 #endif /* BROKER_H_ */
