@@ -20,6 +20,7 @@
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.h"
 #include "../../OurLibraries/UniversoPokemon/universo.h"
+//#include "../../Game-Boy/src/mensajes.c"
 
 typedef struct {
 	op_code op_code;
@@ -32,8 +33,9 @@ typedef struct {
 } info_mensaje;
 
 typedef struct {
-	bool ACK;
+	op_code op_code;
 	double id;
+	int32_t socket;
 } t_suscriptor;
 
 typedef enum {
@@ -71,9 +73,6 @@ t_config* leer_config(void);
 t_log* iniciar_dump(void);
 
 void hacerDump();
-
-void suscribirProceso(op_code operacion, int32_t* PID);
-void agregarMensaje(t_paquete* paquete);
 double get_id();
 
 int getMemoriaOcupada();
@@ -81,7 +80,7 @@ int getMemoriaDisponible();
 
 void iniciarBroker();
 
-void manejoMensajeSuscripcion(int32_t socket_cliente);
+void manejoMensajeSuscripcion(int32_t socket_cliente, double id_proceso, int32_t operacion);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);
@@ -89,6 +88,7 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente);
 info_mensaje * recibirMensajeLocalized(int32_t socket_cliente);
 info_mensaje * recibirMensajeCatch(int32_t socket_cliente);
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
+void enviarMensaje(op_code operacion, info_mensaje * mensaje);
 
 int32_t getSizeMensajeNew(t_New msgNew);
 int32_t getSizeMensajeAppeared(t_Appeared msgAppeared);
@@ -98,23 +98,15 @@ int32_t getSizeMensajeCatch(t_Catch msgCatch);
 int32_t getSizeMensajeCaught(t_Caught msgCaught);
 
 
-t_list* suscriptores_New;
-t_list* suscriptores_Appeared;
-t_list* suscriptores_Catch;
-t_list* suscriptores_Caught;
-t_list* suscriptores_Get;
-t_list* suscriptores_Localized;
 
 t_list* list_mensajes;
-
-
-t_list* mensajes_New;
-t_list* mensajes_Appeared;
-t_list* mensajes_Catch;
-t_list* mensajes_Caught;
-t_list* mensajes_Get;
-t_list* mensajes_Localized;
+t_list* list_suscriptores;
 
 void rutina (int n);
+bool mensajeDeOperacion(info_mensaje * mensaje, op_code operacion);
+t_list* getMensajesDeOperacion(op_code operacion);
+bool esElSuscriptor(t_suscriptor * suscriptor, double id_proceso);
+bool procesoSuscriptoACola(op_code operacion, double id_proceso);
+t_list * obtenerMensajesFaltantes(t_list * mensajesAEnviar, double id_proceso);
 
 #endif /* BROKER_H_ */
