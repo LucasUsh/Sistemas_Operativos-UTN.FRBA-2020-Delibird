@@ -20,7 +20,7 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* i
 	new.pokemon = p_pokemon;
 
 	paquete->buffer->size = tamanio_new (&new);
-	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje);
+	paquete->buffer->id_Mensaje = (double) atoi (id_mensaje);
 	paquete->buffer->stream = &new;
 
 	int32_t bytes_a_enviar;
@@ -54,7 +54,7 @@ void enviar_appeared_pokemon (char* pokemon, char* x, char* y, char* id_mensaje_
 	app.pokemon = p_pokemon;
 
 	paquete->buffer->size = tamanio_appeared (&app);
-	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje_correlativo);
+	paquete->buffer->id_Mensaje = (double) atoi (id_mensaje_correlativo);
 	paquete->buffer->stream = &app;
 
 	int32_t bytes_a_enviar;
@@ -87,7 +87,7 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id_mensaje, int
 	catch.pokemon = p_pokemon;
 
 	paquete->buffer->size = tamanio_catch(&catch);
-	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje);
+	paquete->buffer->id_Mensaje = (double) atoi (id_mensaje);
 	paquete->buffer->stream = &catch;
 
 	int32_t bytes_a_enviar;
@@ -111,7 +111,7 @@ void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int
 	else if (strcmp(fueAtrapado, "FAIL") == 0) caught.fueAtrapado = 0;
 
 	paquete->buffer->size = tamanio_caught(&caught);
-	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje_correlativo);
+	paquete->buffer->id_Mensaje = (double) atoi (id_mensaje_correlativo);
 	paquete->buffer->stream = &caught;
 
 	int32_t bytes_a_enviar;
@@ -138,7 +138,7 @@ void enviar_get_pokemon(char* pokemon, char* id_mensaje, int32_t socket_cliente)
 	get.pokemon = p_pokemon;
 
 	paquete->buffer->size = tamanio_get(&get);
-	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje);
+	paquete->buffer->id_Mensaje = (double) atoi (id_mensaje);
 	paquete->buffer->stream = &get;
 
 	int32_t bytes_a_enviar;

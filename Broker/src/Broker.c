@@ -11,7 +11,7 @@
 #include "Broker.h"
 #include "pruebas.h"
 
-int32_t id_mensaje_global = 0;
+//int32_t id_mensaje_global = 0;
 
 pthread_mutex_t mutex_guardar_en_memoria;
 
@@ -26,87 +26,102 @@ int32_t main(void) {
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
 
 		if(socket_cliente != -1){
-			log_info(logger, "Se conecto un proceso \n"); //pedir ACK aca?
+			log_info(logger, "Se conecto un proceso \n");
 
 			int32_t tamanio_estructura = 0;
-			int32_t id_mensaje=0;
+			double id_mensaje=0;
 			int32_t operacion=0;
 			pthread_t hilo;
+			double id_proceso =0;
 			info_mensaje * mensaje;
+
+			//HANDSHAKE
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				switch(operacion){
-
-				case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED:
-				log_info(logger, "Se suscribio un proceso a una cola de mensajes \n");
-				/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeSuscripcion, socket_cliente) == 0){
-					printf("Creado el hilo que maneja la suscripcion");
-				}else printf("Fallo al crear el hilo que maneja la suscripcion");*/
-				//manejoMensajeSuscripcion(socket_cliente);
-				break;
-				case NEW_POKEMON:
-					log_info(logger, "Llego un mensaje NEW_POKEMON \n");
+				if(operacion == HANDSHAKE){
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					mensaje = recibirMensajeNew(socket_cliente);
+					recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
 
-					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-						printf("Creado el hilo que maneja el mensaje New");
-					}else printf("Fallo al crear el hilo que maneja el mensaje New");
-					//info_mensaje * mensaje;
-					//mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);
-					break;
-				case APPEARED_POKEMON:
-					log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					mensaje = recibirMensajeAppeared(socket_cliente);
+					//ACK DEL HANDSHAKE
+					enviar_ACK(0, socket_cliente);
+					//ESPERA EL MENSAJE
+					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+							switch(operacion){
+							case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED:
+							log_info(logger, "Se suscribio un proceso a una cola de mensajes \n");
+							/*if (pthread_create(&hilo, NULL, (void*)manejoMensajeSuscripcion, socket_cliente) == 0){
+								printf("Creado el hilo que maneja la suscripcion");
+							}else printf("Fallo al crear el hilo que maneja la suscripcion");*/
+							//manejoMensajeSuscripcion(socket_cliente);
+							break;
+							case NEW_POKEMON:
+								log_info(logger, "Llego un mensaje NEW_POKEMON \n");
+								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+								mensaje = recibirMensajeNew(socket_cliente);
 
-					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-						printf("Creado el hilo que maneja el mensaje Appeared");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Appeared");
-					break;
-				case GET_POKEMON:
-					log_info(logger, "Llego un mensaje GET_POKEMON \n");
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					mensaje = recibirMensajeGet(socket_cliente);
-
-					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-						printf("Creado el hilo que maneja el mensaje Get");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Get");
-					break;
-				case LOCALIZED_POKEMON:
-					log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					mensaje = recibirMensajeLocalized(socket_cliente);
-
-					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-						printf("Creado el hilo que maneja el mensaje Localized");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Localized");
-					break;
-				case CATCH_POKEMON:
-					log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					mensaje = recibirMensajeCatch(socket_cliente);
-
-					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-						printf("Creado el hilo que maneja el mensaje Catch");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Catch");
-					break;
-				case CAUGHT_POKEMON:
-					log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					mensaje = recibirMensajeCaught(socket_cliente);
-
-					if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-						printf("Creado el hilo que maneja el mensaje Caught");
-					}else printf("Fallo al crear el hilo que maneja el mensaje Caught");
-					break;
-				}
-			}else printf("Fallo al recibir codigo de operacion = -1\n");
+								//CONFIRMAR RECEPCION DEL MENSAJE
+								enviar_ACK(mensaje->id_mensaje, socket_cliente);
+								if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+									printf("Creado el hilo que maneja el mensaje New");
+								}else printf("Fallo al crear el hilo que maneja el mensaje New");
+								//info_mensaje * mensaje;
+								//mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);
+								break;
+							case APPEARED_POKEMON:
+								log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
+								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+								mensaje = recibirMensajeAppeared(socket_cliente);
+								enviar_ACK(mensaje->id_mensaje, socket_cliente);
+								if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+									printf("Creado el hilo que maneja el mensaje Appeared");
+								}else printf("Fallo al crear el hilo que maneja el mensaje Appeared");
+								break;
+							case GET_POKEMON:
+								log_info(logger, "Llego un mensaje GET_POKEMON \n");
+								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+								mensaje = recibirMensajeGet(socket_cliente);
+								enviar_ACK(mensaje->id_mensaje, socket_cliente);
+								if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+									printf("Creado el hilo que maneja el mensaje Get");
+								}else printf("Fallo al crear el hilo que maneja el mensaje Get");
+								break;
+							case LOCALIZED_POKEMON:
+								log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
+								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+								mensaje = recibirMensajeLocalized(socket_cliente);
+								enviar_ACK(mensaje->id_mensaje, socket_cliente);
+								if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+									printf("Creado el hilo que maneja el mensaje Localized");
+								}else printf("Fallo al crear el hilo que maneja el mensaje Localized");
+								break;
+							case CATCH_POKEMON:
+								log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
+								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+								mensaje = recibirMensajeCatch(socket_cliente);
+								enviar_ACK(mensaje->id_mensaje, socket_cliente);
+								if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+									printf("Creado el hilo que maneja el mensaje Catch");
+								}else printf("Fallo al crear el hilo que maneja el mensaje Catch");
+								break;
+							case CAUGHT_POKEMON:
+								log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
+								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+								mensaje = recibirMensajeCaught(socket_cliente);
+								enviar_ACK(mensaje->id_mensaje, socket_cliente);
+								if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+									printf("Creado el hilo que maneja el mensaje Caught");
+								}else printf("Fallo al crear el hilo que maneja el mensaje Caught");
+								break;
+							}
+						}
+				}else printf("El proceso no se identifico \n");
+			}
+			else printf("Fallo al recibir codigo de operacion = -1\n");
 			liberar_conexion(socket_cliente);
 		}else printf("Fallo al recibir/aceptar al cliente\n");
 	}
@@ -168,7 +183,7 @@ double get_id(){
 
 void manejoMensajeSuscripcion(int32_t socket_cliente){
 	//pedir identificacion del proceso (handshake)
-	informarId(socket_cliente); // falta incorporar semaforo
+	//informarId(socket_cliente); // falta incorporar semaforo
 	//agregar en lista de colas a la que se suscribio: suscribirProceso(op_code operacion, int32_t * PID)
 }
 
@@ -193,9 +208,6 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	new = deserializar_paquete_new (&socket_cliente);
 	printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
 			new->cant, new->posicion.X, new->posicion.Y);
-	//pedir identificacion del proceso (handshake)
-	//informar id mensaje
-	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeNew = malloc(sizeof(info_mensaje));
 	mensajeNew->op_code = NEW_POKEMON;
 	mensajeNew->id_mensaje = get_id();
@@ -212,9 +224,6 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	app = deserializar_paquete_appeared(&socket_cliente);
 	printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
 			app->posicion.X, app->posicion.Y);
-	//pedir identificacion del proceso (handshake)
-	//informar id mensaje
-	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeAppeared = malloc(sizeof(info_mensaje));
 	mensajeAppeared->op_code = APPEARED_POKEMON;
 	mensajeAppeared->id_mensaje = get_id();
@@ -229,9 +238,6 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	t_Get* get = NULL;
 	get = deserializar_paquete_get(&socket_cliente);
 	printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);
-	//pedir identificacion del proceso (handshake)
-	//informar id mensaje
-	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeGet = malloc(sizeof(info_mensaje));
 	mensajeGet->op_code = GET_POKEMON;
 	mensajeGet->id_mensaje = get_id();
@@ -252,9 +258,6 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 		t_posicion * posicion = list_get(localized->listaPosiciones, i);
 		printf("%d  %d \n", posicion->X, posicion->Y);
 	}
-	//pedir identificacion del proceso (handshake)
-	//informar id mensaje
-	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeLocalized = malloc(sizeof(info_mensaje));
 	mensajeLocalized->op_code = LOCALIZED_POKEMON;
 	mensajeLocalized->id_mensaje = get_id();
@@ -270,9 +273,6 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	catch = deserializar_paquete_catch(&socket_cliente);
 	printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
 			catch->posicion.X, catch->posicion.Y);
-	//pedir identificacion del proceso (handshake)
-	//informar id mensaje
-	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeCatch = malloc(sizeof(info_mensaje));
 	mensajeCatch->op_code = CATCH_POKEMON;
 	mensajeCatch->id_mensaje = get_id();
@@ -287,9 +287,6 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	t_Caught* caught = NULL;
 	caught = deserializar_paquete_caught(&socket_cliente);
 	printf("Llego un mensaje Caught Pokemon con los siguientes datos:  %d\n", caught->fueAtrapado);
-	//pedir identificacion del proceso (handshake)
-	//informar id mensaje
-	//asignar id mensaje al mensaje recibido
 	info_mensaje * mensajeCaught = malloc(sizeof(info_mensaje));
 	mensajeCaught->op_code = CAUGHT_POKEMON;
 	mensajeCaught->id_mensaje = get_id();
@@ -319,19 +316,18 @@ info_mensaje * obtenerMensaje(op_code codigo_operacion, double id_mensaje){
 	}
 }
 
-void informarId(int32_t socket_cliente){
-	double id = get_id();
+void informarId(int32_t socket_cliente, double id_mensaje){
 
 	t_paquete * paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = ID_MENSAJE;
+	paquete->codigo_operacion = ACK;
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	paquete->buffer->size = sizeof(double);
-	paquete->buffer->id_Mensaje = id;
+	paquete->buffer->id_Mensaje = id_mensaje;
 	paquete->buffer->stream = NULL;// o deberia ser stream = 0?
 
 	int32_t bytes_a_enviar;
-	void *paqueteSerializado = serializar_id (paquete, &bytes_a_enviar);
+	void *paqueteSerializado = serializar_ACK(paquete, &bytes_a_enviar);
 	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
 
 	free(paqueteSerializado);

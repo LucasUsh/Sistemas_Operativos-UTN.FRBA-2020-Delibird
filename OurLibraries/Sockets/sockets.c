@@ -338,8 +338,27 @@ t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
 	return localized;
 }
 
-void * serializar_id(t_paquete* paquete, int32_t* bytes){
-	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
+void enviar_handshake(double id_proceso, int32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = HANDSHAKE;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	paquete->buffer->size = sizeof(NULL);
+	paquete->buffer->id_Mensaje = id_proceso;
+	paquete->buffer->stream = NULL;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_handshake(paquete, &bytes_a_enviar);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
+}
+
+void * serializar_handshake(t_paquete* paquete, int32_t* bytes){
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje);
 	void *stream = malloc(*bytes);
 	int32_t desplazamiento = 0;
 
@@ -349,20 +368,44 @@ void * serializar_id(t_paquete* paquete, int32_t* bytes){
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
 	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
-	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
-
-	memcpy(stream + desplazamiento, &(paquete->buffer->stream), sizeof(paquete->buffer->stream));
 
 	return stream;
 }
 
-double * deserializar_id(int32_t* socket_cliente){
-	double* id = malloc (sizeof(double));
+void enviar_ACK(double id_mensaje, int32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = ACK;
+	paquete->buffer = malloc(sizeof(t_buffer));
 
-	recv (*socket_cliente, id, sizeof(double), MSG_WAITALL);
+	paquete->buffer->size = sizeof(NULL);
+	paquete->buffer->id_Mensaje = id_mensaje;
+	paquete->buffer->stream = NULL;
 
-	return id;
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_ACK(paquete, &bytes_a_enviar);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
 }
+
+void * serializar_ACK(t_paquete* paquete, int32_t* bytes){
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje);
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+
+	return stream;
+}
+
 
 
 

@@ -9,6 +9,9 @@ int32_t main(int32_t argc, char *argv[])
 	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.config");
 	validar_Argc(logger,argc);
 	int32_t socket;
+	int32_t operacion=0;
+	int32_t tamanio_estructura = 0;
+	double id_mensaje=0;
 
 	printf("GAME BOY iniciando ... \n");
 
@@ -22,21 +25,38 @@ int32_t main(int32_t argc, char *argv[])
 			return 0;
 		}
 		log_info(logger,"Conectado al Broker");
-		if(string_contains(argv[2], "NEW_POKEMON")){
-			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
+
+		enviar_handshake(1, socket);
+		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
+				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL); //recibo el paquete, aunque a Game Boy no le interesa ningun dato
+
+				if(string_contains(argv[2], "NEW_POKEMON")){
+					enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
+						if(operacion == ACK){
+							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
+						}
+					}
+				}
+				if(string_contains(argv[2], "APPEARED_POKEMON")){
+					enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+				}
+				if(string_contains(argv[2], "CATCH_POKEMON")){
+					enviar_catch_pokemon(argv[3], argv[4], argv[5], "0", socket);
+				}
+				if(string_contains(argv[2], "CAUGHT_POKEMON")){
+					enviar_caught_pokemon(argv[3], argv[4], socket);
+				}
+				if(string_contains(argv[2], "GET_POKEMON")){
+					enviar_get_pokemon(argv[3], "0", socket);
+				}
+			}
 		}
-		if(string_contains(argv[2], "APPEARED_POKEMON")){
-			enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
-		}
-		if(string_contains(argv[2], "CATCH_POKEMON")){
-			enviar_catch_pokemon(argv[3], argv[4], argv[5], "0", socket);
-		}
-		if(string_contains(argv[2], "CAUGHT_POKEMON")){
-			enviar_caught_pokemon(argv[3], argv[4], socket);
-		}
-		if(string_contains(argv[2], "GET_POKEMON")){
-			enviar_get_pokemon(argv[3], "0", socket);
-		}
+		else printf("Fallo al recibir codigo de operacion = -1\n");
+		liberar_conexion(socket);
 	}
 
 	// GAME-CARD:

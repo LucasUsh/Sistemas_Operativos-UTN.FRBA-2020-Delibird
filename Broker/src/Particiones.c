@@ -394,20 +394,24 @@ void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompac
 					particion = getParticionFirstFit(tamanio);
 					if(particion->size == tamanio){
 						guardarMensaje(mensaje, particion);
+						buscar = false;
 					}else {
 						generarParticionDinamica(particion, tamanio);
 						particion = getParticionFirstFit(tamanio);
 						guardarMensaje(mensaje, particion);
+						buscar=false;
 					}
 					break;
 				case BF:
 					particion = getParticionBestFit(tamanio);
 					if(particion->size == tamanio){
 						guardarMensaje(mensaje, particion);
+						buscar=false;
 					}else{
 						generarParticionDinamica(particion, tamanio);
 						particion = getParticionBestFit(tamanio);
 						guardarMensaje(mensaje, particion);
+						buscar=false;
 					}
 					break;
 				default:
