@@ -37,16 +37,6 @@ typedef enum {
 } estado_code;
 
 typedef struct {
-	t_posicion posicion;
-	t_posicion posicion_destino;
-	t_list* 	pokemones; //list of t_pokemon_team
-	t_list* 	objetivo; //list of t_pokemon
-	estado_code estado;
-	int32_t id;
-
-} t_entrenador;
-
-typedef struct {
 	int32_t 	algoritmo_code;
 	char* 	algoritmo_string;
 	int32_t 	quantum;
@@ -60,7 +50,21 @@ typedef struct {
 	t_posicion posicion; //supongo que pasará lo mismo con esto jajajaja
 }t_pokemon_team;
 
+typedef struct {
+	t_posicion posicion;
+	t_pokemon_team* pokemon_destino;
+	t_list* 	pokemones; //list of t_pokemon_team
+	t_list* 	objetivo; //list of t_pokemon
+	estado_code estado;
+	int32_t id;
 
+} t_entrenador;
+
+typedef struct {
+	int32_t id_respuesta;
+	int32_t id_entrenador;
+
+} t_respuesta_catch;
 
 
 #endif /* TEAM_H_ */
