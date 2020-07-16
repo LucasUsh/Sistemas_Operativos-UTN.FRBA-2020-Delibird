@@ -4,10 +4,10 @@ int32_t main(void)
 {
 	instalar_filesystem ();
 
-//	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
-//	pthread_t hilo_servidor_GC;
-//	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
-//		log_debug (debug, "Hilo servidor creado correctamente.");
+	debug = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
+	pthread_t hilo_servidor_GC;
+	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
+		log_debug (debug, "Hilo servidor creado correctamente.");
 
 	// TODO: asociarse globalmente a las colas NEW_POKEMON, CATCH y GET
 	// Una vez suscripto tendríamos entonces 3 sockets modo cliente,
@@ -90,10 +90,9 @@ void instalar_filesystem (){
 }
 
 void crear_servidor_GC() {
-	t_config* config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	char* ip_gamecard = config_get_string_value(config_GC,"IP_GAMECARD");
 	char* puerto_gamecard = config_get_string_value(config_GC,"PUERTO_GAMECARD");
-	config_destroy(config);
 
 	int32_t socket_servidor_GC = crear_socket_escucha(ip_gamecard, puerto_gamecard);
 	int32_t socket_cliente_entrante;
@@ -106,6 +105,7 @@ void crear_servidor_GC() {
 
     	pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
     }
+    config_destroy(config_GC);
 }
 
 void responder_mensaje(int32_t* socket_cliente) {
