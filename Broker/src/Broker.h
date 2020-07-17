@@ -63,23 +63,14 @@ int32_t frecuenciaCompactacion;
 int32_t algReemplazo;
 int32_t algParticionLibre;
 int32_t inicioMemoria;
-
+t_list* list_mensajes;
+t_list* list_suscriptores;
 char *IP_BROKER;
 char *PUERTO_BROKER;
 char * LOG_FILE;
 
-t_log* iniciar_logger(void);
-t_config* leer_config(void);
-t_log* iniciar_dump(void);
 
-void hacerDump();
 double get_id();
-
-int getMemoriaOcupada();
-int getMemoriaDisponible();
-
-void iniciarBroker();
-
 void manejoMensajeSuscripcion(int32_t socket_cliente, double id_proceso, int32_t operacion);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
@@ -90,6 +81,13 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente);
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
 void enviarMensaje(op_code operacion, info_mensaje * mensaje);
 
+void iniciarBroker();
+t_log* iniciar_logger(void);
+t_config* leer_config(void);
+t_log* iniciar_dump(void);
+
+int getMemoriaOcupada();
+int getMemoriaDisponible();
 int32_t getSizeMensajeNew(t_New msgNew);
 int32_t getSizeMensajeAppeared(t_Appeared msgAppeared);
 int32_t getSizeMensajeGet(t_Get msgGet);
@@ -97,16 +95,12 @@ int32_t getSizeMensajeLocalized(t_Localized msgLocalized);
 int32_t getSizeMensajeCatch(t_Catch msgCatch);
 int32_t getSizeMensajeCaught(t_Caught msgCaught);
 
-
-
-t_list* list_mensajes;
-t_list* list_suscriptores;
-
 void rutina (int n);
-bool mensajeDeOperacion(info_mensaje * mensaje, op_code operacion);
-t_list* getMensajesDeOperacion(op_code operacion);
-bool esElSuscriptor(t_suscriptor * suscriptor, double id_proceso);
+void hacerDump();
+t_list * getMensajesAEnviar(op_code operacion, double id_proceso);
+t_list* getMensajesCacheadosDeOperacion(op_code operacion);
+
+info_mensaje * obtenerMensaje(double id_mensaje);
 bool procesoSuscriptoACola(op_code operacion, double id_proceso);
-t_list * obtenerMensajesFaltantes(t_list * mensajesAEnviar, double id_proceso);
 
 #endif /* BROKER_H_ */

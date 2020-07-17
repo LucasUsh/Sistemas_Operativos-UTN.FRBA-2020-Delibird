@@ -54,8 +54,6 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo);
 void algoritmoCompactacion();
 
 void guardarMensaje(info_mensaje * mensaje, t_particion * particion);
-bool esElMensaje(t_particion* particion, op_code codigo_operacion, double id_mensaje);
-info_mensaje * obtenerMensaje(op_code codigo_operacion, double id_mensaje);
 
 
 

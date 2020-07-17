@@ -51,37 +51,45 @@ int32_t main(void) {
 					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						switch(operacion){
 						case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT:
-							if(procesoSuscriptoACola(operacion, id_proceso)){
+							if(procesoSuscriptoACola(operacion, id_proceso)){ // si es un proceso que ya se suscribio
 								// Si esta suscripto enviar ACK, filtrar mensajes por operacion, filtrar esa lista por los mensajes que no
 								// tienen al suscriptor en suscriptoresQueRecibieron y enviar esos mensajes. Luego esperar ACK
-								mensajesAEnviar = getMensajesDeOperacion(operacion);
-								mensajesAEnviar = obtenerMensajesFaltantes(mensajesAEnviar, id_proceso);
-								enviar_ACK(mensajesAEnviar->elements_count, socket_cliente);
-								//Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
+								mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
+								enviar_ACK(mensajesAEnviar->elements_count, socket_cliente); //Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
 								for(int i = 0; i<mensajesAEnviar->elements_count; i++){
 									mensaje = list_get(mensajesAEnviar, i);
 									enviarMensaje(operacion, mensaje);
-									//esperar ACK
-									//obtener mensaje de lista de mensajes
-									//agregar suscriptor en suscriptoresQueRecibieron
-									}
-								} else{
-									suscriptor->id = id_proceso;
-									suscriptor->socket = socket_cliente;
-									suscriptor->op_code = operacion;
-									list_add(list_suscriptores, suscriptor);
-									mensajesAEnviar = getMensajesDeOperacion(operacion);
-									enviar_ACK(mensajesAEnviar->elements_count, socket_cliente);
-									//Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
-									for(int i=0; i<mensajesAEnviar->elements_count; i++){
+									//esperar ACK:
+									if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+										if(operacion == ACK){
+											recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+											recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+											//agregar suscriptor en suscriptoresQueRecibieron
+										} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+									} else printf("Fallo al recibir codigo de operacion = -1\n");
+								}
+							} else{
+								suscriptor->id = id_proceso;
+								suscriptor->socket = socket_cliente;
+								suscriptor->op_code = operacion;
+								list_add(list_suscriptores, suscriptor);
+								mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
+								enviar_ACK(mensajesAEnviar->elements_count, socket_cliente);
+								//Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
+								for(int i=0; i<mensajesAEnviar->elements_count; i++){
 										mensaje = list_get(mensajesAEnviar, i);
 										enviarMensaje(operacion, mensaje);
-										//obtener mensaje de lista de mensajes
+										//esperar ACK:
+										if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+											if(operacion == ACK){
+												recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+												recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+												//agregar suscriptor en suscriptoresQueRecibieron
+											} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+										} else printf("Fallo al recibir codigo de operacion = -1\n");
 										//agregar suscriptor en info_mensaje.suscriptoresALosQueSeEnvio
-										//esperar ACK
-										//si se recibe agregar suscriptor en info_mensaje.suscriptoresQueRecibieron
-										}
 									}
+								}
 						break;
 						case NEW_POKEMON:
 							log_info(logger, "Llego un mensaje NEW_POKEMON \n");
@@ -147,15 +155,20 @@ int32_t main(void) {
 							}else printf("Fallo al crear el hilo que maneja el mensaje Caught\n");
 							break;
 							}
-						}
+						} else printf("Fallo al recibir codigo de operacion = -1\n");
 				}else printf("El proceso no se identifico \n");
 			}
 			else printf("Fallo al recibir codigo de operacion = -1\n");
 			liberar_conexion(socket_cliente);
-		}else printf("Fallo al recibir/aceptar al cliente\n");
+		}else {
+			printf("Fallo al recibir/aceptar al cliente\n");
+			liberar_conexion(socket_cliente);
+			sleep(2);
+		}
 	}
 	if(socketEscucha == -1){
 		printf("Fallo al crear socket de escucha = -1\n");
+		sleep(2);
 		//return EXIT_FAILURE;
 	}
 
@@ -309,25 +322,6 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje){
 		break;
 	default:
 		break;
-	}
-}
-
-bool esElMensaje(t_particion* particion, op_code codigo_operacion, double id_mensaje){
-	return !particion->ocupada && particion->codigo_operacion == codigo_operacion && particion->id_mensaje == id_mensaje;
-}
-
-info_mensaje * obtenerMensaje(op_code codigo_operacion, double id_mensaje){
-	info_mensaje * mensaje = NULL;
-	bool _esElMensaje(void* element){
-		return esElMensaje((t_particion*)element, codigo_operacion, id_mensaje);
-	}
-	t_list* mensajesConEseID = list_filter(list_mensajes, _esElMensaje);
-	if(mensajesConEseID->elements_count == 1){
-		mensaje = list_get(mensajesConEseID, 0);
-		return mensaje;
-	}else {
-		printf("Mas de un mensaje con el mismo id. Cantidad: %d \n", mensajesConEseID->elements_count);
-		return mensaje;
 	}
 }
 
@@ -544,19 +538,68 @@ void hacerDump(){
 	}
 }
 
-bool mensajeDeOperacion(info_mensaje * mensaje, op_code operacion){
-	return mensaje->op_code == operacion;
+t_list * getMensajesAEnviar(op_code operacion, double id_proceso){
+	info_mensaje * mensaje;
+	t_particion * mensajeCacheado;
+	t_suscriptor * suscriptor;
+	t_list* mensajesAEnviar=NULL;
+	t_list* mensajesCacheados = getMensajesCacheadosDeOperacion(operacion); // mensajesCacheadoes es una lista de t_particion
+
+	for(int i=0; i<mensajesCacheados->elements_count; i++){
+		mensajeCacheado = list_get(mensajesCacheados, i);
+		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje); // obtenemos el info_mensaje de list_mensajes
+
+		for(int j=0; j<mensaje->suscriptoresQueRecibieron->elements_count; j++){
+			suscriptor = list_get(mensaje->suscriptoresQueRecibieron, j);
+			if(suscriptor->id == id_proceso){
+				list_remove(mensajesCacheados, i);
+			}
+		}
+	}
+	//Obtenemos los info_mensaje de los mensajes a enviar
+	for(int i=0; i<mensajesCacheados->elements_count; i++){
+		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
+		list_add(mensajesAEnviar, mensaje);
+	}
+	return mensajesAEnviar;
 }
 
-t_list* getMensajesDeOperacion(op_code operacion){
+bool mensajeCacheadoDeOperacion(t_particion * particion, op_code operacion){
+	return particion->codigo_operacion == operacion;
+}
 
-	bool _mensajeDeOperacion(void* element){
-		return mensajeDeOperacion((info_mensaje*)element, operacion);
+t_list* getMensajesCacheadosDeOperacion(op_code operacion){
+
+	bool _mensajeCacheadoDeOperacion(void* element){
+		return mensajeCacheadoDeOperacion((t_particion*)element, operacion);
+	}
+	t_list* mensajesCacheados = list_filter(tabla_particiones, _mensajeCacheadoDeOperacion);
+
+	return mensajesCacheados;
+}
+
+bool esElMensaje(info_mensaje* mensaje, double id_mensaje){
+	return mensaje->id_mensaje == id_mensaje;
+}
+
+info_mensaje * obtenerMensaje(double id_mensaje){
+	info_mensaje * mensaje = NULL;
+
+	bool _esElMensaje(void* element){
+		return esElMensaje((info_mensaje*)element, id_mensaje);
 	}
 
-	t_list* mensajesDeOperacion = list_filter(list_mensajes, _mensajeDeOperacion);
-
-	return mensajesDeOperacion;
+	t_list* mensajesConEseID = list_filter(list_mensajes, _esElMensaje);
+	if(mensajesConEseID->elements_count == 1){
+		mensaje = list_get(mensajesConEseID, 0);
+		return mensaje;
+	}else {
+		if(mensajesConEseID->elements_count > 1){
+			printf("Mas de un mensaje con el mismo id. Cantidad: %d \n", mensajesConEseID->elements_count);
+			return mensaje;
+		}else printf("No estaba el mensaje en memoria cache (particiones)");
+		return mensaje;
+	}
 }
 
 bool esElSuscriptor(t_suscriptor * suscriptor, double id_proceso){
@@ -578,22 +621,6 @@ bool procesoSuscriptoACola(op_code operacion, double id_proceso){
 bool otraFuncionMagica(info_mensaje mensaje, double id_proceso){
 
 	return true;
-}
-
-t_list * obtenerMensajesFaltantes(t_list * mensajesAEnviar, double id_proceso){
-	info_mensaje * mensaje;
-	t_suscriptor * suscriptor;
-
-	for(int i=0; i<mensajesAEnviar->elements_count; i++){
-		mensaje = list_get(mensajesAEnviar, i);
-		for(int j=0; j<mensaje->suscriptoresQueRecibieron->elements_count; j++){
-			suscriptor = list_get(mensaje->suscriptoresQueRecibieron, j);
-			if(suscriptor->id == id_proceso){
-				list_remove(mensajesAEnviar, i);
-			}
-		}
-	}
-	return mensajesAEnviar;
 }
 
 
