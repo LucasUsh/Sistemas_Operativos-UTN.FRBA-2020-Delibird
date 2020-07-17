@@ -1,2 +1,3 @@
-./Game-Boy BROKER GET_POKEMON Pikachu
-./Game-Boy BROKER GET_POKEMON Charmander
+#!/bin/sh
+./gameboy BROKER GET_POKEMON Pikachu
+./gameboy BROKER GET_POKEMON Charmander
