@@ -197,6 +197,12 @@ void show_entrenadores(t_algoritmo algoritmo, t_list* entrenadores, t_list* obje
 		printf("********************\n");
 }
 
+int32_t conexion_broker()
+{
+	int32_t socket = crear_conexion(IP_BROKER, PUERTO_BROKER);
+	return socket;
+}
+
 void generar_y_enviar_get(t_list* objetivo_global){
 
 	int id = (rand() % (10)) + 1; // numero random entre 1 y 10
@@ -204,12 +210,27 @@ void generar_y_enviar_get(t_list* objetivo_global){
 	for(int i = 0; i < objetivo_global->elements_count; i++){
 		t_pokemon_team* pokemon_actual = list_get(objetivo_global, i);
 
-		t_Get mensaje_get;
-		mensaje_get.pokemon.nombre = pokemon_actual->nombre;
-		mensaje_get.pokemon.size_Nombre = string_length(pokemon_actual->nombre); // +1?
+		t_Get* mensaje_get = sizeof(typeof(t_Get));
+		mensaje_get->pokemon.nombre = pokemon_actual->nombre;
+		mensaje_get->pokemon.size_Nombre = string_length(pokemon_actual->nombre) + 1;
 
-		printf("mandando el mensaje GET %s...\n", mensaje_get.pokemon.nombre);
+
 		//conectarse al broker y mandar el mensaje;
+
+
+		int32_t socket_broker = conexion_broker();
+
+		if(socket_broker == 0){
+			log_error(logger,"Error al conectar al Broker\n");
+		} else {
+			log_info(logger, "mandando el mensaje GET %s...\n", mensaje_get->pokemon.nombre);
+			t_paquete* paquete = malloc(sizeof(t_paquete));
+			int bytes = 0;
+			void* dato_a_enviar = serializar_paquete_get(paquete, &bytes, mensaje_get);
+
+		}
+
+
 
 		t_respuesta* respuesta = malloc(sizeof(t_respuesta));
 		respuesta->id_entrenador=99;//no importa el id del entrenador
@@ -497,8 +518,22 @@ void hilo_recibidor_mensajes_full(void* l_entrenadores, t_paquete* paquete){
 	}
 }
 
-int32_t main(int32_t argc, char** argv)
-{
+char* get_config_path(char* entrenador){
+
+	 if(entrenador == NULL){
+		printf("falta definir el team\n");
+		return 0;
+	}
+
+	char* cfg_path = string_new();
+	string_append(&cfg_path, "/home/utnso/workspace/tp-2020-1c-5rona/team/config/");
+	string_append(&cfg_path, entrenador);
+	string_append(&cfg_path, ".config");
+
+	return cfg_path;
+}
+
+void inicializar_team(char* entrenador){
 	cola_ready = list_create();
 	objetivo_global = list_create();
 	pokemones_recibidos = list_create();
@@ -507,33 +542,45 @@ int32_t main(int32_t argc, char** argv)
 	mensajes_catch_esperando_respuesta = list_create();
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	srand(time(NULL));
-    printf("el entrenador que se va a cargar es el de la config: %s\n", argv[1] );
+	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
+	config = config_create(get_config_path(entrenador));
+	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/team/team.log", "Team", 1, LOG_LEVEL_INFO);
+	IP_BROKER = config_get_string_value(config, "IP_BROKER");
+	PUERTO_BROKER = config_get_string_value(config, "PURTO_BROKER");
+
+	return;
+}
 
 
-    if(argv[1] == NULL){
-    	printf("falta definir el team\n");
-    	return 0;
-    }
-
-    char* cfg_path = string_new();
-    string_append(&cfg_path, "/home/utnso/workspace/tp-2020-1c-5rona/team/config/");
-    string_append(&cfg_path, argv[1]);
-    string_append(&cfg_path, ".config");
-    t_config* entrenador_config = config_create(cfg_path);
 
 
-    int32_t cantidad_entrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
+int32_t main(int32_t argc, char** argv)
+{
+
+	inicializar_team(argv[1]);
+    int32_t cantidad_entrenadores = array_length(config_get_array_value(config, "POKEMON_ENTRENADORES"));
 
 
-    algoritmo = get_algoritmo(entrenador_config);
-    t_list* entrenadores = get_entrenadores(entrenador_config, cantidad_entrenadores);
+    algoritmo = get_algoritmo(config);
+    t_list* entrenadores = get_entrenadores(config, cantidad_entrenadores);
 
     printf("En este team hay %d entrenadores\n", cantidad_entrenadores);
 
 
     objetivo_global = get_objetivo_global(entrenadores);
 
-    generar_y_enviar_get(objetivo_global);
+
+    int32_t socket_broker = conexion_broker();
+
+	if(socket_broker == 0){
+		log_error(logger,"Error al conectar al Broker\n");
+	} else {
+		log_info(logger, "Conexion con el Broker correcta\n");
+		generar_y_enviar_get(objetivo_global);
+	}
+
+
+
 
 
     pthread_t p_generador_mensajes_localized;
@@ -551,12 +598,24 @@ int32_t main(int32_t argc, char** argv)
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
 
 
-    while(1){
-    }
 
-    /*crear un hilo por entrenador*/
+	int32_t socketEscucha = crear_socket_escucha("127.0.0.2", "5002");
+	log_info(logger, "Creado socket de escucha \n");
 
-    printf("End");
+	if(socketEscucha == -1){
+		log_error(logger, "Fallo al crear socket de escucha = -1\n");
+		return EXIT_FAILURE;
+	}
+
+	while(socketEscucha != -1){
+		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
+
+		if(socket_cliente != -1){
+			log_info(logger, "Se conecto un proceso \n");
+		}
+	}
+
+    printf("End\n");
 
     return EXIT_SUCCESS;
 }

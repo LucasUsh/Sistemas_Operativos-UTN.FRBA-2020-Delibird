@@ -67,4 +67,9 @@ typedef struct {
 } t_respuesta;
 
 
+t_log* logger;
+t_config* config;
+char* IP_BROKER;
+char* PUERTO_BROKER;
+
 #endif /* TEAM_H_ */
