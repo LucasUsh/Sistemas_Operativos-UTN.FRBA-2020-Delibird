@@ -280,7 +280,7 @@ t_respuesta* get_respuesta(int id, t_list* respuestas){
 		}
 	}
 
-	//printf("No es respuesta, lo voy a rechazar\n");
+	printf("No es respuesta, lo voy a rechazar\n");
 	return NULL;
 }
 
@@ -309,13 +309,13 @@ bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
 			return true;
 		}
 	}
-	//printf("No está en objetivos globales, lo voy a rechazar\n");
+	printf("No está en objetivos globales, lo voy a rechazar\n");
 	return false;
 };
 
 
 bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
-	printf("pokemones recibidos: %d\n", pokemones_recibidos->elements_count);
+
 	for(int i = 0; i < pokemones_recibidos->elements_count; i++){
 		char* pokemon_actual = list_get(pokemones_recibidos, i);
 		if(string_equals_ignore_case(pokemon, pokemon_actual)){
@@ -324,7 +324,7 @@ bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
 		}
 	}
 
-	printf("nunca recibí un mensaje con este pokemon\n");
+	//printf("nunca recibí un mensaje con este pokemon\n");
 	return false;
 };
 
