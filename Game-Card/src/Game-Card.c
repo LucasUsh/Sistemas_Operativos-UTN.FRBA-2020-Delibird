@@ -46,9 +46,16 @@ void instalar_filesystem (){
 
 	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
 
+	char comando[tam_punto_de_montaje + strlen("rm -r ") + 1];
+	strcat(strcpy(comando, "rm -r "), punto_de_montaje);
+
 	//Creación de carpetas:
 
-	if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta TallGrass");
+	if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) {
+		if (errno == EEXIST) system(comando);
+		errno = 0;
+		if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta TallGrass");
+	}
 
 	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
 	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
@@ -92,6 +99,7 @@ void instalar_filesystem (){
 	file_auxiliar = fopen (ruta_archivo_Files_Metadata, "w+");
 	fprintf (file_auxiliar, "DIRECTORY=Y");
 	fclose(file_auxiliar);
+
 }
 
 void crear_servidor_GC() {
