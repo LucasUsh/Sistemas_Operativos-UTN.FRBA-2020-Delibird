@@ -8,7 +8,7 @@ int32_t main(void)
 
 	if (existe("Pikachu")) printf ("Existe!!!");
 
-	/*logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
+	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (logger_GC, "Hilo servidor creado correctamente.");
@@ -33,7 +33,7 @@ int32_t main(void)
     liberar_conexion(socket);
     config_destroy(config_GC);
     log_destroy(logger_GC);
-*/
+
     return 0;
 }
 
@@ -46,7 +46,7 @@ void instalar_filesystem (){
 	int32_t cant_bloques_i = (int32_t) atoi (cant_bloques);
 	magic_number = config_get_string_value(config_GC,"MAGIC_NUMBER");
 
-	/*int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
+	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
 
 	char comando[tam_punto_de_montaje + strlen("rm -r ") + 1];
 	strcat(strcpy(comando, "rm -r "), punto_de_montaje);
@@ -101,7 +101,7 @@ void instalar_filesystem (){
 	file_auxiliar = fopen (ruta_archivo_Files_Metadata, "w+");
 	fprintf (file_auxiliar, "DIRECTORY=Y");
 	fclose(file_auxiliar);
-	*/
+
 }
 
 void crear_servidor_GC() {
