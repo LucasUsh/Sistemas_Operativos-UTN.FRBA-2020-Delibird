@@ -18,7 +18,7 @@ int32_t main(void)
 
 	pthread_t hilo_conexion_broker;
 	int32_t socket;
-	//logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", 1, LOG_LEVEL_INFO);
+
     pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket);
 
 
@@ -31,6 +31,7 @@ int32_t main(void)
     liberar_conexion(socket);
     config_destroy(config_GC);
     log_destroy(logger_GC);
+
     return 0;
 }
 
@@ -61,12 +62,14 @@ void instalar_filesystem (){
 	if (mkdir (carpeta_Blocks, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta Blocks");
 
 	//Creacion de archivos administrativos:
-	char ruta_archivo_metadata[strlen(carpeta_Metadata) + strlen ("/Metadata.bin") + 1];
-	strcat(strcpy(ruta_archivo_metadata, carpeta_Metadata), "/Metadata.bin");
-	char ruta_archivo_bitmap[strlen(carpeta_Metadata) + strlen ("/Bitmap.bin") + 1];
-	strcat(strcpy(ruta_archivo_bitmap, carpeta_Metadata), "/Bitmap.bin");
+	char ruta_archivo_Metadata_Metadata[strlen(carpeta_Metadata) + strlen ("/Metadata.bin") + 1];
+	strcat(strcpy(ruta_archivo_Metadata_Metadata, carpeta_Metadata), "/Metadata.bin");
+	char ruta_archivo_Metadata_Bitmap[strlen(carpeta_Metadata) + strlen ("/Bitmap.bin") + 1];
+	strcat(strcpy(ruta_archivo_Metadata_Bitmap, carpeta_Metadata), "/Bitmap.bin");
+	char ruta_archivo_Files_Metadata [strlen(carpeta_Files) + strlen ("/Metadata.bin") + 1];
+	strcat(strcpy(ruta_archivo_Files_Metadata, carpeta_Files), "/Metadata.bin");
 
-	FILE* file_auxiliar = fopen (ruta_archivo_metadata, "w+");
+	FILE* file_auxiliar = fopen (ruta_archivo_Metadata_Metadata, "w+");
 	fprintf (file_auxiliar, "BLOCK_SIZE=%s\n", tam_bloque);
 	fprintf (file_auxiliar, "BLOCKS=%s\n", cant_bloques);
 	fprintf (file_auxiliar, "BLOCK_SIZE=%s\n", magic_number);
@@ -82,10 +85,13 @@ void instalar_filesystem (){
 		int32_t bits_de_mas = cant_bloques_i % 8;
 		for (; bits_de_mas > 0; bits_de_mas--, i++) bitarray_set_bit(&mapa_de_bloques, i);
 	}
-	file_auxiliar = fopen (ruta_archivo_bitmap, "w+");
+	file_auxiliar = fopen (ruta_archivo_Metadata_Bitmap, "w+");
 	fwrite (mapa_de_bloques.bitarray, sizeof(char), mapa_de_bloques.size, file_auxiliar);
 	fclose(file_auxiliar);
 
+	file_auxiliar = fopen (ruta_archivo_Files_Metadata, "w+");
+	fprintf (file_auxiliar, "DIRECTORY=Y");
+	fclose(file_auxiliar);
 }
 
 void crear_servidor_GC() {
@@ -126,7 +132,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 			;
 			t_New* new = NULL;
 			new = deserializar_paquete_new (socket_cliente);
-			funcion_new_pokemon(&new);
+			funcion_new_pokemon(new);
 
 			break;
 
