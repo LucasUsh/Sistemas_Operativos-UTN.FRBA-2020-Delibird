@@ -420,7 +420,7 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 		// esto simula que recibí un mensaje localized
 		t_Localized* mensaje = simular_localized(1);
 
-		printf("Se recibió un LOCALIZED %s", mensaje->pokemon.nombre);
+		printf("Se recibió un LOCALIZED %s\n", mensaje->pokemon.nombre);
 
 		int id = (rand() % (15)) + 1; // genero el id acá para probar
 
