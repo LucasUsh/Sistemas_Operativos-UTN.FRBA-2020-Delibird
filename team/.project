@@ -24,4 +24,16 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 		<nature>org.eclipse.cdt.core.ccnature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Sockets</name>
+			<type>2</type>
+			<location>/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets</location>
+		</link>
+		<link>
+			<name>UniversoPokemon</name>
+			<type>2</type>
+			<location>/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon</location>
+		</link>
+	</linkedResources>
 </projectDescription>
