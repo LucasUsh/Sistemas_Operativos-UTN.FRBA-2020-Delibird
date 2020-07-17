@@ -28,9 +28,10 @@ t_list* get_objetivo_global(t_list* entrenadores);
 t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon);
 t_list* filtrar_localized_repetidos(t_list* mensajes_localized);
 t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* objetivo_global);
-bool es_respuesta(int id, t_list* lista_ids);
+int es_respuesta(int id, t_list* lista_ids);
 bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* objetivo_global);
 bool pokemon_pendiente_de_capturar(t_pokemon pokemon, t_list* entrenadores, int necesito_capturar);
-bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos);
+bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos, t_list* objetivo_global);
+t_respuesta* caught_valido(int id, t_list* catchs_enviados);
 
 #endif /* UTILS_H_ */

@@ -271,18 +271,17 @@ t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* ob
 	return mensajes_filtrados;
 }
 
-bool es_respuesta(int id, t_list* lista_ids){
-
-	for(int i = 0; i < lista_ids->elements_count; i++){
-		int* id_lista = list_get(lista_ids, i);
-		if(id == id_lista){
-			list_remove(lista_ids, i);
-			return true;
+t_respuesta* get_respuesta(int id, t_list* respuestas){
+	for(int i = 0; i < respuestas->elements_count; i++){
+		t_respuesta* respuesta = list_get(respuestas, i);
+		if(id == respuesta->id_respuesta){
+			list_remove(respuestas, i);
+			return respuesta;
 		}
 	}
 
-	printf("No es respuesta, lo voy a rechazar\n");
-	return false;
+	//printf("No es respuesta, lo voy a rechazar\n");
+	return NULL;
 }
 
 
@@ -306,16 +305,17 @@ bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
 		t_pokemon_team* objetivo_actual = list_get(objetivo_global, i);
 
 		if(string_equals_ignore_case(pokemon, objetivo_actual->nombre)){
-			printf("Está en objetivos globales\n");
+			//printf("Está en objetivos globales\n");
 			return true;
 		}
 	}
-	printf("No está en objetivos globales, lo voy a rechazar\n");
+	//printf("No está en objetivos globales, lo voy a rechazar\n");
 	return false;
 };
 
 
 bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
+	printf("pokemones recibidos: %d\n", pokemones_recibidos->elements_count);
 	for(int i = 0; i < pokemones_recibidos->elements_count; i++){
 		char* pokemon_actual = list_get(pokemones_recibidos, i);
 		if(string_equals_ignore_case(pokemon, pokemon_actual)){
@@ -335,7 +335,7 @@ bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
 	for(int j = 0; j < pokemones_capturados->elements_count; j++){
 		t_pokemon_team* pokemon_actual = list_get(pokemones_capturados, j);
 		if(string_equals_ignore_case(pokemon, pokemon_actual->nombre)){
-			printf("tengo %d capturados\n", pokemon_actual->cantidad);
+			//printf("tengo %d capturados\n", pokemon_actual->cantidad);
 			return pokemon_actual->cantidad < necesito_capturar;
 		}
 	}
@@ -353,19 +353,15 @@ bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* o
 
 
 
-bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos){
+bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_list* pokemones_recibidos, t_list* objetivo_global){
 
 	//en realidad el filtro de id ya se hizo antes, lo dejo pa probar
-	bool respuesta = es_respuesta(id, gets_recibidos);
+	t_respuesta* respuesta = get_respuesta(id, gets_enviados);
+	bool en_objetivo = esta_en_objetivos_globales(mensaje->pokemon.nombre, objetivo_global);
 	bool recibido = fue_recibido(mensaje->pokemon.nombre, pokemones_recibidos);
 
-	return respuesta && !recibido;
+	return (respuesta != NULL) && en_objetivo && !recibido;
 }
-
-
-
-
-
 
 
 
