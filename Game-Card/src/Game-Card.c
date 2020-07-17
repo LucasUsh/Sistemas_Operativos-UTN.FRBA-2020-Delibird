@@ -6,8 +6,6 @@ int32_t main(void)
 
 	instalar_filesystem ();
 
-	if (existe("Pikachu")) printf ("Existe!!!");
-
 	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
