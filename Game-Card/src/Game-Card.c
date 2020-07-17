@@ -6,7 +6,7 @@ int32_t main(void)
 
 	instalar_filesystem ();
 
-	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
+	/*logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (logger_GC, "Hilo servidor creado correctamente.");
@@ -31,7 +31,7 @@ int32_t main(void)
     liberar_conexion(socket);
     config_destroy(config_GC);
     log_destroy(logger_GC);
-
+*/
     return 0;
 }
 
@@ -46,9 +46,16 @@ void instalar_filesystem (){
 
 	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
 
+	char comando[tam_punto_de_montaje + strlen("rm -r ") + 1];
+	strcat(strcpy(comando, "rm -r "), punto_de_montaje);
+
 	//Creación de carpetas:
 
-	if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta TallGrass");
+	if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) {
+		if (errno == EEXIST) system(comando);
+		errno = 0;
+		if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta TallGrass");
+	}
 
 	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
 	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
