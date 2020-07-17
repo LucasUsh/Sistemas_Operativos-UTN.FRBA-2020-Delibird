@@ -17,6 +17,10 @@ bool existe (char* nombre_pokemon) {
 	struct stat estado_archivo;
 	int32_t estado = stat (carpeta_archivo, &estado_archivo);
 
-	if (estado == -1 && errno == ENOENT) return true;
-	else return false;
+	if (estado == -1 && errno == ENOENT) {
+		errno = 0;
+		return false;
+	}
+
+	return true;
 }
