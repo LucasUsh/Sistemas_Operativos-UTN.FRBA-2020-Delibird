@@ -64,7 +64,7 @@ typedef struct {
 	int32_t id_respuesta;
 	int32_t id_entrenador;
 
-} t_respuesta_catch;
+} t_respuesta;
 
 
 #endif /* TEAM_H_ */

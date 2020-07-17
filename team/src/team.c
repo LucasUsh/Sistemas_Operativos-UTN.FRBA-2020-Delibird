@@ -69,23 +69,44 @@ void planificar_fifo(){
 	return;
 }
 
+void generar_y_enviar_catch(t_entrenador* entrenador){
+
+	t_Catch mensaje;
+	mensaje.pokemon.nombre = entrenador->pokemon_destino->nombre;
+	mensaje.pokemon.size_Nombre = string_length(entrenador->pokemon_destino->nombre);  // creo que hay que sumar 1
+	mensaje.posicion = entrenador->pokemon_destino->posicion;
+
+	printf("Se generó el mensaje CATCH %s %d %d\n", mensaje.pokemon.nombre, mensaje.posicion.X, mensaje.posicion.Y);
+	int id = (rand() % (10)) + 1;  // numero random entre 1 y 10
+
+	printf("La id correlativo es: %d\n", id);
+
+	t_respuesta* respuesta = malloc(sizeof(t_respuesta));
+	respuesta->id_entrenador = entrenador->id;
+	respuesta->id_respuesta = id;
+
+	list_add(mensajes_catch_esperando_respuesta, respuesta);
+	//printf("mensajes CATCH esperando respuesta: %d\n", mensajes_catch_esperando_respuesta->elements_count);
+	return;
+}
+
 void planificar_rr(t_list* entrenadores, int32_t quantum){
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
-	printf("planificando RR...\n");
+	//printf("planificando RR...\n");
 	while(cola_ready->elements_count > 0){
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	entrenador->estado = EXEC;
-
+	printf("TRAINER %d IS MOVING TO CATCH A %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
 	//no se q paso pero hay que hacer RR de nuevo :c
 
 	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
 	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
-	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+	//printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
 
-	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+	//printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	entrenador->estado = BLOCKED;
 
@@ -190,35 +211,16 @@ void generar_y_enviar_get(t_list* objetivo_global){
 		printf("mandando el mensaje GET %s...\n", mensaje_get.pokemon.nombre);
 		//conectarse al broker y mandar el mensaje;
 
-		id++;
-		printf("Recibí el ID: %d\n", id);
-		list_add(mensajes_get_esperando_respuesta, id);
+		t_respuesta* respuesta = malloc(sizeof(t_respuesta));
+		respuesta->id_entrenador=99;//no importa el id del entrenador
+		respuesta->id_respuesta = id++;
+		printf("Recibí el ID: %d\n", respuesta->id_respuesta);
+		list_add(mensajes_get_esperando_respuesta, respuesta);
 
 	}
 
 	printf("Hay %d mensajes esperando respuesta\n", mensajes_get_esperando_respuesta->elements_count);
 
-	return;
-}
-
-void generar_y_enviar_catch(t_entrenador* entrenador){
-
-	t_Catch mensaje;
-	mensaje.pokemon.nombre = entrenador->pokemon_destino->nombre;
-	mensaje.pokemon.size_Nombre = string_length(entrenador->pokemon_destino->nombre);  // creo que hay que sumar 1
-	mensaje.posicion = entrenador->pokemon_destino->posicion;
-
-	printf("Se generó el mensaje CATCH %s %d %d\n", mensaje.pokemon.nombre, mensaje.posicion.X, mensaje.posicion.Y);
-	int id = (rand() % (10)) + 1;  // numero random entre 1 y 10
-
-	printf("La id correlativo es: %d\n", id);
-
-	t_respuesta_catch* respuesta = malloc(sizeof(t_respuesta_catch));
-	respuesta->id_entrenador = entrenador->id;
-	respuesta->id_respuesta = id;
-
-	list_add(mensajes_catch_esperando_respuesta, respuesta);
-	printf("mensajes CATCH esperando respuesta: %d\n", mensajes_catch_esperando_respuesta->elements_count);
 	return;
 }
 
@@ -242,7 +244,7 @@ t_Localized* generar_localized(char* pokemon, int cant_posiciones){
 }
 
 t_Appeared* generar_appeared(char* pokemon){
-	t_Appeared* mensaje = malloc(sizeof(t_Appeared)); // reemplazar por funcion get size Localized de broker
+	t_Appeared* mensaje = malloc(sizeof(t_Appeared)); // reemplazar por funcion get size appeared de broker
 
 	t_posicion posicion;
 	posicion.X = (rand() % (10)) + 1; // numero random entre 1 y 10
@@ -251,6 +253,14 @@ t_Appeared* generar_appeared(char* pokemon){
 	mensaje-> posicion = posicion;
 	mensaje->pokemon.nombre = pokemon;
 	mensaje->pokemon.size_Nombre = string_length(pokemon); // creo que hay que sumar 1
+
+	return mensaje;
+}
+
+t_Caught* generar_caught(){
+	t_Caught* mensaje = malloc(sizeof(t_Caught)); // reemplazar por funcion get size caught de broker
+
+	mensaje->fueAtrapado = (rand() % (1)) + 1; // numero random entre 1 y 0
 
 	return mensaje;
 }
@@ -295,7 +305,7 @@ t_Localized* simular_localized(int cantidad_posiciones){
 
 t_Appeared* simular_appeared(){
 	/*
-	 * El objetivo de esta funcion es generar un mensaje localized de forma aleatoria
+	 * El objetivo de esta funcion es generar un mensaje appeared de forma aleatoria
 	 * */
 
 	srand(time(NULL));
@@ -307,6 +317,7 @@ t_Appeared* simular_appeared(){
 	return mensaje;
 
 }
+
 
 void show_cola_ready(){
 	for(int i = 0; i < cola_ready->elements_count; i++){
@@ -351,10 +362,8 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 		t_Localized* mensaje = simular_localized(1);
 		int id = (rand() % (15)) + 1; // genero el id acá para probar
 
-		printf("llego el mensaje LOCALIZED con id: %d\n", id);
-
-		if(localized_valido(mensaje, id, mensajes_get_esperando_respuesta, pokemones_recibidos)){
-			printf("Localized que sirve (es respuesta y y nunca se recibió una ubicación)\n");
+		if(localized_valido(mensaje, id, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
+			printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
 			list_add(pokemones_recibidos, mensaje->pokemon.nombre);
 			// No sé si debería comparar todas las posiciones, con todos los entrenadores
 			// y obtener el de distancia mas corta entre todas las posiciones y todos los entrenadores.
@@ -396,12 +405,11 @@ void hilo_recibidor_mensajes_appeared(void* l_entrenadores){
 	while(1){
 
 		t_Appeared* mensaje = simular_appeared();
-		printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
-		printf("***************************************\n");
-		//deberia filtrar el mensaje por especie que necesito
+		//printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
+		//printf("***************************************\n");
 
 		if(appeared_valido(mensaje, pokemones_recibidos, objetivo_global)){
-			printf("Appeared que sirve (está en objetivos globales y nunca se recibió una ubicación)\n");
+			printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
 
 			list_add(pokemones_recibidos, mensaje->pokemon.nombre);
 			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, mensaje->posicion);
@@ -421,9 +429,45 @@ void hilo_recibidor_mensajes_appeared(void* l_entrenadores){
 			}
 		}
 
-		printf("***************************************\n");
+		//printf("***************************************\n");
 
 		sleep(5);
+
+	}
+}
+
+void hilo_recibidor_mensajes_caught(void* l_entrenadores){
+	t_list* entrenadores = (t_list*)l_entrenadores;
+
+	while(1){
+
+		// esto simula que recibí un mensaje localized
+		t_Caught* mensaje = generar_caught();
+		int id = (rand() % (10)) + 1; // genero el id acá para probar pero se recibe antes
+
+
+		t_respuesta* respuesta = get_respuesta(id, mensajes_catch_esperando_respuesta);
+		if(respuesta != NULL){
+
+			t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
+
+			printf("TRYING TO CATCH A %s (ID: %d)\nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, respuesta->id_respuesta ,respuesta->id_entrenador);
+			printf("3...\n2... \n1... \n");
+			sleep(3);
+
+			if(mensaje->fueAtrapado){
+				printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
+				list_add(entrenador->pokemones, entrenador->pokemon_destino);
+			} else {
+				printf("OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
+				//cuando falla, tengo que ir a capturar otro pokemon de esa especie.
+				//mismo que antes, comparo entre todos los entrenadores disponibles y todas las posiciones de ese pokemon
+				//o voy por la primer posicion que encuentre?
+			}
+
+			entrenador->estado = BLOCKED;
+
+		}
 
 	}
 }
@@ -437,7 +481,8 @@ void hilo_recibidor_mensajes_full(void* l_entrenadores, t_paquete* paquete){
 			break;
 		case LOCALIZED_POKEMON:
 			printf("Recibí un LOCALIZED\n");
-			if(es_respuesta(paquete->buffer->id_Mensaje, mensajes_get_esperando_respuesta)){
+			t_respuesta* respuesta = get_respuesta(paquete->buffer->id_Mensaje, mensajes_get_esperando_respuesta);
+			if(respuesta != NULL){
 				hilo_recibidor_mensajes_localized(l_entrenadores); // cambiar nombre a la funcion
 			}
 			break;
@@ -470,11 +515,11 @@ int32_t main(int32_t argc, char** argv)
     	return 0;
     }
 
-    char* unaPalabra = string_new();
-    string_append(&unaPalabra, "/home/utnso/workspace/tp-2020-1c-5rona/team/config/");
-    string_append(&unaPalabra, argv[1]);
-    string_append(&unaPalabra, ".config");
-    t_config* entrenador_config = config_create(unaPalabra);
+    char* cfg_path = string_new();
+    string_append(&cfg_path, "/home/utnso/workspace/tp-2020-1c-5rona/team/config/");
+    string_append(&cfg_path, argv[1]);
+    string_append(&cfg_path, ".config");
+    t_config* entrenador_config = config_create(cfg_path);
 
 
     int32_t cantidad_entrenadores = array_length(config_get_array_value(entrenador_config, "POKEMON_ENTRENADORES"));
@@ -494,13 +539,16 @@ int32_t main(int32_t argc, char** argv)
     pthread_t p_generador_mensajes_localized;
     pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
 
+
     pthread_t p_generador_mensajes_appeared;
 	pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
 
+
+	pthread_t p_generador_mensajes_caught;
+	pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
+
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
-
-
 
 
     while(1){
