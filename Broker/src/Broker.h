@@ -20,7 +20,6 @@
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.h"
 #include "../../OurLibraries/UniversoPokemon/universo.h"
-//#include "../../Game-Boy/src/mensajes.c"
 
 typedef struct {
 	op_code op_code;
@@ -79,7 +78,8 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente);
 info_mensaje * recibirMensajeLocalized(int32_t socket_cliente);
 info_mensaje * recibirMensajeCatch(int32_t socket_cliente);
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
-void enviarMensaje(op_code operacion, info_mensaje * mensaje);
+void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente);
+void enviarMensajeNew(info_mensaje * mensaje, int32_t socket_cliente);
 
 void iniciarBroker();
 t_log* iniciar_logger(void);

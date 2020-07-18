@@ -10,6 +10,7 @@
 
 #include "Broker.h"
 #include "pruebas.h"
+#include "../../OurLibraries/Sockets/mensajes.h"
 
 //int32_t id_mensaje_global = 0;
 
@@ -58,7 +59,7 @@ int32_t main(void) {
 								enviar_ACK(mensajesAEnviar->elements_count, socket_cliente); //Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
 								for(int i = 0; i<mensajesAEnviar->elements_count; i++){
 									mensaje = list_get(mensajesAEnviar, i);
-									enviarMensaje(operacion, mensaje);
+									enviarMensaje(operacion, mensaje, socket_cliente);
 									mensaje = obtenerMensaje(mensaje->id_mensaje);
 									suscriptor = obtenerSuscriptor(id_proceso);
 									list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
@@ -83,7 +84,7 @@ int32_t main(void) {
 								//Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
 								for(int i=0; i<mensajesAEnviar->elements_count; i++){
 										mensaje = list_get(mensajesAEnviar, i);
-										enviarMensaje(operacion, mensaje);
+										enviarMensaje(operacion, mensaje, socket_cliente);
 										mensaje = obtenerMensaje(mensaje->id_mensaje);
 										list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
 										//esperar ACK:
@@ -309,10 +310,10 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	return mensajeCaught;
 }
 
-void enviarMensaje(op_code operacion, info_mensaje * mensaje){
+void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente){
 	switch(operacion){
 	case SUSCRIPCION_NEW:
-		//enviar mensaje new
+		enviarMensajeNew(mensaje, socket_cliente);
 		break;
 	case SUSCRIPCION_APPEARED:
 		//enviar mensaje appeared
@@ -332,6 +333,27 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje){
 	default:
 		break;
 	}
+}
+
+void enviarMensajeNew(info_mensaje * mensaje, int32_t socket_cliente){
+	t_New * new;
+	new = mensaje->mensaje;
+	char* pokemon;
+	char* x;
+	char* y;
+	char* cantidad;
+	char* id_mensaje;
+	pokemon = new->pokemon.nombre;
+	x = (char)new->posicion.X;
+	y = (char)new->posicion.Y;
+	cantidad = (char)new->cant;
+	id_mensaje = (char)mensaje->id_mensaje;
+
+	enviar_new_pokemon(pokemon, x, y, cantidad, id_mensaje, socket_cliente);
+	//enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* id_mensaje, int32_t socket_cliente)
+	//new = mensaje->mensaje;
+
+
 }
 
 void iniciarBroker(){
