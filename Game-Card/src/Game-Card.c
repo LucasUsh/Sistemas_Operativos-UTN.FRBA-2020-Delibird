@@ -18,8 +18,8 @@ int32_t main(void)
 
 	pthread_t hilo_conexion_broker;
 	int32_t socket;
-
-    pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket);
+	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
+			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
 
 
 
@@ -173,20 +173,33 @@ void conexionBroker(int32_t *socket)
 {
 	char* ip_broker;
 	char* puerto_broker;
+	int32_t operacion=0;
+	int32_t tamanio_estructura = 0;
+	double id_mensaje=0;
 
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
 	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
-	//char* timer = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
+	char* timer = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
 
-	*socket = crear_conexion(ip_broker,puerto_broker);
+	*socket = 0;
 	while(*socket == 0)
 	{
-		sleep(1);
 		*socket = crear_conexion(ip_broker,puerto_broker);
+		if(*socket != 0)
+		{
+			enviar_handshake(2, *socket);
+			if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(operacion == ACK){
+					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+					log_info(logger_GC,"Conectado al Broker");
+				}
+			}
+		}
+		sleep(1);
 	}
-	printf("\n");
-	log_info(logger_GC,"Conectado al Broker");
+
 }
 
 
