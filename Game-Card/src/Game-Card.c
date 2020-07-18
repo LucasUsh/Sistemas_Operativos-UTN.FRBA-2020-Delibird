@@ -205,6 +205,9 @@ void conexionBroker(int32_t *socket)
 						//Obtener id_proceso del archivo de configuracion
 						enviar_suscripcion_new(2, *socket);
 						//Esperar ACK
+						//recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						//recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+
 					}else
 					{
 						*socket = 0;

@@ -45,13 +45,15 @@ int32_t main(void) {
 				if(operacion == HANDSHAKE){
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
-
 					//ACK DEL HANDSHAKE
 					enviar_ACK(0, socket_cliente);
 					//ESPERA EL MENSAJE
 					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						switch(operacion){
 						case SUSCRIPCION_NEW:
+							printf("new suscriptor \n");
+							liberar_conexion(socket_cliente);
+							break;
 						case SUSCRIPCION_APPEARED:
 						case SUSCRIPCION_GET:
 						case SUSCRIPCION_LOCALIZED:
