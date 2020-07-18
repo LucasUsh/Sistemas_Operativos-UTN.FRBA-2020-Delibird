@@ -51,7 +51,12 @@ int32_t main(void) {
 					//ESPERA EL MENSAJE
 					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						switch(operacion){
-						case SUSCRIPCION_NEW || SUSCRIPCION_APPEARED || SUSCRIPCION_GET || SUSCRIPCION_LOCALIZED || SUSCRIPCION_CATCH || SUSCRIPCION_CAUGHT:
+						case SUSCRIPCION_NEW:
+						case SUSCRIPCION_APPEARED:
+						case SUSCRIPCION_GET:
+						case SUSCRIPCION_LOCALIZED:
+						case SUSCRIPCION_CATCH:
+						case SUSCRIPCION_CAUGHT:
 							if(procesoSuscriptoACola(operacion, id_proceso)){ // si es un proceso que ya se suscribio
 								// Si esta suscripto enviar ACK, filtrar mensajes por operacion, filtrar esa lista por los mensajes que no
 								// tienen al suscriptor en suscriptoresQueRecibieron y enviar esos mensajes. Luego esperar ACK
@@ -75,6 +80,7 @@ int32_t main(void) {
 									} else printf("Fallo al recibir codigo de operacion = -1\n");
 								}
 							} else{
+								//PARA GUARDAR EL SUSCRIPTOR NECESITO HACER UN MALLOC DE T_SUSCRIPTOR!!!!!!!!!!!
 								suscriptor->id = id_proceso;
 								suscriptor->socket = socket_cliente;
 								suscriptor->op_code = operacion;

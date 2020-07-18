@@ -406,6 +406,40 @@ void * serializar_ACK(t_paquete* paquete, int32_t* bytes){
 	return stream;
 }
 
+void enviar_suscripcion_new(double id_proceso, int32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = SUSCRIPCION_NEW;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	paquete->buffer->size = sizeof(NULL);
+	paquete->buffer->id_Mensaje = id_proceso;
+	paquete->buffer->stream = NULL;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_suscripcion_new(paquete, &bytes_a_enviar);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
+}
+
+void * serializar_suscripcion_new(t_paquete* paquete, int32_t* bytes){
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje);
+	void *stream = malloc(*bytes);
+	int32_t desplazamiento = 0;
+
+	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	desplazamiento+= sizeof(paquete->codigo_operacion);
+
+	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	desplazamiento+= sizeof(paquete->buffer->size);
+	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+
+	return stream;
+}
+
 
 
 

@@ -197,6 +197,9 @@ void conexionBroker(int32_t *socket)
 					{
 						log_info(logger_GC,"Conectado al Broker");
 						//suscribirse_broker();
+						//Obtener id_proceso del archivo de configuracion
+						enviar_suscripcion_new(2, *socket);
+						//Esperar ACK
 					}else
 					{
 						*socket = 0;
