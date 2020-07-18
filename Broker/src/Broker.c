@@ -59,11 +59,16 @@ int32_t main(void) {
 								for(int i = 0; i<mensajesAEnviar->elements_count; i++){
 									mensaje = list_get(mensajesAEnviar, i);
 									enviarMensaje(operacion, mensaje);
+									mensaje = obtenerMensaje(mensaje->id_mensaje);
+									suscriptor = obtenerSuscriptor(id_proceso);
+									list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
 									//esperar ACK:
 									if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 										if(operacion == ACK){
 											recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 											recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+											mensaje = obtenerMensaje(mensaje->id_mensaje);
+											list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
 											//agregar suscriptor en suscriptoresQueRecibieron
 										} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 									} else printf("Fallo al recibir codigo de operacion = -1\n");
@@ -79,11 +84,15 @@ int32_t main(void) {
 								for(int i=0; i<mensajesAEnviar->elements_count; i++){
 										mensaje = list_get(mensajesAEnviar, i);
 										enviarMensaje(operacion, mensaje);
+										mensaje = obtenerMensaje(mensaje->id_mensaje);
+										list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
 										//esperar ACK:
 										if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 											if(operacion == ACK){
 												recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 												recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+												mensaje = obtenerMensaje(mensaje->id_mensaje);
+												list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
 												//agregar suscriptor en suscriptoresQueRecibieron
 											} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 										} else printf("Fallo al recibir codigo de operacion = -1\n");
@@ -616,6 +625,22 @@ bool procesoSuscriptoACola(op_code operacion, double id_proceso){
 		printf("Estaba suscripto mas de una vez a la misma cola \n");
 		return -1;
 	}else return suscriptor->elements_count;
+}
+
+t_suscriptor * obtenerSuscriptor(double id_proceso){
+	t_suscriptor * suscriptor = NULL;
+	bool _esElSuscriptor(void* element){
+		return esElSuscriptor((t_suscriptor*)element, id_proceso);
+	}
+
+	t_list * suscriptores = list_filter(list_suscriptores, _esElSuscriptor);
+	if(suscriptores->elements_count >1){
+		printf("Estaba suscripto mas de una vez a la misma cola \n");
+		return suscriptor;
+	}else {
+		suscriptor = list_get(suscriptores, 0);
+		return suscriptor;
+	}
 }
 
 bool otraFuncionMagica(info_mensaje mensaje, double id_proceso){

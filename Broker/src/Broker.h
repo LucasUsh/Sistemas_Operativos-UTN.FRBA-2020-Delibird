@@ -102,5 +102,6 @@ t_list* getMensajesCacheadosDeOperacion(op_code operacion);
 
 info_mensaje * obtenerMensaje(double id_mensaje);
 bool procesoSuscriptoACola(op_code operacion, double id_proceso);
+t_suscriptor * obtenerSuscriptor(double id_proceso);
 
 #endif /* BROKER_H_ */
