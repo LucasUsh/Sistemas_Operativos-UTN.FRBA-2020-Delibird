@@ -88,7 +88,7 @@ int32_t main(int32_t argc, char *argv[])
 	else if(string_contains(argv[1], "TEAM")){
 
 		socket = conexionTeam();
-		printf("se armo el socket al menos\n");
+
 		if(socket == 0)
 		{
 			log_info(logger,"Error al conectar al Team");
