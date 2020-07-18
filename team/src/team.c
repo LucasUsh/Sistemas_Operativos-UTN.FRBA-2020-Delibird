@@ -15,6 +15,7 @@
 int32_t cantidad_entrenadores = 0;
 t_list* objetivo_global;
 t_algoritmo algoritmo;
+int32_t socket_escucha_team;
 
 //colas de planificacion
 t_list* cola_ready;
@@ -413,7 +414,7 @@ void ubicar_pokemones_localized(t_Localized* pokemones_a_ubicar){
 	}
 }
 
-void hilo_recibidor_mensajes_localized(void* l_entrenadores){
+void recibidor_mensajes_localized(void* l_entrenadores, t_Localized* mensaje_localized){
 	t_list* entrenadores = (t_list*)l_entrenadores;
 
 	while(1){
@@ -462,50 +463,51 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 }
 
 
-void hilo_recibidor_mensajes_appeared(void* l_entrenadores){
+void recibidor_mensajes_appeared(void* l_entrenadores, t_Appeared* mensaje){
 	t_list* entrenadores = (t_list*)l_entrenadores;
 
-	while(1){
+	t_Appeared* mensaje_appeared = simular_appeared();
 
-		t_Appeared* mensaje = simular_appeared();
-		printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
-		//printf("***************************************\n");
+	mensaje = mensaje_appeared; //comentar esta linea cuando ande el deserealizar.
 
-		if(appeared_valido(mensaje, pokemones_recibidos, objetivo_global)){
-			printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
+	printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
+	//printf("***************************************\n");
 
-			list_add(pokemones_recibidos, mensaje->pokemon.nombre);
-			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, mensaje->posicion);
+	if(appeared_valido(mensaje, pokemones_recibidos, objetivo_global)){
+		printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
 
-			if(entrenador_mas_cercano != NULL){
-				entrenador_mas_cercano->estado = READY;
+		list_add(pokemones_recibidos, mensaje->pokemon.nombre);
+		t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, mensaje->posicion);
 
-				t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
-				entrenador_mas_cercano->pokemon_destino = pokemon_destino;
+		if(entrenador_mas_cercano != NULL){
+			entrenador_mas_cercano->estado = READY;
 
-				list_add(cola_ready, entrenador_mas_cercano);
-				sem_post(&s_cola_ready_con_items);
-			} else {
-				t_pokemon_team* pokemon_ubicado = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
+			t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
+			entrenador_mas_cercano->pokemon_destino = pokemon_destino;
 
-				list_add(pokemones_ubicados, pokemon_ubicado);
-			}
+			list_add(cola_ready, entrenador_mas_cercano);
+			sem_post(&s_cola_ready_con_items);
+		} else {
+			t_pokemon_team* pokemon_ubicado = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
+
+			list_add(pokemones_ubicados, pokemon_ubicado);
 		}
-
-		//printf("***************************************\n");
-
-		sleep(5);
-
 	}
+
+	//printf("***************************************\n");
+
+	//sleep(5);
+
 }
 
-void hilo_recibidor_mensajes_caught(void* l_entrenadores){
+void recibidor_mensajes_caught(void* l_entrenadores, t_Caught* mensaje_caught){
 	t_list* entrenadores = (t_list*)l_entrenadores;
 
 	while(1){
 		sleep(5);
 		// esto simula que recibí un mensaje localized
 		t_Caught* mensaje = generar_caught();
+		mensaje_caught = mensaje;
 		int id = (rand() % (10)) + 1; // genero el id acá para probar pero se recibe antes
 
 		printf("se recibió un mensaje CAUGHT (id: %d)\n", id);
@@ -535,38 +537,64 @@ void hilo_recibidor_mensajes_caught(void* l_entrenadores){
 	}
 }
 
-void hilo_recibidor_mensajes_full(void* l_entrenadores, t_paquete* paquete){
-	while(1){
-		switch(paquete->codigo_operacion){
-		case APPEARED_POKEMON:
-			printf("Recibí un APPEARED\n");
-			hilo_recibidor_mensajes_appeared(l_entrenadores);
-			break;
-		case LOCALIZED_POKEMON:
-			printf("Recibí un LOCALIZED\n");
-			t_respuesta* respuesta = get_respuesta(paquete->buffer->id_Mensaje, mensajes_get_esperando_respuesta);
-			if(respuesta != NULL){
-				hilo_recibidor_mensajes_localized(l_entrenadores); // cambiar nombre a la funcion
-			}
-			break;
-		case CAUGHT_POKEMON:
-			printf("Recibí un CAUGHT\n");
-			break;
+void hilo_escuchador_mensajes(void* l_entrenadores){
 
-		default:
-			printf("no me interesa el mensaje");
-			return;
+	while(socket_escucha_team != -1){
+		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
+
+		if(socket_cliente != -1){
+			log_info(logger, "Se conecto un proceso \n");
+
+			int32_t codigo_operacion = 0;
+			int32_t tamanio_estructura = 0;
+			int32_t id_mensaje = 0;
+
+			if(recv(socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
+					codigo_operacion = -1;
+			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+			log_info(logger, "Código de operación %d", codigo_operacion);
+
+			switch(codigo_operacion){
+				case APPEARED_POKEMON:
+					log_info(logger, "Recibí un APPEARED\n");
+					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
+					//printf("nombre pokemon: %s\n", mensaje_appeared->pokemon.nombre);
+					recibidor_mensajes_appeared(l_entrenadores, mensaje_appeared);
+
+					break;
+				case LOCALIZED_POKEMON:
+					log_info(logger, "Recibí un LOCALIZED\n");
+
+					t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_cliente);
+					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
+
+					if(respuesta_get != NULL){
+						recibidor_mensajes_localized(l_entrenadores, mensaje_localized); // cambiar nombre a la funcion
+					}
+
+					break;
+				case CAUGHT_POKEMON:
+					log_info(logger, "Recibí un CAUGHT\n");
+					t_Caught* mensaje_caught = deserializar_paquete_localized(&socket_cliente);
+					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
+
+					if(respuesta_catch != NULL){
+						recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
+					}
+
+					break;
+
+				default:
+					printf("no me interesa el mensaje");
+					return;
+			}
 		}
 	}
 }
 
 char* get_config_path(char* entrenador){
-
-	 if(entrenador == NULL){
-		printf("falta definir el team\n");
-		return 0;
-	}
-
 	char* cfg_path = string_new();
 	string_append(&cfg_path, "/home/utnso/workspace/tp-2020-1c-5rona/team/config/");
 	string_append(&cfg_path, entrenador);
@@ -575,7 +603,8 @@ char* get_config_path(char* entrenador){
 	return cfg_path;
 }
 
-void inicializar_team(char* entrenador){
+int inicializar_team(char* entrenador){
+
 	cola_ready = list_create();
 	objetivo_global = list_create();
 	pokemones_recibidos = list_create();
@@ -584,20 +613,23 @@ void inicializar_team(char* entrenador){
 	mensajes_catch_esperando_respuesta = list_create();
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	srand(time(NULL));
-	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
 	config = config_create(get_config_path(entrenador));
+	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
 	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/team/team.log", "Team", 1, LOG_LEVEL_INFO);
 	IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	PUERTO_BROKER = config_get_string_value(config, "PURTO_BROKER");
 
-	return;
+	return 1;
 }
 
 
 
 
 int32_t main(int32_t argc, char** argv){
-
+	if(!argv[1]){
+		printf("Fata definir el team a cargar\n");
+		return EXIT_FAILURE;
+	}
 	inicializar_team(argv[1]);
     int32_t cantidad_entrenadores = array_length(config_get_array_value(config, "POKEMON_ENTRENADORES"));
 
@@ -610,27 +642,17 @@ int32_t main(int32_t argc, char** argv){
 
     objetivo_global = get_objetivo_global(entrenadores);
 
-
-    /* una conexion por cada GET
-    int32_t socket_broker = conexion_broker();
-
-	if(socket_broker == 0){
-		log_error(logger,"Error al conectar al Broker\n");
-		generar_y_enviar_get(objetivo_global);
-	} else {
-		log_info(logger, "Conexion con el Broker correcta\n");
-		generar_y_enviar_get(objetivo_global);
-	}
-*/
-
+/*
 	generar_y_enviar_get(objetivo_global);
+
+
 
     pthread_t p_generador_mensajes_localized;
     pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
 
 
-//    pthread_t p_generador_mensajes_appeared;
-//	pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
+    pthread_t p_generador_mensajes_appeared;
+	pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
 
 
 	pthread_t p_generador_mensajes_caught;
@@ -638,26 +660,25 @@ int32_t main(int32_t argc, char** argv){
 
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
+*/
 
 
-	char* ip = config_get_string_value(config, "IP");
-	char* puerto= config_get_string_value(config, "PUERTO");;
+    char* ip = config_get_string_value(config, "IP");
+	char* puerto = config_get_string_value(config, "PUERTO");
 
-	int32_t socketEscucha = crear_socket_escucha(ip, puerto);
+	socket_escucha_team = crear_socket_escucha(ip, puerto);
+
 	log_info(logger, "Creado socket de escucha \n");
 
-	if(socketEscucha == -1){
+	if(socket_escucha_team == -1){
 		log_error(logger, "Fallo al crear socket de escucha = -1\n");
 		return EXIT_FAILURE;
+	} else {
+		  pthread_t p_escuchador;
+		  pthread_create(&p_escuchador, NULL, (void*)hilo_escuchador_mensajes, (void*)entrenadores);
 	}
 
-	while(socketEscucha != -1){
-		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
-
-		if(socket_cliente != -1){
-			log_info(logger, "Se conecto un proceso \n");
-		}
-	}
+	while(1){}
 
     printf("End\n");
 
