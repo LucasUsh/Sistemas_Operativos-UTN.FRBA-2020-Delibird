@@ -148,7 +148,7 @@ void planificar_rr(t_list* entrenadores, int32_t quantum){
 			sem_post(&s_cola_ready_con_items);
 			break;
 		}
-
+		sleep(5);
 	}
 
 	return;
