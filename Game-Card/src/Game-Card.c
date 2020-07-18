@@ -193,12 +193,23 @@ void conexionBroker(int32_t *socket)
 				if(operacion == ACK){
 					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
-					log_info(logger_GC,"Conectado al Broker");
+					if(id_mensaje == 0)
+					{
+						log_info(logger_GC,"Conectado al Broker");
+						//suscribirse_broker();
+					}else
+					{
+						*socket = 0;
+					}
 				}
 			}
 		}
 		sleep(1);
 	}
+
+}
+
+void suscribirse_broker(){
 
 }
 
