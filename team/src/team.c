@@ -248,10 +248,11 @@ void generar_y_enviar_get(t_list* objetivo_global){
 	for(int i = 0; i < objetivo_global->elements_count; i++){
 		t_pokemon_team* pokemon_actual = list_get(objetivo_global, i);
 
-		t_Get* mensaje_get = sizeof(typeof(t_Get));
-		mensaje_get->pokemon.nombre = pokemon_actual->nombre;
-		mensaje_get->pokemon.size_Nombre = string_length(pokemon_actual->nombre) + 1;
 
+
+		t_Get mensaje_get;
+		mensaje_get.pokemon.nombre = pokemon_actual->nombre;
+		//mensaje_get->pokemon.size_Nombre = string_length(pokemon_actual->nombre) + 1;
 
 		//conectarse al broker y mandar el mensaje;
 
@@ -261,15 +262,15 @@ void generar_y_enviar_get(t_list* objetivo_global){
 		if(socket_broker == 0){
 			log_error(logger,"Error al conectar al Broker\n");
 		} else {
-			log_info(logger, "mandando el mensaje GET %s...\n", mensaje_get->pokemon.nombre);
+			log_info(logger, "mandando el mensaje GET %s...\n", mensaje_get.pokemon.nombre);
 			t_paquete* paquete = malloc(sizeof(t_paquete));
 			int bytes = 0;
-			void* dato_a_enviar = serializar_paquete_get(paquete, &bytes, mensaje_get);
+			//void* dato_a_enviar = serializar_paquete_get(paquete, &bytes, mensaje_get);
 
 		}
 
-
-		log_info(logger, "mandando el mensaje GET %s...\n", mensaje_get->pokemon.nombre);
+		//log_info(logger, "Genero los GET igualmente %s...\n");
+		log_info(logger, "mandando el mensaje GET %s...\n", mensaje_get.pokemon.nombre);
 		t_respuesta* respuesta = malloc(sizeof(t_respuesta));
 		respuesta->id_entrenador=99;//no importa el id del entrenador
 		respuesta->id_respuesta = id++;
@@ -278,7 +279,7 @@ void generar_y_enviar_get(t_list* objetivo_global){
 
 	}
 
-	printf("Hay %d mensajes esperando respuesta\n", mensajes_get_esperando_respuesta->elements_count);
+	//printf("Hay %d mensajes esperando respuesta\n", mensajes_get_esperando_respuesta->elements_count);
 
 	return;
 }
@@ -420,9 +421,9 @@ void hilo_recibidor_mensajes_localized(void* l_entrenadores){
 		// esto simula que recibí un mensaje localized
 		t_Localized* mensaje = simular_localized(1);
 
-		printf("Se recibió un LOCALIZED %s\n", mensaje->pokemon.nombre);
-
 		int id = (rand() % (15)) + 1; // genero el id acá para probar
+
+		printf("Se recibió un LOCALIZED %s (id: %d)\n", mensaje->pokemon.nombre, id);
 
 		if(localized_valido(mensaje, id, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
 			printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
@@ -507,7 +508,7 @@ void hilo_recibidor_mensajes_caught(void* l_entrenadores){
 		t_Caught* mensaje = generar_caught();
 		int id = (rand() % (10)) + 1; // genero el id acá para probar pero se recibe antes
 
-
+		printf("se recibió un mensaje CAUGHT (id: %d)\n", id);
 		t_respuesta* respuesta = get_respuesta(id, mensajes_catch_esperando_respuesta);
 		if(respuesta != NULL){
 
@@ -610,21 +611,26 @@ int32_t main(int32_t argc, char** argv){
     objetivo_global = get_objetivo_global(entrenadores);
 
 
+    /* una conexion por cada GET
     int32_t socket_broker = conexion_broker();
 
 	if(socket_broker == 0){
 		log_error(logger,"Error al conectar al Broker\n");
+		generar_y_enviar_get(objetivo_global);
 	} else {
 		log_info(logger, "Conexion con el Broker correcta\n");
 		generar_y_enviar_get(objetivo_global);
 	}
+*/
+
+	generar_y_enviar_get(objetivo_global);
 
     pthread_t p_generador_mensajes_localized;
     pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
 
 
-    pthread_t p_generador_mensajes_appeared;
-	pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
+//    pthread_t p_generador_mensajes_appeared;
+//	pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
 
 
 	pthread_t p_generador_mensajes_caught;
