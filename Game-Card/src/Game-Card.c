@@ -204,10 +204,27 @@ void conexionBroker(int32_t *socket)
 						//suscribirse_broker();
 						//Obtener id_proceso del archivo de configuracion
 						enviar_suscripcion_new(2, *socket);
-						//Esperar ACK
-						//recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						//recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+							if(operacion == ACK){
+								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+								//id_mensaje = cantidad de mensajes que va a enviar el Broker
 
+								for(int i=0; i<id_mensaje; i++){
+										if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+											if(operacion == NEW_POKEMON){
+												recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+												recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+												t_New* new = NULL;
+												new = deserializar_paquete_new (*socket);
+												//que Game Card haga lo que necesite con el mensaje
+												enviar_ACK(0, *socket);
+											} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+										} else printf("Fallo al recibir codigo de operacion = -1\n");
+									}
+								printf("Confirmacion de suscripcion recibida\n");
+							} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+						} else printf("Fallo al recibir codigo de operacion = -1\n");
 					}else
 					{
 						*socket = 0;

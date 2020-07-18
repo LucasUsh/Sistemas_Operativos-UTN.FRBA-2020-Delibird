@@ -37,7 +37,7 @@ int32_t main(void) {
 			pthread_t hilo;
 			double id_proceso =0;
 			info_mensaje * mensaje;
-			t_suscriptor * suscriptor = NULL;
+			t_suscriptor * suscriptor;
 			t_list * mensajesAEnviar = NULL;
 
 			//HANDSHAKE
@@ -51,9 +51,9 @@ int32_t main(void) {
 					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						switch(operacion){
 						case SUSCRIPCION_NEW:
-							printf("new suscriptor \n");
+							/*printf("new suscriptor \n");
 							liberar_conexion(socket_cliente);
-							break;
+							break;*/
 						case SUSCRIPCION_APPEARED:
 						case SUSCRIPCION_GET:
 						case SUSCRIPCION_LOCALIZED:
@@ -219,7 +219,7 @@ void manejoMensaje(info_mensaje* mensaje){
 		break;
 		}
 	pthread_mutex_unlock(&mutex_guardar_en_memoria);
-	pruebaMostrarEstadoMemoria();
+	//pruebaMostrarEstadoMemoria();
 	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
 	// o se hace en otro hilo)
 }
@@ -235,6 +235,10 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	mensajeNew->process_id = 1;
 	mensajeNew->mensaje = new;
 	mensajeNew->sizeMsg = getSizeMensajeNew(*new);
+	mensajeNew->suscriptoresALosQueSeEnvio = list_create();
+	mensajeNew->suscriptoresALosQueSeEnvio->elements_count=0;
+	mensajeNew->suscriptoresQueRecibieron = list_create();
+	mensajeNew->suscriptoresQueRecibieron->elements_count=0;
 	list_add(list_mensajes, mensajeNew);
 	return mensajeNew;
 }
@@ -346,16 +350,19 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 void enviarMensajeNew(info_mensaje * mensaje, int32_t socket_cliente){
 	t_New * new;
 	new = mensaje->mensaje;
-	char* pokemon;
-	char* x;
-	char* y;
-	char* cantidad;
-	char* id_mensaje;
+	char* pokemon = "Pikachu";
+	char* x = "5";
+	//char x[sizeof(new->posicion.X)];
+	char* y = "10";
+	char* cantidad = "4";
+	char* id_mensaje = "2";
 	pokemon = new->pokemon.nombre;
-	x = (char)new->posicion.X;
-	y = (char)new->posicion.Y;
-	cantidad = (char)new->cant;
-	id_mensaje = (char)mensaje->id_mensaje;
+	//snprintf(target_string, size_of_target_string_in_bytes, "%d", source_int)
+	//sprintf(x, "%d", new->posicion.X);
+	//x = new->posicion.X;
+	//y = new->posicion.Y;
+	//cantidad = new->cant;
+	//id_mensaje = mensaje->id_mensaje;
 
 	enviar_new_pokemon(pokemon, x, y, cantidad, id_mensaje, socket_cliente);
 	//enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* id_mensaje, int32_t socket_cliente)
@@ -581,8 +588,32 @@ t_list * getMensajesAEnviar(op_code operacion, double id_proceso){
 	info_mensaje * mensaje;
 	t_particion * mensajeCacheado;
 	t_suscriptor * suscriptor;
-	t_list* mensajesAEnviar=NULL;
-	t_list* mensajesCacheados = getMensajesCacheadosDeOperacion(operacion); // mensajesCacheadoes es una lista de t_particion
+	t_list* mensajesAEnviar=list_create();
+	mensajesAEnviar->elements_count=0;
+	op_code tipoMensajeABuscar;
+	switch(operacion){
+	case SUSCRIPCION_NEW:
+		tipoMensajeABuscar =NEW_POKEMON;
+		break;
+	case SUSCRIPCION_APPEARED:
+		tipoMensajeABuscar =APPEARED_POKEMON;
+		break;
+	case SUSCRIPCION_CATCH:
+		tipoMensajeABuscar =CATCH_POKEMON;
+		break;
+	case SUSCRIPCION_CAUGHT:
+		tipoMensajeABuscar =CAUGHT_POKEMON;
+		break;
+	case SUSCRIPCION_GET:
+		tipoMensajeABuscar =GET_POKEMON;
+		break;
+	case SUSCRIPCION_LOCALIZED:
+		tipoMensajeABuscar =LOCALIZED_POKEMON;
+		break;
+	default:
+		break;
+	}
+	t_list* mensajesCacheados = getMensajesCacheadosDeOperacion(tipoMensajeABuscar); // mensajesCacheadoes es una lista de t_particion
 
 	for(int i=0; i<mensajesCacheados->elements_count; i++){
 		mensajeCacheado = list_get(mensajesCacheados, i);

@@ -17,7 +17,7 @@ t_particion* crearParticion(int inicio, int size, bool ocupada){
 	newParticion->size = size;
 	newParticion->id = get_id();
 	//newParticion->ramaBuddy = ramaBuddy;
-	newParticion->codigo_operacion = 0;
+	newParticion->codigo_operacion = -1;
 	newParticion->id_mensaje = 0;
 
 	return newParticion;
