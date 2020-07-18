@@ -640,8 +640,10 @@ int32_t main(int32_t argc, char** argv){
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
 
 
+	char* ip = config_get_string_value(config, "IP");
+	char* puerto= config_get_string_value(config, "PUERTO");;
 
-	int32_t socketEscucha = crear_socket_escucha("127.0.0.2", "5002");
+	int32_t socketEscucha = crear_socket_escucha(ip, puerto);
 	log_info(logger, "Creado socket de escucha \n");
 
 	if(socketEscucha == -1){
