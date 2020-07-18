@@ -3,7 +3,7 @@
 void funcion_new_pokemon(t_New* new) {
 
 	printf("Creando a %s...\n", new->pokemon.nombre);
-
+/*
 	char* ruta_metadata = ruta_metadata_pokemon_teorica (new->pokemon);
 
 	//TODO: Verificar si existe en fileSystem sino crearlo
@@ -19,6 +19,7 @@ void funcion_new_pokemon(t_New* new) {
 	//TODO: Abrir el archivo...
 	//TODO: enviar appeared_pokemon al broker
 	free (ruta_metadata);
+*/
 }
 
 int32_t existe (char* ruta) {
