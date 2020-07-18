@@ -2,6 +2,7 @@
 
 int32_t main(void)
 {
+	logger_GC = log_create("../Game-Card.log", "Game-Card", true, LOG_LEVEL_INFO);
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 
 	instalar_filesystem ();
@@ -46,16 +47,20 @@ void instalar_filesystem (){
 
 	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
 
-	char comando[tam_punto_de_montaje + strlen("rm -r ") + 1];
-	strcat(strcpy(comando, "rm -r "), punto_de_montaje);
-
 	//Creación de carpetas:
 
-	if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) {
-		if (errno == EEXIST) system(comando);
-		errno = 0;
-		if (mkdir (punto_de_montaje, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta TallGrass");
+	if (mkdir (punto_de_montaje, S_IRWXU | S_IRWXO) != 0) {
+		if (errno == EEXIST) {
+			log_info(logger_GC, "Utilizacion de file system previamente formateado.");
+			return;
+		}
+		else salir ("Problema al intentar crear la carpeta TallGrass.");
 	}
+
+	close(logger_GC->file);
+	logger_GC->file = fopen("../Game-Card.log", "w");
+	if (logger_GC->file == NULL) salir ("Error al crear el logger durante la instalacion.");
+	log_info(logger_GC, "Instalando el sistema de archivos TallGrass...");
 
 	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
 	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
@@ -218,6 +223,7 @@ void suscribirse_broker(){
 
 
 void salir (const char* mensaje) {
+	log_error(logger_GC, mensaje);
 	perror (mensaje);
 	exit (EXIT_FAILURE);
 }
