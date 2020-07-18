@@ -5,6 +5,7 @@
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/bitarray.h>
+#include<commons/collections/dictionary.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<readline/readline.h>
@@ -22,7 +23,6 @@
 
 //Punteros globales:
 t_log* logger_GC = NULL;
-t_log* debug = NULL;
 
 t_config* config_GC = NULL;
 
@@ -30,6 +30,8 @@ char* punto_de_montaje = NULL;
 char* tam_bloque = NULL;
 char* cant_bloques = NULL;
 char* magic_number = NULL;
+
+
 
 //Datos globales:
 pthread_t hilo_global_cliente_GC;
