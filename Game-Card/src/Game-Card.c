@@ -2,7 +2,7 @@
 
 int32_t main(void)
 {
-	logger_GC = log_create("../Game-Card.log", "Game-Card", true, LOG_LEVEL_INFO);
+	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", true, LOG_LEVEL_INFO);
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 
 	instalar_filesystem ();
@@ -57,8 +57,8 @@ void instalar_filesystem (){
 		else salir ("Problema al intentar crear la carpeta TallGrass.");
 	}
 
-	close(logger_GC->file);
-	logger_GC->file = fopen("../Game-Card.log", "w");
+	fclose(logger_GC->file);
+	logger_GC->file = fopen("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "w+");
 	if (logger_GC->file == NULL) salir ("Error al crear el logger durante la instalacion.");
 	log_info(logger_GC, "Instalando el sistema de archivos TallGrass...");
 
@@ -104,7 +104,6 @@ void instalar_filesystem (){
 	file_auxiliar = fopen (ruta_archivo_Files_Metadata, "w+");
 	fprintf (file_auxiliar, "DIRECTORY=Y");
 	fclose(file_auxiliar);
-
 }
 
 void crear_servidor_GC() {

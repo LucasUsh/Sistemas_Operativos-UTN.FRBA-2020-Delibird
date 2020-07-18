@@ -31,7 +31,7 @@ char* tam_bloque = NULL;
 char* cant_bloques = NULL;
 char* magic_number = NULL;
 
-
+t_dictionary* semaforos = NULL;
 
 //Datos globales:
 pthread_t hilo_global_cliente_GC;
