@@ -2,12 +2,11 @@
 
 int32_t main(void)
 {
-	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", true, LOG_LEVEL_INFO);
+	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", true, LOG_LEVEL_DEBUG);
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 
 	instalar_filesystem ();
 
-	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/debug.log", "Game-Card", 1, LOG_LEVEL_DEBUG);
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (logger_GC, "Hilo servidor creado correctamente.");
@@ -221,7 +220,7 @@ void conexionBroker(int32_t *socket)
 											recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 											recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
 											t_New* new = NULL;
-											new = deserializar_paquete_new (*socket);
+											new = deserializar_paquete_new (socket);
 											//que Game Card haga lo que necesite con el mensaje
 											enviar_ACK(0, *socket);
 										} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
