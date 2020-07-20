@@ -20,6 +20,8 @@ extern char* magic_number;
 
 // Funciones que no requieren liberar memoria:
 void funcion_new_pokemon(t_New* new);
+void funcion_catch_pokemon(t_Catch* catch);
+void funcion_get_pokemon(t_Get* get);
 
 int32_t existe (char* nombre_pokemon);
 

@@ -34,3 +34,11 @@ char* ruta_metadata_pokemon_teorica (t_pokemon pokemon) {
 
 	return strcat (strcat (strcat (strcpy(ruta, punto_de_montaje), "/Files/"), pokemon.nombre), "/Metadata.bin");
 }
+
+void funcion_catch_pokemon(t_Catch* catch) {
+	printf("Catch %s...\n", catch->pokemon.nombre);
+}
+
+void funcion_get_pokemon(t_Get* get) {
+
+}
