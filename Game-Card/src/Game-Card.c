@@ -134,7 +134,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 	if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
 			codigo_operacion = -1;
 	recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-	recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+	recv(*socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
 
 	log_debug (logger_GC, "Código de operación %d", codigo_operacion);
 
