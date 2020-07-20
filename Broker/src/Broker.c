@@ -82,7 +82,6 @@ int32_t main(void) {
 									} else printf("Fallo al recibir codigo de operacion = -1\n");
 								}
 							} else{
-								//PARA GUARDAR EL SUSCRIPTOR NECESITO HACER UN MALLOC DE T_SUSCRIPTOR!!!!!!!!!!!
 								suscriptor->id = id_proceso;
 								suscriptor->socket = socket_cliente;
 								suscriptor->op_code = operacion;
@@ -323,9 +322,17 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 }
 
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente){
+	double id_mensaje;
+
+	if(esCorrelativo()){
+		id_mensaje = mensaje->id_mensaje_correlativo;
+	}else id_mensaje = mensaje->id_mensaje;
+
 	switch(operacion){
+	t_New * new;
 	case SUSCRIPCION_NEW:
-		enviarMensajeNew(mensaje, socket_cliente);
+		new = mensaje->mensaje;
+		enviarMensajeNew(new, id_mensaje, socket_cliente);
 		break;
 	case SUSCRIPCION_APPEARED:
 		//enviar mensaje appeared
@@ -347,27 +354,27 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	}
 }
 
-void enviarMensajeNew(info_mensaje * mensaje, int32_t socket_cliente){
-	t_New * new;
-	new = mensaje->mensaje;
-	char* pokemon = "Pikachu";
-	char* x = "5";
-	//char x[sizeof(new->posicion.X)];
-	char* y = "10";
-	char* cantidad = "4";
-	char* id_mensaje = "2";
-	pokemon = new->pokemon.nombre;
-	//snprintf(target_string, size_of_target_string_in_bytes, "%d", source_int)
-	//sprintf(x, "%d", new->posicion.X);
-	//x = new->posicion.X;
-	//y = new->posicion.Y;
-	//cantidad = new->cant;
-	//id_mensaje = mensaje->id_mensaje;
+bool esCorrelativo(){
+	return 0;
+}
 
-	enviar_new_pokemon(pokemon, x, y, cantidad, id_mensaje, socket_cliente);
-	//enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* id_mensaje, int32_t socket_cliente)
-	//new = mensaje->mensaje;
+void enviarMensajeNew(t_New * new, double id_mensaje, int32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = NEW_POKEMON;
+	paquete->buffer = malloc(sizeof(t_buffer));
 
+	paquete->buffer->size = getSizeMensajeNew(*new);
+	paquete->buffer->id_Mensaje = id_mensaje;
+	paquete->buffer->stream = new;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_paquete_new (paquete, &bytes_a_enviar, new);
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
 
 }
 

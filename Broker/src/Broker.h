@@ -24,6 +24,7 @@
 typedef struct {
 	op_code op_code;
 	double id_mensaje;
+	double id_mensaje_correlativo;
 	double process_id; // ID del proceso que mando el mensaje
 	void * mensaje;
 	int32_t sizeMsg;
@@ -79,7 +80,8 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente);
 info_mensaje * recibirMensajeCatch(int32_t socket_cliente);
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente);
-void enviarMensajeNew(info_mensaje * mensaje, int32_t socket_cliente);
+bool esCorrelativo();
+void enviarMensajeNew(t_New * new, double id_mensaje, int32_t socket_cliente);
 
 void iniciarBroker();
 t_log* iniciar_logger(void);
