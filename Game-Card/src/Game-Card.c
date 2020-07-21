@@ -4,6 +4,8 @@ int32_t main(void)
 {
 	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", true, LOG_LEVEL_DEBUG);
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	sem_init (&diccionario, 0, 1);
+	semaforos = dictionary_create();
 
 	instalar_filesystem ();
 
@@ -27,26 +29,37 @@ int32_t main(void)
 	pthread_join(hilo_conexion_broker,NULL);
 
 	free(mapa_de_bloques.bitarray);
+	bitarray_destroy(&mapa_de_bloques);
 
     liberar_conexion(socket);
     config_destroy(config_GC);
     log_destroy(logger_GC);
 
+    sem_destroy(&bitmap);
+    sem_destroy(&diccionario);
+
+    dictionary_destroy_and_destroy_elements(semaforos, (void*) sem_destroy);
+
     return 0;
 }
 
 void instalar_filesystem (){
-	//Información del archivo de configuración:
+	// Información del archivo de configuración:
 
+	tiempo_reintento_op = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_OPERACION");
+	tiempo_retardo_op = config_get_string_value(config_GC,"TIEMPO_RETARDO_OPERACION");
 	punto_de_montaje = config_get_string_value(config_GC,"PUNTO_MONTAJE_TALLGRASS");
 	tam_bloque = config_get_string_value(config_GC,"BLOCK_SIZE");
 	cant_bloques = config_get_string_value(config_GC,"BLOCKS");
-	int32_t cant_bloques_i = (int32_t) atoi (cant_bloques);
 	magic_number = config_get_string_value(config_GC,"MAGIC_NUMBER");
 
-	int32_t tam_punto_de_montaje = strlen (punto_de_montaje);
+	tiempo_reintento_operacion = (int32_t) atoi (tiempo_reintento_op);
+	tiempo_retardo_operacion = (int32_t) atoi (tiempo_retardo_op);
+	tamanio_bloque = (int32_t) atoi (tam_bloque);
+	cantidad_bloques = (int32_t) atoi (cant_bloques);
+	tam_punto_de_montaje = strlen (punto_de_montaje);
 
-	//Creación de carpetas:
+	// Creación de carpetas:
 
 	if (mkdir (punto_de_montaje, S_IRWXU | S_IRWXO) != 0) {
 		if (errno == EEXIST) {
@@ -72,7 +85,7 @@ void instalar_filesystem (){
 	if (mkdir (carpeta_Files, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta Files");
 	if (mkdir (carpeta_Blocks, S_IRWXU | S_IROTH) != 0) salir("Error al crear la carpeta Blocks");
 
-	//Creacion de archivos administrativos:
+	// Creacion de archivos administrativos:
 	char ruta_archivo_Metadata_Metadata[strlen(carpeta_Metadata) + strlen ("/Metadata.bin") + 1];
 	strcat(strcpy(ruta_archivo_Metadata_Metadata, carpeta_Metadata), "/Metadata.bin");
 	char ruta_archivo_Metadata_Bitmap[strlen(carpeta_Metadata) + strlen ("/Bitmap.bin") + 1];
@@ -86,14 +99,15 @@ void instalar_filesystem (){
 	fprintf (file_auxiliar, "BLOCK_SIZE=%s\n", magic_number);
 	fclose(file_auxiliar);
 
-	if (cant_bloques_i % 8 == 0) mapa_de_bloques.size = (size_t) cant_bloques_i / 8;
-	else mapa_de_bloques.size = (size_t) (cant_bloques_i / 8 + 1);
+	/*Bitmap*/
+	if (cantidad_bloques % 8 == 0) mapa_de_bloques.size = (size_t) cantidad_bloques / 8;
+	else mapa_de_bloques.size = (size_t) (cantidad_bloques / 8 + 1);
 	mapa_de_bloques.mode = LSB_FIRST;
 	mapa_de_bloques.bitarray = malloc (mapa_de_bloques.size);
 	int32_t i;
-	for (i=0; i < cant_bloques_i; i++) bitarray_clean_bit(&mapa_de_bloques, i);
-	if (cant_bloques_i % 8 != 0) {
-		int32_t bits_de_mas = cant_bloques_i % 8;
+	for (i=0; i < cantidad_bloques; i++) bitarray_clean_bit(&mapa_de_bloques, i);
+	if (cantidad_bloques % 8 != 0) {
+		int32_t bits_de_mas = cantidad_bloques % 8;
 		for (; bits_de_mas > 0; bits_de_mas--, i++) bitarray_set_bit(&mapa_de_bloques, i);
 	}
 	file_auxiliar = fopen (ruta_archivo_Metadata_Bitmap, "w+");
@@ -103,6 +117,9 @@ void instalar_filesystem (){
 	file_auxiliar = fopen (ruta_archivo_Files_Metadata, "w+");
 	fprintf (file_auxiliar, "DIRECTORY=Y");
 	fclose(file_auxiliar);
+
+	// Inicializo semaforos:
+	sem_init (&bitmap, 0, 1);
 }
 
 void crear_servidor_GC() {

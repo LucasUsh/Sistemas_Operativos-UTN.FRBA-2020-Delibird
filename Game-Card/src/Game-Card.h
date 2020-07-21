@@ -1,16 +1,17 @@
 #ifndef GAME_CARD_H_
 #define GAME_CARD_H_
 
-#include<commons/config.h>
-#include<commons/log.h>
-#include<commons/string.h>
-#include<commons/bitarray.h>
-#include<commons/collections/dictionary.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<readline/readline.h>
-#include<netdb.h>
-#include<pthread.h>
+#include <commons/config.h>
+#include <commons/log.h>
+#include <commons/string.h>
+#include <commons/bitarray.h>
+#include <commons/collections/dictionary.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <readline/readline.h>
+#include <netdb.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -26,6 +27,8 @@ t_log* logger_GC = NULL;
 
 t_config* config_GC = NULL;
 
+char* tiempo_reintento_op = NULL;
+char* tiempo_retardo_op = NULL;
 char* punto_de_montaje = NULL;
 char* tam_bloque = NULL;
 char* cant_bloques = NULL;
@@ -37,6 +40,15 @@ t_dictionary* semaforos = NULL;
 pthread_t hilo_global_cliente_GC;
 
 t_bitarray mapa_de_bloques;
+
+sem_t diccionario;
+sem_t bitmap;
+
+int32_t tiempo_reintento_operacion;
+int32_t tiempo_retardo_operacion;
+int32_t tamanio_bloque;
+int32_t cantidad_bloques;
+int32_t tam_punto_de_montaje;
 
 //Prototipos de funciones:
 void instalar_filesystem();
