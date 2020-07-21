@@ -46,7 +46,7 @@ void enviar_appeared_pokemon (char* pokemon, char* x, char* y, char* id_mensaje_
 	posicion.Y = (int32_t) atoi (y);
 
 	t_pokemon p_pokemon;
-	p_pokemon.size_Nombre = strlen(pokemon) +1;
+	p_pokemon.size_Nombre = string_length(pokemon) +1;
 	p_pokemon.nombre = pokemon;
 
 	t_Appeared app;
@@ -65,6 +65,8 @@ void enviar_appeared_pokemon (char* pokemon, char* x, char* y, char* id_mensaje_
 	free(paqueteSerializado);
 	free(paquete->buffer);
 	free(paquete);
+
+	return;
 }
 
 
@@ -98,6 +100,8 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id_mensaje, int
 	free(paqueteSerializado);
 	free(paquete->buffer);
 	free(paquete);
+
+	return;
 }
 
 void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int32_t socket_cliente)
