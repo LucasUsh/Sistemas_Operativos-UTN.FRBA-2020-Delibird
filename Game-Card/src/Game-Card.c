@@ -2,10 +2,7 @@
 
 int32_t main(void)
 {
-	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", true, LOG_LEVEL_DEBUG);
-	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
-	sem_init (&diccionario, 0, 1);
-	semaforos = dictionary_create();
+	inicializaciones_globales();
 
 	instalar_filesystem ();
 
@@ -13,32 +10,16 @@ int32_t main(void)
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (logger_GC, "Hilo servidor creado correctamente.");
 
-	// TODO: asociarse globalmente a las colas NEW_POKEMON, CATCH y GET
-	// Una vez suscripto tendríamos entonces 3 sockets modo cliente,
-	// cuando llega un mensaje informar al Broker la recepción del mismo (ACK) y hacer lo que corresponda
-
-
 	pthread_t hilo_conexion_broker;
 	int32_t socket;
 	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
 			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
 
 
-
 	pthread_join(hilo_servidor_GC, NULL);
 	pthread_join(hilo_conexion_broker,NULL);
 
-	free(mapa_de_bloques.bitarray);
-	bitarray_destroy(&mapa_de_bloques);
-
-    liberar_conexion(socket);
-    config_destroy(config_GC);
-    log_destroy(logger_GC);
-
-    sem_destroy(&bitmap);
-    sem_destroy(&diccionario);
-
-    dictionary_destroy_and_destroy_elements(semaforos, (void*) sem_destroy);
+	liberar_memoria(socket);
 
     return 0;
 }
@@ -269,6 +250,27 @@ void salir (const char* mensaje) {
 	log_error(logger_GC, mensaje);
 	perror (mensaje);
 	exit (EXIT_FAILURE);
+}
+
+void inicializaciones_globales() {
+	logger_GC = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.log", "Game-Card", true, LOG_LEVEL_DEBUG);
+	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	sem_init (&diccionario, 0, 1);
+	semaforos = dictionary_create();
+}
+
+void liberar_memoria(int32_t socket) {
+	free(mapa_de_bloques.bitarray);
+	bitarray_destroy(&mapa_de_bloques);
+
+    liberar_conexion(socket);
+    config_destroy(config_GC);
+    log_destroy(logger_GC);
+
+    sem_destroy(&bitmap);
+    sem_destroy(&diccionario);
+
+    dictionary_destroy_and_destroy_elements(semaforos, (void*) sem_destroy);
 }
 
 /*

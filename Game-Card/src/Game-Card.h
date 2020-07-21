@@ -57,5 +57,6 @@ void responder_mensaje(int32_t* socket_cliente);
 void conexionBroker(int32_t *socket);
 void suscribirse_broker();
 void salir (const char* mensaje);
+void liberar_memoria (int32_t socket);
 
 #endif
