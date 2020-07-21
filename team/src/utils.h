@@ -33,5 +33,6 @@ bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* o
 bool pokemon_pendiente_de_capturar(t_pokemon pokemon, t_list* entrenadores, int necesito_capturar);
 bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos, t_list* objetivo_global);
 t_respuesta* caught_valido(int id, t_list* catchs_enviados);
+int32_t conexion_broker();
 
 #endif /* UTILS_H_ */

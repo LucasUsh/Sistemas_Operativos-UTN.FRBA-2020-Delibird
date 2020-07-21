@@ -364,7 +364,11 @@ bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_lis
 }
 
 
-
+int32_t conexion_broker()
+{
+	int32_t socket = crear_conexion(IP_BROKER, PUERTO_BROKER);
+	return socket;
+}
 
 
 

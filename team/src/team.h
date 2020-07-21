@@ -69,7 +69,12 @@ typedef struct {
 
 t_log* logger;
 t_config* config;
+
+//Datos traidos por config
 char* IP_BROKER;
 char* PUERTO_BROKER;
+int32_t PROCESS_ID;
+t_list* objetivo_global;
+t_algoritmo algoritmo;
 
 #endif /* TEAM_H_ */
