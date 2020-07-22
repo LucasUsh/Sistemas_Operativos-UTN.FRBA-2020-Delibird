@@ -42,9 +42,13 @@ void instalar_filesystem (){
 
 	// Creación de carpetas:
 
+
+
 	if (mkdir (punto_de_montaje, S_IRWXU | S_IRWXO) != 0) {
 		if (errno == EEXIST) {
 			log_info(logger_GC, "Utilizacion de file system previamente formateado.");
+			recuperar_datos();
+			log_info(logger_GC, "Datos administrativos recobrados.");
 			return;
 		}
 		else salir ("Problema al intentar crear la carpeta TallGrass.");
@@ -55,10 +59,10 @@ void instalar_filesystem (){
 	if (logger_GC->file == NULL) salir ("Error al crear el logger durante la instalacion.");
 	log_info(logger_GC, "Instalando el sistema de archivos TallGrass...");
 
-	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
-	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
 	char carpeta_Files[tam_punto_de_montaje + strlen ("/Files") + 1];
 	strcat(strcpy(carpeta_Files, punto_de_montaje), "/Files");
+	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
+	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
 	char carpeta_Blocks[tam_punto_de_montaje + strlen ("/Blocks") + 1];
 	strcat(strcpy(carpeta_Blocks, punto_de_montaje), "/Blocks");
 
@@ -101,6 +105,43 @@ void instalar_filesystem (){
 
 	// Inicializo semaforos:
 	sem_init (&bitmap, 0, 1);
+}
+
+void recuperar_datos() {
+	char carpeta_Files[tam_punto_de_montaje + strlen ("/Files") + 1];
+	strcat(strcpy(carpeta_Files, punto_de_montaje), "/Files");
+	char carpeta_Metadata[tam_punto_de_montaje + strlen ("/Metadata") + 1];
+	strcat(strcpy(carpeta_Metadata, punto_de_montaje), "/Metadata");
+	char ruta_archivo_Metadata_Bitmap[strlen(carpeta_Metadata) + strlen ("/Bitmap.bin") + 1];
+	strcat(strcpy(ruta_archivo_Metadata_Bitmap, carpeta_Metadata), "/Bitmap.bin");
+
+	// Recupero el mapa de bits del disco:
+	if (cantidad_bloques % 8 == 0) mapa_de_bloques.size = (size_t) cantidad_bloques / 8;
+	else mapa_de_bloques.size = (size_t) (cantidad_bloques / 8 + 1);
+	mapa_de_bloques.mode = LSB_FIRST;
+	mapa_de_bloques.bitarray = malloc (mapa_de_bloques.size);
+	FILE* aux = fopen (ruta_archivo_Metadata_Bitmap, "r");
+	if (aux == NULL) salir("Error al cargar el mapa de bits existente");
+	fread (mapa_de_bloques.bitarray, sizeof(char), mapa_de_bloques.size, aux);
+	fclose(aux);
+
+	// Recupero semáforos:
+	DIR *Files = opendir(carpeta_Files);
+	if (Files == NULL) salir("No se pudo abrir la carpeta Files para recuperar semaforos");
+
+	struct dirent *entrada;
+
+	sem_t* nuevo_semaforo;
+
+	while ((entrada = readdir (Files)) != NULL) {
+	    if ((strcmp(entrada->d_name, ".")!=0) && (strcmp(entrada->d_name, "..")!=0) && (strcmp(entrada->d_name, "Metadata.bin")!=0)){
+	    	nuevo_semaforo = malloc(sizeof(sem_t));
+	    	dictionary_put (semaforos, entrada->d_name, nuevo_semaforo);
+	    	sem_init (dictionary_get (semaforos, entrada->d_name), 0, 1);
+	    }
+	}
+
+	closedir (Files);
 }
 
 void crear_servidor_GC() {

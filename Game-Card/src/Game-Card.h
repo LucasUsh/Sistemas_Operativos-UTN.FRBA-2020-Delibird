@@ -14,8 +14,10 @@
 #include <semaphore.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <dirent.h>
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.h"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
@@ -52,11 +54,13 @@ int32_t tam_punto_de_montaje;
 
 //Prototipos de funciones:
 void instalar_filesystem();
+void recuperar_datos();
 void crear_servidor_GC();
 void responder_mensaje(int32_t* socket_cliente);
 void conexionBroker(int32_t *socket);
 void suscribirse_broker();
 void salir (const char* mensaje);
+void inicializaciones_globales();
 void liberar_memoria (int32_t socket);
 
 #endif
