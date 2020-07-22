@@ -338,7 +338,7 @@ t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
 	return localized;
 }
 
-void enviar_handshake(double id_proceso, int32_t socket_cliente){
+void enviar_handshake(int32_t id_proceso, int32_t socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = HANDSHAKE;
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -372,7 +372,7 @@ void * serializar_handshake(t_paquete* paquete, int32_t* bytes){
 	return stream;
 }
 
-void enviar_ACK(double id_mensaje, int32_t socket_cliente){
+void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = ACK;
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -406,7 +406,7 @@ void * serializar_ACK(t_paquete* paquete, int32_t* bytes){
 	return stream;
 }
 
-void enviar_suscripcion_new(double id_proceso, int32_t socket_cliente){
+void enviar_suscripcion_new(int32_t id_proceso, int32_t socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = SUSCRIPCION_NEW;
 	paquete->buffer = malloc(sizeof(t_buffer));

@@ -32,19 +32,22 @@ int32_t main(void) {
 			log_info(logger, "Se conecto un proceso \n");
 
 			int32_t tamanio_estructura = 0;
-			double id_mensaje=0;
+			int32_t id_mensaje=0;
 			int32_t operacion=0;
 			pthread_t hilo;
-			double id_proceso =0;
+			int32_t id_proceso =0;
 			info_mensaje * mensaje;
-			t_suscriptor * suscriptor;
+			t_suscriptor * suscriptor = malloc(sizeof(t_suscriptor));
+			//suscriptor->id = 0;
+			//suscriptor->socket = 0;
+			//suscriptor->op_code = -1;
 			t_list * mensajesAEnviar = NULL;
 
 			//HANDSHAKE
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == HANDSHAKE){
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+					recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
 					//ACK DEL HANDSHAKE
 					enviar_ACK(0, socket_cliente);
 					//ESPERA EL MENSAJE
@@ -74,7 +77,7 @@ int32_t main(void) {
 									if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 										if(operacion == ACK){
 											recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-											recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+											recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
 											mensaje = obtenerMensaje(mensaje->id_mensaje);
 											list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
 											//agregar suscriptor en suscriptoresQueRecibieron
@@ -98,7 +101,7 @@ int32_t main(void) {
 										if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 											if(operacion == ACK){
 												recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-												recv(socket_cliente, &id_proceso, sizeof(double), MSG_WAITALL);
+												recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
 												mensaje = obtenerMensaje(mensaje->id_mensaje);
 												list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
 												//agregar suscriptor en suscriptoresQueRecibieron
@@ -111,7 +114,7 @@ int32_t main(void) {
 						case NEW_POKEMON:
 							log_info(logger, "Llego un mensaje NEW_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeNew(socket_cliente);
 							//CONFIRMAR RECEPCION DEL MENSAJE
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
@@ -125,7 +128,7 @@ int32_t main(void) {
 						case APPEARED_POKEMON:
 							log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeAppeared(socket_cliente);
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -136,7 +139,7 @@ int32_t main(void) {
 						case GET_POKEMON:
 							log_info(logger, "Llego un mensaje GET_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeGet(socket_cliente);
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -147,7 +150,7 @@ int32_t main(void) {
 						case LOCALIZED_POKEMON:
 							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeLocalized(socket_cliente);
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -158,7 +161,7 @@ int32_t main(void) {
 						case CATCH_POKEMON:
 							log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeCatch(socket_cliente);
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -169,7 +172,7 @@ int32_t main(void) {
 						case CAUGHT_POKEMON:
 							log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeCaught(socket_cliente);
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -199,18 +202,18 @@ int32_t main(void) {
 
 }
 
-double get_id(){
+int32_t get_id(){
 	//para obtener id usamos el timestamp
 
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	double id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec);
+	uint32_t id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec);
 	//printf("el id es: %f\n", id);
 
 	return id;
 }
 
-void manejoMensajeSuscripcion(int32_t socket_cliente, double id_proceso, int32_t operacion){
+void manejoMensajeSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
 }
 
 void manejoMensaje(info_mensaje* mensaje){
@@ -328,7 +331,7 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 }
 
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente){
-	double id_mensaje;
+	int32_t id_mensaje;
 	t_New * new;
 	char *nombre="Pikachu";
 
@@ -368,7 +371,7 @@ bool esCorrelativo(){
 	return 0;
 }
 
-void enviarMensajeNew(t_New * new, double id_mensaje, int32_t socket_cliente){
+void enviarMensajeNew(t_New * new, int32_t id_mensaje, int32_t socket_cliente){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = NEW_POKEMON;
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -601,7 +604,7 @@ void hacerDump(){
 	}
 }
 
-t_list * getMensajesAEnviar(op_code operacion, double id_proceso){
+t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	info_mensaje * mensaje;
 	t_particion * mensajeCacheado;
 	t_suscriptor * suscriptor;
@@ -666,11 +669,11 @@ t_list* getMensajesCacheadosDeOperacion(op_code operacion){
 	return mensajesCacheados;
 }
 
-bool esElMensaje(info_mensaje* mensaje, double id_mensaje){
+bool esElMensaje(info_mensaje* mensaje, int32_t id_mensaje){
 	return mensaje->id_mensaje == id_mensaje;
 }
 
-info_mensaje * obtenerMensaje(double id_mensaje){
+info_mensaje * obtenerMensaje(int32_t id_mensaje){
 	info_mensaje * mensaje = NULL;
 
 	bool _esElMensaje(void* element){
@@ -693,11 +696,11 @@ info_mensaje * obtenerMensaje(double id_mensaje){
 	}
 }
 
-bool esElSuscriptor(t_suscriptor * suscriptor, double id_proceso){
+bool esElSuscriptor(t_suscriptor * suscriptor, int32_t id_proceso){
 	return suscriptor->id == id_proceso;
 }
 
-bool procesoSuscriptoACola(op_code operacion, double id_proceso){
+bool procesoSuscriptoACola(op_code operacion, int32_t id_proceso){
 	bool _esElSuscriptor(void* element){
 		return esElSuscriptor((t_suscriptor*)element, id_proceso);
 	}
@@ -714,7 +717,7 @@ bool procesoSuscriptoACola(op_code operacion, double id_proceso){
 	}
 }
 
-t_suscriptor * obtenerSuscriptor(double id_proceso){
+t_suscriptor * obtenerSuscriptor(int32_t id_proceso){
 	t_suscriptor * suscriptor = NULL;
 	bool _esElSuscriptor(void* element){
 		return esElSuscriptor((t_suscriptor*)element, id_proceso);
@@ -730,7 +733,7 @@ t_suscriptor * obtenerSuscriptor(double id_proceso){
 	}
 }
 
-bool otraFuncionMagica(info_mensaje mensaje, double id_proceso){
+bool otraFuncionMagica(info_mensaje mensaje, int32_t id_proceso){
 
 	return true;
 }

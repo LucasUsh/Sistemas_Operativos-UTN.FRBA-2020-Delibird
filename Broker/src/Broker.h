@@ -23,9 +23,9 @@
 
 typedef struct {
 	op_code op_code;
-	double id_mensaje;
-	double id_mensaje_correlativo;
-	double process_id; // ID del proceso que mando el mensaje
+	int32_t id_mensaje;
+	int32_t id_mensaje_correlativo;
+	int32_t process_id; // ID del proceso que mando el mensaje
 	void * mensaje;
 	int32_t sizeMsg;
 	t_list * suscriptoresALosQueSeEnvio;
@@ -34,7 +34,7 @@ typedef struct {
 
 typedef struct {
 	op_code op_code;
-	double id;
+	int32_t id;
 	int32_t socket;
 } t_suscriptor;
 
@@ -70,8 +70,8 @@ char *PUERTO_BROKER;
 char * LOG_FILE;
 
 
-double get_id();
-void manejoMensajeSuscripcion(int32_t socket_cliente, double id_proceso, int32_t operacion);
+int32_t get_id();
+void manejoMensajeSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);
@@ -81,7 +81,7 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente);
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente);
 bool esCorrelativo();
-void enviarMensajeNew(t_New * new, double id_mensaje, int32_t socket_cliente);
+void enviarMensajeNew(t_New * new, int32_t id_mensaje, int32_t socket_cliente);
 
 void iniciarBroker();
 t_log* iniciar_logger(void);
@@ -99,11 +99,11 @@ int32_t getSizeMensajeCaught(t_Caught msgCaught);
 
 void rutina (int n);
 void hacerDump();
-t_list * getMensajesAEnviar(op_code operacion, double id_proceso);
+t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso);
 t_list* getMensajesCacheadosDeOperacion(op_code operacion);
 
-info_mensaje * obtenerMensaje(double id_mensaje);
-bool procesoSuscriptoACola(op_code operacion, double id_proceso);
-t_suscriptor * obtenerSuscriptor(double id_proceso);
+info_mensaje * obtenerMensaje(int32_t id_mensaje);
+bool procesoSuscriptoACola(op_code operacion, int32_t id_proceso);
+t_suscriptor * obtenerSuscriptor(int32_t id_proceso);
 
 #endif /* BROKER_H_ */

@@ -44,7 +44,7 @@ typedef enum
 typedef struct
 {
 	int32_t size;
-	double id_Mensaje;
+	int32_t id_Mensaje;
 	void* stream;
 } t_buffer;
 
@@ -71,11 +71,11 @@ t_Get* deserializar_paquete_get (int32_t* socket_cliente);
 void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* caught);
 t_Caught* deserializar_paquete_caught (int32_t* socket_cliente);
 
-void enviar_handshake(double id_proceso, int32_t socket_cliente);
+void enviar_handshake(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_handshake(t_paquete* paquete, int32_t* bytes);
-void enviar_ACK(double id_mensaje, int32_t socket_cliente);
+void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente);
 void * serializar_ACK(t_paquete* paquete, int32_t* bytes);
-void enviar_suscripcion_new(double id_proceso, int32_t socket_cliente);
+void enviar_suscripcion_new(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_suscripcion_new(t_paquete* paquete, int32_t* bytes);
 
 

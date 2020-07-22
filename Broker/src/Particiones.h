@@ -23,8 +23,8 @@ typedef struct {
 	int32_t posicion_final;
 	int32_t size;
 	bool ocupada;
-	double id_mensaje;
-	double id; //valor que asigna Broker a partir de una variable global
+	int32_t id_mensaje;
+	int32_t id; //valor que asigna Broker a partir de una variable global
 	//int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
 } t_particion;
 

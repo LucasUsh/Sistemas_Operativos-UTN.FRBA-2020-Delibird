@@ -11,7 +11,7 @@ int32_t main(int32_t argc, char *argv[])
 	int32_t socket;
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
-	double id_mensaje=0;
+	int32_t id_mensaje=0;
 
 	printf("GAME BOY iniciando ... \n");
 
@@ -30,14 +30,14 @@ int32_t main(int32_t argc, char *argv[])
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 			if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
 				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL); //recibo el paquete, aunque a Game Boy no le interesa ningun dato
+				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aunque a Game Boy no le interesa ningun dato
 
 				if(string_contains(argv[2], "NEW_POKEMON")){
 					enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
 					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
 						}
 					}
 				}

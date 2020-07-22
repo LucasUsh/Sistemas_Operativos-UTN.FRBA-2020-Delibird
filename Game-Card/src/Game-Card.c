@@ -171,7 +171,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 	if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
 			codigo_operacion = -1;
 	recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-	recv(*socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+	recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 	log_debug (logger_GC, "Código de operación %d", codigo_operacion);
 
@@ -224,7 +224,7 @@ void conexionBroker(int32_t *socket)
 	char* puerto_broker;
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
-	double id_mensaje=0;
+	int32_t id_mensaje=0;
 
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
@@ -241,7 +241,7 @@ void conexionBroker(int32_t *socket)
 			if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+					recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					if(id_mensaje == 0)
 					{
 						//Obtener id_proceso del archivo de configuracion
@@ -249,14 +249,14 @@ void conexionBroker(int32_t *socket)
 						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 							if(operacion == ACK){
 								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-								recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 								//id_mensaje = cantidad de mensajes que va a enviar el Broker
 								log_info(logger_GC,"Suscripto a la cola new");
 								for(int i=0; i<id_mensaje; i++){
 									if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 										if(operacion == NEW_POKEMON){
 											recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-											recv(*socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+											recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 											t_New* new = NULL;
 											new = deserializar_paquete_new (socket);
 											//que Game Card haga lo que necesite con el mensaje
