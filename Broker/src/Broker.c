@@ -80,7 +80,7 @@ int32_t main(void) {
 											//agregar suscriptor en suscriptoresQueRecibieron
 										} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 									} else printf("Fallo al recibir codigo de operacion = -1\n");
-								}
+								} list_destroy(mensajesAEnviar);
 							} else{
 								suscriptor->id = id_proceso;
 								suscriptor->socket = socket_cliente;
@@ -118,6 +118,7 @@ int32_t main(void) {
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje New\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
+							pthread_detach(hilo);
 							//info_mensaje * mensaje;
 							//mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);
 							break;
@@ -130,6 +131,7 @@ int32_t main(void) {
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Appeared\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Appeared\n");
+							pthread_detach(hilo);
 							break;
 						case GET_POKEMON:
 							log_info(logger, "Llego un mensaje GET_POKEMON \n");
@@ -140,6 +142,7 @@ int32_t main(void) {
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Get\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Get\n");
+							pthread_detach(hilo);
 							break;
 						case LOCALIZED_POKEMON:
 							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
@@ -150,6 +153,7 @@ int32_t main(void) {
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Localized\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Localized\n");
+							pthread_detach(hilo);
 							break;
 						case CATCH_POKEMON:
 							log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
@@ -160,6 +164,7 @@ int32_t main(void) {
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Catch\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Catch\n");
+							pthread_detach(hilo);
 							break;
 						case CAUGHT_POKEMON:
 							log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
@@ -170,6 +175,7 @@ int32_t main(void) {
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Caught\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Caught\n");
+							pthread_detach(hilo);
 							break;
 							}
 						} else printf("Fallo al recibir codigo de operacion = -1\n");
@@ -323,16 +329,20 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente){
 	double id_mensaje;
+	t_New * new;
+	char *nombre="Pikachu";
 
 	if(esCorrelativo()){
 		id_mensaje = mensaje->id_mensaje_correlativo;
 	}else id_mensaje = mensaje->id_mensaje;
 
+	id_mensaje = 1;
 	switch(operacion){
-	t_New * new;
 	case SUSCRIPCION_NEW:
 		new = mensaje->mensaje;
-		enviarMensajeNew(new, id_mensaje, socket_cliente);
+		//enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* id_mensaje, int32_t socket_cliente)
+		//char* string_itoa(int number)
+		enviar_new_pokemon(nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
 		break;
 	case SUSCRIPCION_APPEARED:
 		//enviar mensaje appeared
@@ -638,6 +648,7 @@ t_list * getMensajesAEnviar(op_code operacion, double id_proceso){
 		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
 		list_add(mensajesAEnviar, mensaje);
 	}
+	list_destroy(mensajesCacheados);
 	return mensajesAEnviar;
 }
 
@@ -669,13 +680,16 @@ info_mensaje * obtenerMensaje(double id_mensaje){
 	t_list* mensajesConEseID = list_filter(list_mensajes, _esElMensaje);
 	if(mensajesConEseID->elements_count == 1){
 		mensaje = list_get(mensajesConEseID, 0);
+		list_destroy(mensajesConEseID);
 		return mensaje;
 	}else {
 		if(mensajesConEseID->elements_count > 1){
 			printf("Mas de un mensaje con el mismo id. Cantidad: %d \n", mensajesConEseID->elements_count);
-			return mensaje;
+			list_destroy(mensajesConEseID);
+			return NULL;
 		}else printf("No estaba el mensaje en memoria cache (particiones)");
-		return mensaje;
+		list_destroy(mensajesConEseID);
+		return NULL;
 	}
 }
 
@@ -690,9 +704,14 @@ bool procesoSuscriptoACola(op_code operacion, double id_proceso){
 
 	t_list * suscriptor = list_filter(list_suscriptores, _esElSuscriptor);
 	if(suscriptor->elements_count >1){
+		list_destroy(suscriptor);
 		printf("Estaba suscripto mas de una vez a la misma cola \n");
 		return -1;
-	}else return suscriptor->elements_count;
+	}else {
+		bool resultado = suscriptor->elements_count;
+		list_destroy(suscriptor);
+		return resultado;
+	}
 }
 
 t_suscriptor * obtenerSuscriptor(double id_proceso){

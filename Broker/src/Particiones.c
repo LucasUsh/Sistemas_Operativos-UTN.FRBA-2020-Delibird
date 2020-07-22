@@ -32,7 +32,9 @@ bool hayParticionesCandidatas(int32_t sizeMsg){
 		return particionCandidata((t_particion*)element, sizeMsg);
 	}
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
-	return particionesCandidatas->elements_count != 0;
+	bool resultado = particionesCandidatas->elements_count != 0;
+	list_destroy(particionesCandidatas);
+	return resultado;
 }
 
 
@@ -44,8 +46,9 @@ t_particion* getParticionFirstFit(int32_t sizeMensaje){
 	}
 
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidata);
-
-	return list_get(particionesCandidatas, 0);
+	t_particion* candidato = list_get(particionesCandidatas, 0);
+	list_destroy(particionesCandidatas);
+	return candidato;
 }
 
 t_particion* getParticionBestFit(int32_t sizeMensaje){
@@ -331,7 +334,9 @@ bool hayParticionesCandidatasBS(int32_t sizeMsg){
 		return particionCandidataBS((t_particion*)element, sizeMsg);
 	}
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataBS);
-	return particionesCandidatas->elements_count != 0;
+	bool resultado = particionesCandidatas->elements_count != 0;
+	list_destroy(particionesCandidatas);
+	return resultado;
 }
 
 t_particion* getParticionBS(int32_t tamanioMinimo){
@@ -339,7 +344,9 @@ t_particion* getParticionBS(int32_t tamanioMinimo){
 		return particionCandidata((t_particion*)element, tamanioMinimo);
 	}
 	t_list* particionesCandidatas = list_filter(tabla_particiones, _particionCandidataBS);
-	return list_get(particionesCandidatas, 0);
+	t_particion* candidato = list_get(particionesCandidatas, 0);
+	list_destroy(particionesCandidatas);
+	return candidato;
 }
 
 void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
