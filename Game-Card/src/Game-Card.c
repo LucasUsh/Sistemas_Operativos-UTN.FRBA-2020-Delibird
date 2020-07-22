@@ -15,7 +15,6 @@ int32_t main(void)
 	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
 			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
 
-
 	pthread_join(hilo_servidor_GC, NULL);
 	pthread_join(hilo_conexion_broker,NULL);
 

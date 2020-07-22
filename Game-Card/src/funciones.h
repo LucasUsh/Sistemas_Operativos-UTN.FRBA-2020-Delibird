@@ -44,12 +44,13 @@ void funcion_catch_pokemon(t_Catch* catch);
 void funcion_get_pokemon(t_Get* get);
 
 int32_t existe (char* nombre_pokemon);
-void crear_metadata_new (t_New* new, char* ruta);
+off_t crear_metadata_new (t_New* new, char* ruta);
 off_t asignar_bloque_libre(void);
 char get_open (char* ruta_metadata);
 void set_open (char* ruta_metadata, char valor);
 FILE* abrir_para (char* ruta, char* modo);
 void actualizar_bitmap (void);
+char* traer_bloques(char** bloques, int32_t cantidad);
 
 extern void salir (const char* mensaje);
 
@@ -57,6 +58,7 @@ extern void salir (const char* mensaje);
 char* ruta_metadata_pokemon_teorica (t_pokemon pokemon);
 char* ruta_carpeta_pokemon_teorica (t_pokemon pokemon);
 FILE* abrir_para (char* ruta, char* modo);
-char* copiar_stream(char* ruta_metadata);
+char* copiar_stream(FILE* archivo_lectura, char* ruta_archivo);
+char* copiar_linea(int numero_de_linea, FILE* archivo_lectura, char* ruta_archivo);
 
 #endif
