@@ -268,7 +268,12 @@ void conexionBroker(int32_t *socket)
 					if(id_mensaje == 0)
 					{
 
-						enviar_suscripcion(ip_gamecard, puerto_gamecard, NEW_POKEMON, *socket);
+						enviar_suscripcion(ip_gamecard, puerto_gamecard, SUSCRIPCION_NEW, *socket);
+						/*Tengan en cuenta que Broker libera la conexion despues de recibir el mensaje
+						 * si choca con la logica que tenian en mente capaz puedo re-pensarlo pero tendriamos
+						 * que hablarlo
+						 */
+
 						//enviar_suscripcion_new(2, *socket);
 						// de aca
 //						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){

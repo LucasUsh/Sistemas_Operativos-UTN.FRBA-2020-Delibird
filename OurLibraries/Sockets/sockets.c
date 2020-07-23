@@ -410,16 +410,16 @@ void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes, t_suscr
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
 	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
+	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
 	memcpy(stream + desplazamiento, &(suscripcion->size_ip), sizeof(suscripcion->size_ip));
 	desplazamiento+= sizeof(suscripcion->size_ip);
 	memcpy(stream + desplazamiento, suscripcion->ip, suscripcion->size_ip);
-	desplazamiento+= sizeof(suscripcion->size_ip);
+	desplazamiento+= suscripcion->size_ip;
 
 	memcpy(stream + desplazamiento, &(suscripcion->size_puerto), sizeof(suscripcion->size_puerto));
 	desplazamiento+= sizeof(suscripcion->size_puerto);
 	memcpy(stream + desplazamiento, suscripcion->puerto, suscripcion->size_puerto);
-	desplazamiento+= sizeof(suscripcion->size_puerto);
 
 	return stream;
 }
