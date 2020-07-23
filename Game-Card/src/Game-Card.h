@@ -29,6 +29,7 @@ t_log* logger_GC = NULL;
 
 t_config* config_GC = NULL;
 
+char* tiempo_reintento_con = NULL;
 char* tiempo_reintento_op = NULL;
 char* tiempo_retardo_op = NULL;
 char* punto_de_montaje = NULL;
@@ -46,6 +47,7 @@ t_bitarray mapa_de_bloques;
 sem_t diccionario;
 sem_t bitmap;
 
+int32_t tiempo_reintento_conexion;
 int32_t tiempo_reintento_operacion;
 int32_t tiempo_retardo_operacion;
 int32_t tamanio_bloque;

@@ -313,7 +313,7 @@ void conexionBroker(int32_t *socket)
 			}
 		}
 
-		sleep(tiempo_reintento_operacion);
+		sleep(tiempo_reintento_conexion);
 	}
 
 }
@@ -329,6 +329,8 @@ void inicializaciones_globales() {
 	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	sem_init (&diccionario, 0, 1);
 	semaforos = dictionary_create();
+	tiempo_reintento_con = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
+	tiempo_reintento_conexion = (int32_t) atoi (tiempo_reintento_con);
 }
 
 void liberar_memoria(int32_t socket) {
