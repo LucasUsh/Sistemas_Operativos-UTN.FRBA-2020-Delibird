@@ -50,7 +50,12 @@ char get_open (char* ruta_metadata);
 void set_open (char* ruta_metadata, char valor);
 FILE* abrir_para (char* ruta, char* modo);
 void actualizar_bitmap (void);
-char* traer_bloques(char** bloques, int32_t cantidad);
+int32_t cantidad_de_bloques (char* vector);
+void liberar_bloques (char** strings_bloques, int32_t cantidad);
+char* apuntar_a_posicion (char* archivo_cargado, t_posicion posicion);
+void agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_nueva);
+void agregar_nueva_posicion(char* archivo_cargado, t_posicion posicion_nueva, int32_t cantidad_nueva);
+void volcar_archivo_cargado(char* archivo_cargado);
 
 extern void salir (const char* mensaje);
 
@@ -59,6 +64,8 @@ char* ruta_metadata_pokemon_teorica (t_pokemon pokemon);
 char* ruta_carpeta_pokemon_teorica (t_pokemon pokemon);
 FILE* abrir_para (char* ruta, char* modo);
 char* copiar_stream(FILE* archivo_lectura, char* ruta_archivo);
-char* copiar_linea(int numero_de_linea, FILE* archivo_lectura, char* ruta_archivo);
+char* copiar_linea(int32_t numero_de_linea, FILE* archivo_lectura, char* ruta_archivo);
+char* traer_bloques(char** bloques, int32_t cantidad);
+char* posicion_a_string (t_posicion posicion);
 
 #endif
