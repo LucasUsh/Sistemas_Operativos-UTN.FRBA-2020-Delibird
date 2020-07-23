@@ -379,10 +379,12 @@ void enviar_suscripcion(char* IP, char* PUERTO, op_code operacion, int32_t socke
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	t_suscripcion suscripcion;
-	suscripcion.IP = atoi(IP);
-	suscripcion.PUERTO = atoi(PUERTO);
+	suscripcion.size_ip = string_length(IP)+1;
+	suscripcion.ip = IP;
+	suscripcion.size_puerto = string_length(PUERTO)+1;
+	suscripcion.puerto = PUERTO;
 
-	paquete->buffer->size = sizeof(t_suscripcion); // probar si lo toma o tenemos que agregar sizeof(int32_t) *2
+	paquete->buffer->size = sizeof(int32_t)*2+suscripcion.size_ip+suscripcion.size_puerto;
 	paquete->buffer->id_Mensaje = 0;
 	paquete->buffer->stream = &suscripcion;
 
@@ -404,16 +406,41 @@ void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes, t_suscr
 
 	memcpy(stream, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
 	desplazamiento+= sizeof(paquete->codigo_operacion);
+
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
 	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
-	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
 
-	memcpy(stream + desplazamiento, &(suscripcion->IP), sizeof(suscripcion->IP));
-	desplazamiento+= sizeof(suscripcion->IP);
-	memcpy(stream + desplazamiento, &(suscripcion->PUERTO), sizeof(suscripcion->PUERTO));
+	memcpy(stream + desplazamiento, &(suscripcion->size_ip), sizeof(suscripcion->size_ip));
+	desplazamiento+= sizeof(suscripcion->size_ip);
+	memcpy(stream + desplazamiento, suscripcion->ip, suscripcion->size_ip);
+	desplazamiento+= sizeof(suscripcion->size_ip);
+
+	memcpy(stream + desplazamiento, &(suscripcion->size_puerto), sizeof(suscripcion->size_puerto));
+	desplazamiento+= sizeof(suscripcion->size_puerto);
+	memcpy(stream + desplazamiento, suscripcion->puerto, suscripcion->size_puerto);
+	desplazamiento+= sizeof(suscripcion->size_puerto);
 
 	return stream;
+}
+
+t_suscripcion* deserializar_paquete_suscripcion (int32_t* socket_cliente) {
+
+	t_suscripcion * suscripcion = malloc (sizeof(t_suscripcion));
+
+	recv (*socket_cliente, &(suscripcion->size_ip), sizeof(suscripcion->size_ip), MSG_WAITALL);
+
+	suscripcion->ip = malloc (suscripcion->size_ip);
+
+	recv(*socket_cliente, suscripcion->ip, suscripcion->size_ip, MSG_WAITALL);
+
+	recv (*socket_cliente, &(suscripcion->size_puerto), sizeof(suscripcion->size_puerto), MSG_WAITALL);
+
+	suscripcion->puerto = malloc (suscripcion->size_puerto);
+
+	recv(*socket_cliente, suscripcion->puerto, suscripcion->size_puerto, MSG_WAITALL);
+
+	return suscripcion;
 }
 
 void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente){

@@ -249,6 +249,10 @@ void conexionBroker(int32_t *socket)
 	//config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
 	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
+	char* ip_gamecard = config_get_string_value(config_GC,"IP_GAMECARD");
+	char* puerto_gamecard = config_get_string_value(config_GC,"PUERTO_GAMECARD"); //mati dice: esto definan uds si queda aca o se mueve
+	//int32_t id_proceso = atoi(config_get_string_value(config_GC,"ID_PROCESO")); //agregar en archivo de configuracion
+	int32_t id_proceso = 2;
 
 	*socket = 0;
 	while(*socket == 0)
@@ -256,18 +260,15 @@ void conexionBroker(int32_t *socket)
 		*socket = crear_conexion(ip_broker,puerto_broker);
 		if(*socket != 0)
 		{
-			enviar_handshake(2, *socket);
+			enviar_handshake(id_proceso, *socket);
 			if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){ //El Broker responde que recibio la identificacion
 					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					if(id_mensaje == 0)
 					{
-						//Obtener id_proceso del archivo de configuracion
-						char* IP = config_get_string_value(config_GC,"IP_GAMECARD");
-						char* PUERTO = config_get_string_value(config_GC,"PUERTO_GAMECARD");
 
-						enviar_suscripcion(IP, PUERTO, NEW_POKEMON, *socket);
+						enviar_suscripcion(ip_gamecard, puerto_gamecard, NEW_POKEMON, *socket);
 						//enviar_suscripcion_new(2, *socket);
 						// de aca
 //						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
