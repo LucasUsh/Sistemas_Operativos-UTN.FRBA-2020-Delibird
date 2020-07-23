@@ -77,7 +77,8 @@ void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente);
 void * serializar_ACK(t_paquete* paquete, int32_t* bytes);
 void enviar_suscripcion_new(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_suscripcion_new(t_paquete* paquete, int32_t* bytes);
-
+void enviar_suscripcion_catch(int32_t id_proceso, int32_t socket_cliente);
+void enviar_suscripcion_get(int32_t id_proceso, int32_t socket_cliente);
 
 
 #endif /* SOCKETS_H_ */

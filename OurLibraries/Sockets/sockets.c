@@ -440,7 +440,43 @@ void * serializar_suscripcion_new(t_paquete* paquete, int32_t* bytes){
 	return stream;
 }
 
+void enviar_suscripcion_catch(int32_t id_proceso, int32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = SUSCRIPCION_CATCH;
+	paquete->buffer = malloc(sizeof(t_buffer));
 
+	paquete->buffer->size = sizeof(NULL);
+	paquete->buffer->id_Mensaje = id_proceso;
+	paquete->buffer->stream = NULL;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_suscripcion_new(paquete, &bytes_a_enviar); //serializar_suscripcion es igual para todas las suscripciones
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
+}
+
+void enviar_suscripcion_get(int32_t id_proceso, int32_t socket_cliente){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = SUSCRIPCION_GET;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	paquete->buffer->size = sizeof(NULL);
+	paquete->buffer->id_Mensaje = id_proceso;
+	paquete->buffer->stream = NULL;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_suscripcion_new(paquete, &bytes_a_enviar); // lo mismo que catch y new
+
+	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
+}
 
 
 

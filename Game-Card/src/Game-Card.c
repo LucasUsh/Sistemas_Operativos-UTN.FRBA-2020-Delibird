@@ -226,10 +226,9 @@ void conexionBroker(int32_t *socket)
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 
-	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	//config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
 	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
-	char* timer = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
 
 	*socket = 0;
 	while(*socket == 0)
@@ -267,11 +266,15 @@ void conexionBroker(int32_t *socket)
 							} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 						} else printf("Fallo al recibir codigo de operacion = -1\n");
 
-						//enviar_suscripcion_catch(2, *socket);
-						//if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){}
 
-						//enviar_suscripcion_get(2, *socket);
-						//if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){}
+						enviar_suscripcion_catch(2, *socket);
+						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+							if(operacion == ACK){
+								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+								log_info(logger_GC,"Suscripto a la cola catch");
+							}
+						}
 
 
 					}else
@@ -281,7 +284,8 @@ void conexionBroker(int32_t *socket)
 				}
 			}
 		}
-		sleep(1);
+
+		sleep(tiempo_reintento_operacion);
 	}
 
 }
