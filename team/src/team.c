@@ -562,6 +562,10 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 							mensaje_appeared->posicion.Y);
 
 					//debería ser un hilo
+					/*
+					    pthread_t p_generador_mensajes_appeared;
+						pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
+					*/
 					recibidor_mensajes_appeared(l_entrenadores, mensaje_appeared);
 					break;
 
@@ -580,6 +584,10 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
 					//debería ser un hilo
+					/*
+					 pthread_t p_generador_mensajes_localized;
+					 pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
+*/
 					if(respuesta_get != NULL){
 						recibidor_mensajes_localized(l_entrenadores, mensaje_localized);
 					}
@@ -596,6 +604,10 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
 					//debería ser un hilo
+					/*
+						pthread_t p_generador_mensajes_caught;
+						pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
+					*/
 					if(respuesta_catch != NULL){
 						recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
 					}
@@ -657,23 +669,6 @@ int32_t main(int32_t argc, char** argv){
 
 	generar_y_enviar_get();
 
-
-
-
-
-    /*
-    pthread_t p_generador_mensajes_localized;
-    pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
-
-
-    pthread_t p_generador_mensajes_appeared;
-	pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
-
-
-	pthread_t p_generador_mensajes_caught;
-	pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
-
-*/
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
 
@@ -696,6 +691,8 @@ int32_t main(int32_t argc, char** argv){
 	while(1){}
 
 	free(objetivo_global);
+	free(entrenadores);
+
 	liberar_conexion(socket_escucha_team);
 
     printf("End\n");
