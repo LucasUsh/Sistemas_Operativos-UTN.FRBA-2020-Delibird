@@ -182,19 +182,18 @@ void responder_mensaje(int32_t* socket_cliente) {
 			t_New* new = NULL;
 			//new = deserializar_paquete_new (socket_cliente);
 
-			if(recv(*socket, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(codigo_operacion == ACK){
-					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					//id_mensaje = cantidad de mensajes que va a enviar el Broker
 					log_info(logger_GC,"Suscripto a la cola new");
 					for(int i=0; i<id_mensaje; i++){
-						if(recv(*socket, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 							if(codigo_operacion == NEW_POKEMON){
-								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-								t_New* new = NULL;
-								new = deserializar_paquete_new (socket);
+								recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+								new = deserializar_paquete_new (socket_cliente);
 
 								funcion_new_pokemon(new);
 
@@ -203,8 +202,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 								log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
 								log_debug (logger_GC, "Cantidad: %d", new->cant);
 
-								//que Game Card haga lo que necesite con el mensaje
-								enviar_ACK(0, *socket);
+								enviar_ACK(0, *socket_cliente);
 							} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 						} else printf("Fallo al recibir codigo de operacion = -1\n");
 					}
@@ -266,7 +264,11 @@ void conexionBroker(int32_t *socket)
 					if(id_mensaje == 0)
 					{
 						//Obtener id_proceso del archivo de configuracion
-						enviar_suscripcion_new(2, *socket);
+						char* IP = config_get_string_value(config_GC,"IP_GAMECARD");
+						char* PUERTO = config_get_string_value(config_GC,"PUERTO_GAMECARD");
+
+						enviar_suscripcion(IP, PUERTO, NEW_POKEMON, *socket);
+						//enviar_suscripcion_new(2, *socket);
 						// de aca
 //						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 //							if(operacion == ACK){
