@@ -170,7 +170,7 @@ t_list* get_objetivo_global(t_list* entrenadores){
 	return objetivo_global;
 }
 
-t_list* get_pokemones_capturados(t_list* entrenadores){
+t_list* get_pokemones_capturados_global(t_list* entrenadores){
 
 	t_list* pokemones_capturados = list_create();
 
@@ -191,6 +191,25 @@ t_list* get_pokemones_capturados(t_list* entrenadores){
 
 	return pokemones_capturados;
 }
+
+t_list* get_pokemones_capturados_entrenador(t_entrenador* entrenador){
+
+	t_list* pokemones_capturados = list_create();
+
+	for(int j = 0; j < entrenador->pokemones->elements_count; j++){
+		t_pokemon_team* pokemon_actual = list_get(entrenador->pokemones, j);
+
+		list_add(pokemones_capturados, pokemon_actual);
+	}
+
+    if(pokemones_capturados->elements_count > 0){
+    	pokemones_capturados = sumarizar_pokemones(pokemones_capturados);
+    }
+
+
+	return pokemones_capturados;
+}
+
 
 
 t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
@@ -288,9 +307,9 @@ t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 
 
 
-int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* objetivo_global){
-	for(int j = 0; j < objetivo_global->elements_count; j++){
-		t_pokemon_team* objetivo_actual = list_get(objetivo_global, j);
+int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* pokemones){
+	for(int j = 0; j < pokemones->elements_count; j++){
+		t_pokemon_team* objetivo_actual = list_get(pokemones, j);
 
 		if(string_equals_ignore_case(pokemon, objetivo_actual->nombre)){
 			return objetivo_actual->cantidad;
@@ -330,7 +349,7 @@ bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
 
 bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
 
-	t_list* pokemones_capturados = get_pokemones_capturados(entrenadores);
+	t_list* pokemones_capturados = get_pokemones_capturados_global(entrenadores);
 
 	for(int j = 0; j < pokemones_capturados->elements_count; j++){
 		t_pokemon_team* pokemon_actual = list_get(pokemones_capturados, j);
@@ -371,6 +390,21 @@ int32_t conexion_broker()
 }
 
 
+bool cumplio_objetivo(t_entrenador* entrenador){
 
+	entrenador->pokemones = sumarizar_pokemones(entrenador->pokemones);
+
+	for(int i = 0; i < entrenador->objetivo->elements_count; i++){
+		t_pokemon* pokemon_actual = list_get(entrenador->objetivo, i);
+		int cantidad_capturados = get_cantidad_by_nombre_pokemon(pokemon_actual->nombre, entrenador->pokemones);
+		int cantidad_objetivo = get_cantidad_by_nombre_pokemon(pokemon_actual->nombre, entrenador->objetivo);
+
+		if(cantidad_objetivo != cantidad_capturados){
+			 return false;
+		}
+	}
+
+	return true;
+}
 
 

@@ -223,7 +223,7 @@ void generar_y_enviar_get(){
 		}
 
 		int32_t operacion = 0;
-		double id_mensaje = 0;
+		int32_t id_mensaje = 0;
 		int32_t tamanio_estructura = 0;
 		t_pokemon_team* pokemon = list_get(objetivo_global, i);
 
@@ -233,13 +233,13 @@ void generar_y_enviar_get(){
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 			if(operacion == ACK){
 				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_get_pokemon(pokemon->nombre, "0", socket);
 				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 					if(operacion == ACK){
 						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					}
 				}
 			}
@@ -262,7 +262,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 	}
 
 	int32_t operacion = 0;
-	double id_mensaje = 0; // esto creo que habria que cambiarlo
+	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
 	int32_t tamanio_estructura = 0;
 
 	log_info(logger,"Conectado al Broker para enviar Catch");
@@ -270,7 +270,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
 			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 			printf("El broker me reconocio\n");
 
 			char* pokemon = entrenador->pokemon_destino->nombre;
@@ -282,7 +282,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
 				}
 			}
 		}
@@ -541,12 +541,12 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 
 			int32_t codigo_operacion = 0;
 			int32_t tamanio_estructura = 0;
-			double id_mensaje = 0;
+			int32_t id_mensaje = 0;
 
 			if(recv(socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
 					codigo_operacion = -1;
 			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			log_info(logger, "Código de operación %d", codigo_operacion);
 
@@ -650,6 +650,13 @@ int inicializar_team(char* entrenador){
 	return 1;
 }
 
+bool hay_deadlock(t_list* entrenadores){
+	//hay deadlock cuando ningun entrenador cumplio sus objetivos y no pueden capturar mas
+
+	t_list* pokemones_capturados = get_pokemones_capturados_global(entrenadores);
+
+}
+
 int32_t main(int32_t argc, char** argv){
 	if(!argv[1]){
 		printf("Fata definir el team a cargar\n");
@@ -699,4 +706,7 @@ int32_t main(int32_t argc, char** argv){
 
     return EXIT_SUCCESS;
 }
+
+
+
 
