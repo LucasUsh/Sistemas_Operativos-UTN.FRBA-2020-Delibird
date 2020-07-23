@@ -54,6 +54,11 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
+typedef struct {
+	int32_t IP;
+	int32_t PUERTO;
+} t_suscripcion;
+
 int32_t crear_conexion(char* ip, char* puerto);
 void liberar_conexion(int32_t socket_cliente);
 

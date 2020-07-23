@@ -34,11 +34,6 @@ typedef struct {
  * no digo que lo hagan pero no creo que podamos confirmar al 100% el tamaño del tipo de dato, hay que calcularlo
 */
 
-typedef struct {
-	int32_t IP;
-	int32_t PUERTO;
-} t_suscripcion;
-
 
 typedef struct {
 	t_list pokemones;/* aca iria un t_list * listaPokemones y cuando haces list_add le pasas
