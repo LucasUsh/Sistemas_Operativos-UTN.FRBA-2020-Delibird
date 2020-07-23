@@ -35,7 +35,8 @@ typedef struct {
 typedef struct {
 	op_code op_code;
 	int32_t id;
-	int32_t socket;
+	int32_t IP_suscriptor;
+	int32_t PUERTO_suscriptor;
 } t_suscriptor;
 
 typedef enum {

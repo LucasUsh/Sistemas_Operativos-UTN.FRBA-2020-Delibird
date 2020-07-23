@@ -35,8 +35,6 @@ typedef struct {
 */
 
 
-
-
 typedef struct {
 	t_list pokemones;/* aca iria un t_list * listaPokemones y cuando haces list_add le pasas
 								como parametro el tipo t_pokemon*/

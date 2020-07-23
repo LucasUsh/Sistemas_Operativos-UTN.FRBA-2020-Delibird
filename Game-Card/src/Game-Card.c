@@ -180,14 +180,34 @@ void responder_mensaje(int32_t* socket_cliente) {
 		case NEW_POKEMON:
 			;
 			t_New* new = NULL;
-			new = deserializar_paquete_new (socket_cliente);
+			//new = deserializar_paquete_new (socket_cliente);
 
-			log_debug (logger_GC, "***Estructura t_New recibida*** \n");
-			log_debug (logger_GC, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
-			log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
-			log_debug (logger_GC, "Cantidad: %d", new->cant);
+			if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(codigo_operacion == ACK){
+					recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					//id_mensaje = cantidad de mensajes que va a enviar el Broker
+					log_info(logger_GC,"Suscripto a la cola new");
+					for(int i=0; i<id_mensaje; i++){
+						if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+							if(codigo_operacion == NEW_POKEMON){
+								recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+								new = deserializar_paquete_new (socket_cliente);
 
-			funcion_new_pokemon(new);
+								funcion_new_pokemon(new);
+
+								log_debug (logger_GC, "***Estructura t_New recibida*** \n");
+								log_debug (logger_GC, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
+								log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
+								log_debug (logger_GC, "Cantidad: %d", new->cant);
+
+								enviar_ACK(0, *socket_cliente);
+							} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+						} else printf("Fallo al recibir codigo de operacion = -1\n");
+					}
+				} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+			} else printf("Fallo al recibir codigo de operacion = -1\n");
 
 			break;
 
@@ -226,10 +246,9 @@ void conexionBroker(int32_t *socket)
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 
-	config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
+	//config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
 	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
 	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
-	char* timer = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
 
 	*socket = 0;
 	while(*socket == 0)
@@ -239,39 +258,51 @@ void conexionBroker(int32_t *socket)
 		{
 			enviar_handshake(2, *socket);
 			if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion == ACK){
+				if(operacion == ACK){ //El Broker responde que recibio la identificacion
 					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					if(id_mensaje == 0)
 					{
 						//Obtener id_proceso del archivo de configuracion
-						enviar_suscripcion_new(2, *socket);
+						char* IP = config_get_string_value(config_GC,"IP_GAMECARD");
+						char* PUERTO = config_get_string_value(config_GC,"PUERTO_GAMECARD");
+
+						enviar_suscripcion(IP, PUERTO, NEW_POKEMON, *socket);
+						//enviar_suscripcion_new(2, *socket);
+						// de aca
+//						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+//							if(operacion == ACK){
+//								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+//								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+//								//id_mensaje = cantidad de mensajes que va a enviar el Broker
+//								log_info(logger_GC,"Suscripto a la cola new");
+//								for(int i=0; i<id_mensaje; i++){
+//									if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+//										if(operacion == NEW_POKEMON){
+//											recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+//											recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+//											t_New* new = NULL;
+//											new = deserializar_paquete_new (socket);
+//											printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
+//											new->cant, new->posicion.X, new->posicion.Y);
+//											//que Game Card haga lo que necesite con el mensaje
+//											enviar_ACK(0, *socket);
+//										} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+//									} else printf("Fallo al recibir codigo de operacion = -1\n");
+//								}
+//							} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+//						} else printf("Fallo al recibir codigo de operacion = -1\n");
+						//hasta aca
+
+
+						enviar_suscripcion_catch(2, *socket);
 						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 							if(operacion == ACK){
 								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-								//id_mensaje = cantidad de mensajes que va a enviar el Broker
-								log_info(logger_GC,"Suscripto a la cola new");
-								for(int i=0; i<id_mensaje; i++){
-									if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-										if(operacion == NEW_POKEMON){
-											recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-											recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-											t_New* new = NULL;
-											new = deserializar_paquete_new (socket);
-											//que Game Card haga lo que necesite con el mensaje
-											enviar_ACK(0, *socket);
-										} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-									} else printf("Fallo al recibir codigo de operacion = -1\n");
-								}
-							} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-						} else printf("Fallo al recibir codigo de operacion = -1\n");
-
-						//enviar_suscripcion_catch(2, *socket);
-						//if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){}
-
-						//enviar_suscripcion_get(2, *socket);
-						//if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){}
+								log_info(logger_GC,"Suscripto a la cola catch");
+							}
+						}
 
 
 					}else
@@ -281,7 +312,8 @@ void conexionBroker(int32_t *socket)
 				}
 			}
 		}
-		sleep(1);
+
+		sleep(tiempo_reintento_operacion);
 	}
 
 }
