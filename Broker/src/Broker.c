@@ -12,7 +12,8 @@
 #include "pruebas.h"
 #include "../../OurLibraries/Sockets/mensajes.h"
 
-//int32_t id_mensaje_global = 0;
+int32_t id_mensaje_global = 0;
+pthread_mutex_t mutex_id_mensaje;
 
 pthread_mutex_t mutex_guardar_en_memoria;
 
@@ -185,14 +186,10 @@ int32_t main(void) {
 }
 
 int32_t get_id(){
-	//para obtener id usamos el timestamp
-
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	uint32_t id =((double)tv.tv_sec) * 1000 + (double)(tv.tv_usec);
-	//printf("el id es: %f\n", id);
-
-	return id;
+	pthread_mutex_lock(&mutex_id_mensaje);
+	++id_mensaje_global;
+	pthread_mutex_unlock(&mutex_id_mensaje);
+	return id_mensaje_global;
 }
 
 void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
@@ -226,6 +223,9 @@ void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t
 					recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
 					mensaje = obtenerMensaje(mensaje->id_mensaje);
 					list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+					//APPEARED
+					// ENVIO APPEARED A TEAM
+					//
 				} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 			} else printf("Fallo al recibir codigo de operacion = -1\n");
 			//agregar suscriptor en info_mensaje.suscriptoresALosQueSeEnvio
