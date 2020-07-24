@@ -217,17 +217,18 @@ void generar_y_enviar_get(){
 		int32_t socket = conexion_broker();
 
 		if(socket == 0){
-			log_error(logger,"Error al conectar al Broker...");
+			log_error(logger,"Error al conectar al Broker para enviar GET...");
 			//logica para reintentar
 			return;
 		}
+
+		log_debug(logger,"Conectado al Broker para enviar GET");
 
 		int32_t operacion = 0;
 		int32_t id_mensaje = 0;
 		int32_t tamanio_estructura = 0;
 		t_pokemon_team* pokemon = list_get(objetivo_global, i);
 
-		log_info(logger,"Conectado al Broker");
 		enviar_handshake(PROCESS_ID, socket);
 
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
@@ -265,7 +266,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
 	int32_t tamanio_estructura = 0;
 
-	log_info(logger,"Conectado al Broker para enviar Catch");
+	log_debug(logger,"Conectado al Broker para enviar CATCH");
 	enviar_handshake(PROCESS_ID, socket);
 	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
@@ -545,7 +546,7 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
 
 		if(socket_cliente != -1){
-			log_info(logger, "Se conecto un proceso \n");
+			log_info(logger, "Se conecto el GAME BOY \n");
 
 			int32_t codigo_operacion = 0;
 			int32_t tamanio_estructura = 0;
@@ -556,14 +557,14 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-			log_info(logger, "Código de operación %d", codigo_operacion);
+			log_info(logger, "Código de operación %d\n", codigo_operacion);
 
 			switch(codigo_operacion){
 				case APPEARED_POKEMON:
-					log_info(logger, "Llego un mensaje APPEARED \n");
+					log_debug(logger, "Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
 
-					log_info(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+					log_debug(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
 							mensaje_appeared->pokemon.size_Nombre,
 							mensaje_appeared->pokemon.nombre,
 							mensaje_appeared->posicion.X,
@@ -578,10 +579,10 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					break;
 
 				case LOCALIZED_POKEMON:
-					log_info(logger, "Recibí un mensaje LOCALIZED\n");
+					log_debug(logger, "Recibí un mensaje LOCALIZED desde el GAME BOY\n");
 					t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_cliente);
 
-					log_info(logger, "Llego un mensaje Localized Pokemon con los siguientes datos: %d\n",
+					log_debug(logger, "Llego un mensaje Localized Pokemon con los siguientes datos: %d\n",
 							mensaje_localized->pokemon.nombre);
 
 					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
@@ -603,20 +604,21 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					break;
 
 				case CAUGHT_POKEMON:
-					log_info(logger, "Recibí un mensaje CAUGHT\n");
+					log_debug(logger, "Recibí un mensaje CAUGHT desde el GAME BOY\n");
 					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_cliente);
 
-					log_info(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
+					log_debug(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
 												mensaje_caught->fueAtrapado);
 
 					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
 					//debería ser un hilo
-					/*
-						pthread_t p_generador_mensajes_caught;
-						pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
-					*/
 					if(respuesta_catch != NULL){
+				/*
+					pthread_t p_generador_mensajes_caught;
+					pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
+				*/
+
 						recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
 					}
 
@@ -637,6 +639,183 @@ char* get_config_path(char* entrenador){
 
 	return cfg_path;
 }
+
+
+void hilo_suscribirse_appeared(void* l_entrenadores){
+
+	int32_t socket = conexion_broker();
+
+	if(socket == 0){
+		log_error(logger,"Error al conectar al Broker para suscribirse a Appeared...");
+		//logica para reintentar
+		return;
+	}
+
+	log_debug(logger,"Conectado al Broker para suscribirse a APPEARED...\n");
+
+	int32_t operacion = 0;
+	int32_t id_mensaje = 0;
+	int32_t tamanio_estructura = 0;
+
+	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(operacion == ACK){
+			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+			//voy a ir recibiendo mensajes APPEARED
+			log_info(logger, "Esperando que llegue algún APPEARED de la cola de suscripcion...\n");
+			while(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+				enviar_handshake(PROCESS_ID, socket);
+
+				if(operacion == APPEARED_POKEMON){
+					log_debug(logger, "Llego un mensaje APPEARED \n");
+					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket);
+
+					log_debug(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+							mensaje_appeared->pokemon.size_Nombre,
+							mensaje_appeared->pokemon.nombre,
+							mensaje_appeared->posicion.X,
+							mensaje_appeared->posicion.Y);
+
+					//debería ser un hilo
+					/*
+						pthread_t p_generador_mensajes_appeared;
+						pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
+					*/
+					recibidor_mensajes_appeared((t_list*)l_entrenadores, mensaje_appeared);
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+void hilo_suscribirse_caught(void* l_entrenadores){
+	int32_t socket = conexion_broker();
+
+	if(socket == 0){
+		log_error(logger,"Error al conectar al Broker para suscribirse a CAUGHT...");
+		//logica para reintentar
+		return;
+	}
+
+	log_debug(logger,"Conectado al Broker para suscribirse a CAUGHT...\n");
+
+	int32_t operacion = 0;
+	int32_t id_mensaje = 0;
+	int32_t tamanio_estructura = 0;
+
+	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(operacion == ACK){
+			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+			//voy a ir recibiendo mensajes CAUGHT
+			log_info(logger, "Esperando que llegue algún CAUGHT de la cola de suscripcion...\n");
+			while(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+				enviar_handshake(PROCESS_ID, socket);
+
+				if(operacion == CAUGHT_POKEMON){
+					log_debug(logger, "Recibí un mensaje CAUGHT\n");
+					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket);
+
+					log_debug(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
+												mensaje_caught->fueAtrapado);
+
+					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
+
+					//debería ser un hilo
+					if(respuesta_catch != NULL){
+				/*
+					pthread_t p_generador_mensajes_caught;
+					pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
+				*/
+
+						recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
+					}
+				}
+			}
+		}
+	}
+
+
+	return;
+}
+
+void hilo_suscribirse_localized(void* l_entrenadores){
+
+	int32_t socket = conexion_broker();
+
+	if(socket == 0){
+		log_error(logger,"Error al conectar al Broker para suscribirse a Appeared...");
+		//logica para reintentar
+		return;
+	}
+
+	log_debug(logger,"Conectado al Broker para suscribirse a LOCALIZED...\n");
+
+
+	int32_t operacion = 0;
+	int32_t id_mensaje = 0;
+	int32_t tamanio_estructura = 0;
+
+	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(operacion == ACK){
+			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+			//voy a ir recibiendo mensajes LOCALIZED
+			log_info(logger, "Esperando que llegue algún LOCALIZED de la cola de suscripcion...");
+			while(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				log_debug(logger, "Recibí un mensaje LOCALIZED\n");
+				t_Localized* mensaje_localized = deserializar_paquete_localized(&socket);
+
+				log_debug(logger, "Llego un mensaje LOCALIZED Pokemon con los siguientes datos: %d\n",
+						mensaje_localized->pokemon.nombre);
+
+				for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
+					t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
+					log_info(logger, "Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+				}
+
+				t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
+
+				//debería ser un hilo
+				/*
+				 pthread_t p_generador_mensajes_localized;
+				 pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
+				*/
+				if(respuesta_get != NULL){
+					recibidor_mensajes_localized(l_entrenadores, mensaje_localized);
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+void suscribirse_colas(t_list* entrenadores){
+
+	pthread_t p_suscribirse_appeared;
+	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, entrenadores);
+
+	pthread_t p_suscribirse_caught;
+	pthread_create(&p_suscribirse_caught, NULL, (void*)hilo_suscribirse_caught, entrenadores);
+
+	pthread_t p_suscribirse_localized;
+	pthread_create(&p_suscribirse_localized, NULL, (void*)hilo_suscribirse_localized, entrenadores);
+
+
+	return;
+};
 
 int inicializar_team(char* entrenador){
 
@@ -682,6 +861,14 @@ bool hay_deadlock(t_list* entrenadores){
 	return list_all_satisfy(entrenadores, _blockeado_sin_poder_hacer_nada);
 }
 
+
+
+bool esta_en_deadlock(t_entrenador* entrenador){
+	return ((t_entrenador*)entrenador)->estado == BLOCKED &&
+			!cumplio_objetivo((t_entrenador*)entrenador) &&
+			!puede_capturar_pokemones((t_entrenador*)entrenador);
+}
+
 int32_t main(int32_t argc, char** argv){
 	if(!argv[1]){
 		printf("Fata definir el team a cargar\n");
@@ -700,6 +887,8 @@ int32_t main(int32_t argc, char** argv){
     objetivo_global = get_objetivo_global(entrenadores);
 
 	generar_y_enviar_get();
+	suscribirse_colas(entrenadores);
+
 
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
