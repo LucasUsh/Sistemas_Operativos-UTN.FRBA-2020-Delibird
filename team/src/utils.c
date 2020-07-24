@@ -22,7 +22,6 @@ char** get_array_by_index(char** array_from_config, int32_t index){
 	return value_array;
 }
 
-
 int32_t array_length(char** value_array){
 	int32_t i = 0;
 
@@ -104,8 +103,6 @@ t_posicion get_posicion(t_config* config, int32_t index){
 	return posicion;
 }
 
-
-
 t_entrenador* get_entrenador(t_config* config, int32_t index){
 	t_entrenador* entrenador = (t_entrenador*)malloc(sizeof(t_entrenador));
 
@@ -118,8 +115,6 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 
 	return entrenador;
 }
-
-
 
 t_list* get_entrenadores(t_config* config, int32_t cantidadEntrenadores){
 	t_list* entrenadores_list = list_create();
@@ -148,8 +143,6 @@ int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 	return sqrt(pow(distX,2) + pow(distY,2));
 
 }
-
-
 
 t_list* get_objetivo_global(t_list* entrenadores){
 	t_list* objetivo_global = list_create();
@@ -210,8 +203,6 @@ t_list* get_pokemones_capturados_entrenador(t_entrenador* entrenador){
 	return pokemones_capturados;
 }
 
-
-
 t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon){
 
 	t_entrenador* entrenador_cercano = malloc(sizeof(t_entrenador));
@@ -239,7 +230,6 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 
 	return entrenador_cercano;
 }
-
 
 t_list* filtrar_localized_repetidos(t_list* mensajes_localized){
 
@@ -303,10 +293,6 @@ t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 	return NULL;
 }
 
-
-
-
-
 int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* pokemones){
 	for(int j = 0; j < pokemones->elements_count; j++){
 		t_pokemon_team* objetivo_actual = list_get(pokemones, j);
@@ -331,7 +317,6 @@ bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
 	printf("No está en objetivos globales, lo voy a rechazar\n");
 	return false;
 };
-
 
 bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
 
@@ -370,8 +355,6 @@ bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* o
 	return en_objetivo && !recibido;
 }
 
-
-
 bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_list* pokemones_recibidos, t_list* objetivo_global){
 
 	//en realidad el filtro de id ya se hizo antes, lo dejo pa probar
@@ -382,18 +365,16 @@ bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_lis
 	return (respuesta != NULL) && en_objetivo && !recibido;
 }
 
-
 int32_t conexion_broker()
 {
 	int32_t socket = crear_conexion(IP_BROKER, PUERTO_BROKER);
 	return socket;
 }
 
-
 bool cumplio_objetivo(t_entrenador* entrenador){
-
+	printf("viendo si cumple\n");
 	entrenador->pokemones = sumarizar_pokemones(entrenador->pokemones);
-
+	printf("cantidd de objetivos: %d\n", entrenador->objetivo->elements_count);
 	for(int i = 0; i < entrenador->objetivo->elements_count; i++){
 		t_pokemon* pokemon_actual = list_get(entrenador->objetivo, i);
 		int cantidad_capturados = get_cantidad_by_nombre_pokemon(pokemon_actual->nombre, entrenador->pokemones);
