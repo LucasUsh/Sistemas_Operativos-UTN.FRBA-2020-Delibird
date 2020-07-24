@@ -9,13 +9,23 @@
 
 #include<commons/string.h>
 
+int32_t id_particion = 0;
+pthread_mutex_t mutex_id_particion;
+
+int32_t get_id_particion(){
+	pthread_mutex_lock(&mutex_id_particion);
+	++id_particion;
+	pthread_mutex_unlock(&mutex_id_particion);
+	return id_particion;
+}
+
 t_particion* crearParticion(int inicio, int size, bool ocupada){
 	t_particion* newParticion = malloc(sizeof(t_particion));
 	newParticion->ocupada = false;
 	newParticion->posicion_inicial = inicio;
 	newParticion->posicion_final = inicio+size-1; //para contemplar el 0. Ej: si es de 128bytes arranca en 0 y va a 127
 	newParticion->size = size;
-	newParticion->id = get_id();
+	newParticion->id = get_id_particion();
 	//newParticion->ramaBuddy = ramaBuddy;
 	newParticion->codigo_operacion = -1;
 	newParticion->id_mensaje = 0;
@@ -283,7 +293,7 @@ int obtenerPosicion(t_particion * particion){
 			return i;
 		}
 	}
-	printf("No encontre el elemento de id %f con posicion inicial %d \n", particion->id, particion->posicion_inicial);
+	printf("No encontre el elemento de id %d con posicion inicial %d \n", particion->id, particion->posicion_inicial);
 	return -1;
 }
 
@@ -312,10 +322,10 @@ void generarParticionBS(t_particion* particionInicial){
 	int inicioDerecha = particionInicial->posicion_inicial+((particionInicial->size)*0.5);
 
 	t_particion *particionIzquierda = crearParticion(inicioIzquierda, halfSize, false);
-	particionIzquierda->id = get_id();
+	particionIzquierda->id = get_id_particion();
 	sleep(0.25);
 	t_particion *particionDerecha = crearParticion(inicioDerecha, halfSize, false);
-	particionDerecha->id = get_id();
+	particionDerecha->id = get_id_particion();
 
 	int posicion = obtenerPosicion(particionInicial);
 	list_remove(tabla_particiones, posicion);

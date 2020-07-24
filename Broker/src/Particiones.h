@@ -29,7 +29,7 @@ typedef struct {
 } t_particion;
 
 t_list* tabla_particiones;
-
+int32_t get_id_particion();
 t_particion* crearParticion(int inicio, int size, bool ocupada);
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje);
