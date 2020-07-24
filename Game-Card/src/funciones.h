@@ -44,7 +44,7 @@ void funcion_catch_pokemon(t_Catch* catch);
 void funcion_get_pokemon(t_Get* get);
 
 int32_t existe (char* nombre_pokemon);
-off_t crear_metadata_new (t_New* new, char* ruta);
+void crear_metadata_new (t_New* new, char* ruta);
 off_t asignar_bloque_libre(void);
 char get_open (char* ruta_metadata);
 void set_open (char* ruta_metadata, char valor);
@@ -55,7 +55,10 @@ void liberar_bloques (char** strings_bloques, int32_t cantidad);
 char* apuntar_a_posicion (char* archivo_cargado, t_posicion posicion);
 void agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_nueva);
 void agregar_nueva_posicion(char* archivo_cargado, t_posicion posicion_nueva, int32_t cantidad_nueva);
-void volcar_archivo_cargado(char* archivo_cargado);
+void volcar_archivo_cargado(char* archivo_cargado, char* ruta_metadata, char* pokemon);
+void metadata_agregar_bloque (char* ruta_metadata, char* pokemon, char* bloque);
+void metadata_actualizar_size (char* ruta_metadata, char* pokemon, int32_t size_nuevo);
+void metadata_volcar (char* ruta_metadata, char* pokemon, char* archivo_cargado);
 
 extern void salir (const char* mensaje);
 
@@ -67,5 +70,6 @@ char* copiar_stream(FILE* archivo_lectura, char* ruta_archivo);
 char* copiar_linea(int32_t numero_de_linea, FILE* archivo_lectura, char* ruta_archivo);
 char* traer_bloques(char** bloques, int32_t cantidad);
 char* posicion_a_string (t_posicion posicion);
+char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamiento);
 
 #endif
