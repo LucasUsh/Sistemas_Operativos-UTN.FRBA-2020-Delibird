@@ -182,34 +182,7 @@ void responder_mensaje(int32_t* socket_cliente) {
 		case NEW_POKEMON:
 			;
 			t_New* new = NULL;
-			//new = deserializar_paquete_new (socket_cliente);
-
-			if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(codigo_operacion == ACK){
-					recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					//id_mensaje = cantidad de mensajes que va a enviar el Broker
-					log_info(logger_GC,"Suscripto a la cola new");
-					for(int i=0; i<id_mensaje; i++){
-						if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-							if(codigo_operacion == NEW_POKEMON){
-								recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-								recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-								new = deserializar_paquete_new (socket_cliente);
-
-								funcion_new_pokemon(new);
-
-								log_debug (logger_GC, "***Estructura t_New recibida*** \n");
-								log_debug (logger_GC, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
-								log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
-								log_debug (logger_GC, "Cantidad: %d", new->cant);
-
-								enviar_ACK(0, *socket_cliente);
-							} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-						} else printf("Fallo al recibir codigo de operacion = -1\n");
-					}
-				} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-			} else printf("Fallo al recibir codigo de operacion = -1\n");
+			new = deserializar_paquete_new (socket_cliente);
 
 			break;
 
@@ -240,11 +213,12 @@ void responder_mensaje(int32_t* socket_cliente) {
 	}
 }
 
+
 void conexionBroker(int32_t *socket)
 {
 	char* ip_broker;
 	char* puerto_broker;
-	int32_t operacion=0;
+	int32_t codigo_operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 
@@ -263,14 +237,25 @@ void conexionBroker(int32_t *socket)
 		if(*socket != 0)
 		{
 			enviar_handshake(id_proceso, *socket);
-			if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion == ACK){ //El Broker responde que recibio la identificacion
+			if(recv(*socket, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(codigo_operacion == ACK){ //El Broker responde que recibio la identificacion
 					recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					if(id_mensaje == 0)
 					{
 
 						enviar_suscripcion(ip_gamecard, puerto_gamecard, SUSCRIPCION_NEW, *socket);
+						if(recv(*socket, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+							if(codigo_operacion == ACK){
+								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+								//id_mensaje = cantidad de mensajes que va a enviar el Broker
+								log_info(logger_GC,"Suscripto a la cola new");
+								for(int i=0; i<id_mensaje; i++){
+									responder_mensaje(socket);
+								}
+							} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+						} else printf("Fallo al recibir codigo de operacion = -1\n");
 						/*Tengan en cuenta que Broker libera la conexion despues de recibir el mensaje
 						 * si choca con la logica que tenian en mente capaz puedo re-pensarlo pero tendriamos
 						 * que hablarlo
@@ -304,8 +289,8 @@ void conexionBroker(int32_t *socket)
 
 
 						enviar_suscripcion_catch(2, *socket);
-						if(recv(*socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-							if(operacion == ACK){
+						if(recv(*socket, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+							if(codigo_operacion == ACK){
 								recv(*socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 								recv(*socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 								log_info(logger_GC,"Suscripto a la cola catch");

@@ -73,6 +73,10 @@ int32_t main(void) {
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeNew(socket_cliente);
+							if(esCorrelativo(id_mensaje)){
+								mensaje->id_mensaje_correlativo = id_mensaje;
+							}
+							mensaje->process_id=id_proceso;
 							//CONFIRMAR RECEPCION DEL MENSAJE
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -87,6 +91,10 @@ int32_t main(void) {
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeAppeared(socket_cliente);
+							if(esCorrelativo(id_mensaje)){
+								mensaje->id_mensaje_correlativo = id_mensaje;
+							}
+							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Appeared\n");
@@ -99,6 +107,10 @@ int32_t main(void) {
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeGet(socket_cliente);
+							if(esCorrelativo(id_mensaje)){
+								mensaje->id_mensaje_correlativo = id_mensaje;
+							}
+							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Get\n");
@@ -110,6 +122,10 @@ int32_t main(void) {
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeLocalized(socket_cliente);
+							if(esCorrelativo(id_mensaje)){
+								mensaje->id_mensaje_correlativo = id_mensaje;
+							}
+							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Localized\n");
@@ -121,6 +137,10 @@ int32_t main(void) {
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeCatch(socket_cliente);
+							if(esCorrelativo(id_mensaje)){
+								mensaje->id_mensaje_correlativo = id_mensaje;
+							}
+							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Catch\n");
@@ -132,6 +152,10 @@ int32_t main(void) {
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = recibirMensajeCaught(socket_cliente);
+							if(esCorrelativo(id_mensaje)){
+								mensaje->id_mensaje_correlativo = id_mensaje;
+							}
+							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 								printf("Creado el hilo que maneja el mensaje Caught\n");
@@ -263,6 +287,7 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	info_mensaje * mensajeNew = malloc(sizeof(info_mensaje));
 	mensajeNew->op_code = NEW_POKEMON;
 	mensajeNew->id_mensaje = get_id();
+	mensajeNew->id_mensaje_correlativo = 0;
 	mensajeNew->process_id = 1;
 	mensajeNew->mensaje = new;
 	mensajeNew->sizeMsg = getSizeMensajeNew(*new);
@@ -283,6 +308,7 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	info_mensaje * mensajeAppeared = malloc(sizeof(info_mensaje));
 	mensajeAppeared->op_code = APPEARED_POKEMON;
 	mensajeAppeared->id_mensaje = get_id();
+	mensajeAppeared->id_mensaje_correlativo = 0;
 	mensajeAppeared->process_id = 1;
 	mensajeAppeared->mensaje = app;
 	mensajeAppeared->sizeMsg = getSizeMensajeAppeared(*app);
@@ -297,6 +323,7 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	info_mensaje * mensajeGet = malloc(sizeof(info_mensaje));
 	mensajeGet->op_code = GET_POKEMON;
 	mensajeGet->id_mensaje = get_id();
+	mensajeGet->id_mensaje_correlativo = 0;
 	mensajeGet->process_id = 1;
 	mensajeGet->mensaje = get;
 	mensajeGet->sizeMsg = getSizeMensajeGet(*get);
@@ -317,6 +344,7 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	info_mensaje * mensajeLocalized = malloc(sizeof(info_mensaje));
 	mensajeLocalized->op_code = LOCALIZED_POKEMON;
 	mensajeLocalized->id_mensaje = get_id();
+	mensajeLocalized->id_mensaje_correlativo = 0;
 	mensajeLocalized->process_id = 1;
 	mensajeLocalized->mensaje = localized;
 	mensajeLocalized->sizeMsg = getSizeMensajeLocalized(*localized);
@@ -332,6 +360,7 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	info_mensaje * mensajeCatch = malloc(sizeof(info_mensaje));
 	mensajeCatch->op_code = CATCH_POKEMON;
 	mensajeCatch->id_mensaje = get_id();
+	mensajeCatch->id_mensaje_correlativo = 0;
 	mensajeCatch->process_id = 1;
 	mensajeCatch->mensaje = catch;
 	mensajeCatch->sizeMsg = getSizeMensajeCatch(*catch);
@@ -346,6 +375,7 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	info_mensaje * mensajeCaught = malloc(sizeof(info_mensaje));
 	mensajeCaught->op_code = CAUGHT_POKEMON;
 	mensajeCaught->id_mensaje = get_id();
+	mensajeCaught->id_mensaje_correlativo = 0;
 	mensajeCaught->process_id = 1;
 	mensajeCaught->mensaje = caught;
 	mensajeCaught->sizeMsg = getSizeMensajeCaught(*caught);
@@ -357,7 +387,7 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	int32_t id_mensaje;
 	t_New * new;
 
-	if(esCorrelativo()){
+	if(esCorrelativo(mensaje->id_mensaje_correlativo)){
 		id_mensaje = mensaje->id_mensaje_correlativo;
 	}else id_mensaje = mensaje->id_mensaje;
 
@@ -388,8 +418,11 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	}
 }
 
-bool esCorrelativo(){
-	return 0;
+bool esCorrelativo(int32_t id_mensaje){
+	if(id_mensaje != 0){
+		return true;
+	}
+	return false;
 }
 
 void enviarMensajeNew(t_New * new, int32_t id_mensaje, int32_t socket_cliente){
