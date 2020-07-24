@@ -39,7 +39,6 @@ int32_t main(int32_t argc, char *argv[])
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							printf("enviado new \n");
 						}
 					}
 				}
@@ -102,14 +101,35 @@ int32_t main(int32_t argc, char *argv[])
 		if(string_contains(argv[2], "NEW_POKEMON")){
 			log_info(logger,"Envio new_pokemon");
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], argv[7], socket);
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(operacion == ACK){
+					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+				}
+			}
+			log_info(logger,"OK");
 		}
 		if(string_contains(argv[2], "CATCH_POKEMON")){
 			log_info(logger,"Envio Catch Pokemon");
 			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(operacion == ACK){
+					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+				}
+			}
+			log_info(logger,"OK");
 		}
 		if(string_contains(argv[2], "GET_POKEMON")){
 			log_info(logger,"Envio Get Pokemon");
 			enviar_get_pokemon(argv[3], argv[4], socket);
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(operacion == ACK){
+					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+				}
+			}
+			log_info(logger,"OK");
 		}
 	}
 

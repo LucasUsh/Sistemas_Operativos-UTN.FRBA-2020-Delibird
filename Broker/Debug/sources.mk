@@ -15,6 +15,7 @@ C_DEPS :=
 SUBDIRS := \
 Sockets/Debug \
 Sockets \
+UniversoPokemon/Debug \
 UniversoPokemon \
 src \
 

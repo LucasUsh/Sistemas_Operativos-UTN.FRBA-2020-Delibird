@@ -9,6 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include src/subdir.mk
+-include UniversoPokemon/Debug/subdir.mk
 -include UniversoPokemon/subdir.mk
 -include Sockets/Debug/subdir.mk
 -include Sockets/subdir.mk
