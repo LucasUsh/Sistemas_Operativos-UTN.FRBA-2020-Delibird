@@ -223,7 +223,7 @@ void generar_y_enviar_get(){
 		}
 
 		int32_t operacion = 0;
-		double id_mensaje = 0;
+		int32_t id_mensaje = 0;
 		int32_t tamanio_estructura = 0;
 		t_pokemon_team* pokemon = list_get(objetivo_global, i);
 
@@ -233,13 +233,13 @@ void generar_y_enviar_get(){
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 			if(operacion == ACK){
 				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_get_pokemon(pokemon->nombre, "0", socket);
 				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 					if(operacion == ACK){
 						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					}
 				}
 			}
@@ -262,7 +262,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 	}
 
 	int32_t operacion = 0;
-	double id_mensaje = 0; // esto creo que habria que cambiarlo
+	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
 	int32_t tamanio_estructura = 0;
 
 	log_info(logger,"Conectado al Broker para enviar Catch");
@@ -270,7 +270,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
 			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 			printf("El broker me reconocio\n");
 
 			char* pokemon = entrenador->pokemon_destino->nombre;
@@ -282,7 +282,7 @@ void generar_y_enviar_catch(t_entrenador* entrenador){
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket, &id_mensaje, sizeof(double), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
 				}
 			}
 		}
@@ -433,36 +433,44 @@ void recibidor_mensajes_localized(void* l_entrenadores, t_Localized* mensaje_loc
 		if(localized_valido(mensaje, id, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
 			printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
 			list_add(pokemones_recibidos, mensaje->pokemon.nombre);
-			// No sé si debería comparar todas las posiciones, con todos los entrenadores
-			// y obtener el de distancia mas corta entre todas las posiciones y todos los entrenadores.
-			// Por ahora vamos con la primera:
-			t_posicion* posicion = list_get(mensaje->listaPosiciones, 0);
-
-			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
-
-			if(entrenador_mas_cercano != NULL){
-
-				//Si hay entrenadores planificables, planifico esa posicion
-				list_remove(mensaje->listaPosiciones, 0);
 
 
-				//agrego a mi mapa todas las otras posiciones
-				if(mensaje->listaPosiciones->elements_count > 0){
+			//tengo que planificar tantas posiciones como pokemon necesite.
+			//Ej, si me llegan 3 posiciones y necesito 2, solo planifico 2 pero las otras las guardo en memoria
+			//Si necesito 2 posiciones y llega 1, planifico 1.
+
+			int cantidad_pokemones_global = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
+
+			// me quedo con la menor de las cantidades
+			int cantidad_a_planificar = 0;
+			if(mensaje->listaPosiciones->elements_count <= cantidad_pokemones_global ){
+				cantidad_a_planificar = mensaje->listaPosiciones->elements_count;
+			} else {
+				cantidad_a_planificar = cantidad_pokemones_global;
+			}
+
+			for(int i = 0; i < cantidad_a_planificar; i++){
+				t_posicion* posicion = list_get(mensaje->listaPosiciones, i);
+
+				t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
+
+				if(entrenador_mas_cercano != NULL){
+
+					//Si hay entrenadores planificables, planifico esa posicion que siempre va a ser la 0
+					list_remove(mensaje->listaPosiciones, 0);
+
+					t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, *posicion);
+
+					entrenador_mas_cercano->estado = READY;
+					entrenador_mas_cercano->pokemon_destino = pokemon_destino;
+
+					list_add(cola_ready, entrenador_mas_cercano);
+					sem_post(&s_cola_ready_con_items);
+				} else {
 					ubicar_pokemones_localized(mensaje);
 				}
-
-				t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, *posicion);
-
-				entrenador_mas_cercano->estado = READY;
-				entrenador_mas_cercano->pokemon_destino = pokemon_destino;
-
-				list_add(cola_ready, entrenador_mas_cercano);
-				sem_post(&s_cola_ready_con_items);
-			} else {
-				ubicar_pokemones_localized(mensaje);
 			}
 		}
-
 	}
 }
 
@@ -532,7 +540,7 @@ void recibidor_mensajes_caught(void* l_entrenadores, t_Caught* mensaje_caught){
 }
 
 void hilo_escuchador_mensajes(void* l_entrenadores){
-
+	printf("Escuchando mensajes...\n");
 	while(socket_escucha_team != -1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
 
@@ -541,12 +549,12 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 
 			int32_t codigo_operacion = 0;
 			int32_t tamanio_estructura = 0;
-			double id_mensaje = 0;
+			int32_t id_mensaje = 0;
 
 			if(recv(socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
 					codigo_operacion = -1;
 			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket_cliente, &id_mensaje, sizeof(double), MSG_WAITALL);
+			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			log_info(logger, "Código de operación %d", codigo_operacion);
 
@@ -650,6 +658,30 @@ int inicializar_team(char* entrenador){
 	return 1;
 }
 
+bool hay_deadlock(t_list* entrenadores){
+	//hay deadlock cuando ningun entrenador cumplio sus objetivos y no pueden capturar mas
+
+	//en realidad esta mal, no necesariamente participan todos los entrenadores en un deadlock
+
+	//un entrenador PODRIA estar en deadlock si se cumple lo de abajo, pero no tienen que ser todos
+	//podria tener una funcion que sea GET ENTRENADORES EN DEADLOCK
+
+	//se debe cumplir que:
+	//el entrenador este blocked
+	//tiene pokemon/es que no necesita o en exceso
+	//debe haber espera circular
+
+
+	//O sea, que para que haya deadlock tienen que haber al menos dos entrenadores que cumplen lo de abajo.
+	bool _blockeado_sin_poder_hacer_nada(void* entrenador){
+		return ((t_entrenador*)entrenador)->estado == BLOCKED &&
+				!cumplio_objetivo((t_entrenador*)entrenador) &&
+				!puede_capturar_pokemones((t_entrenador*)entrenador);
+	}
+
+	return list_all_satisfy(entrenadores, _blockeado_sin_poder_hacer_nada);
+}
+
 int32_t main(int32_t argc, char** argv){
 	if(!argv[1]){
 		printf("Fata definir el team a cargar\n");
@@ -699,4 +731,7 @@ int32_t main(int32_t argc, char** argv){
 
     return EXIT_SUCCESS;
 }
+
+
+
 

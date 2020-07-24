@@ -33,25 +33,55 @@ int32_t main(int32_t argc, char *argv[])
 				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aunque a Game Boy no le interesa ningun dato
 
 				if(string_contains(argv[2], "NEW_POKEMON")){
+					log_info(logger,"Envio NEW POKEMON");
 					enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							printf("enviado new \n");
 						}
 					}
 				}
 				if(string_contains(argv[2], "APPEARED_POKEMON")){
-					enviar_appeared_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+					log_info(logger,"Envio APPEARED POKEMON");
+					enviar_appeared_pokemon(argv[3], argv[4], argv[5], "0", socket);
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						}
+					}
 				}
 				if(string_contains(argv[2], "CATCH_POKEMON")){
+					log_info(logger,"Envio CATCH POKEMON");
 					enviar_catch_pokemon(argv[3], argv[4], argv[5], "0", socket);
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						}
+					}
 				}
 				if(string_contains(argv[2], "CAUGHT_POKEMON")){
+					log_info(logger,"Envio CAUGHT POKEMON");
 					enviar_caught_pokemon(argv[3], argv[4], socket);
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						}
+					}
 				}
 				if(string_contains(argv[2], "GET_POKEMON")){
+					log_info(logger,"Envio GET POKEMON");
 					enviar_get_pokemon(argv[3], "0", socket);
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						}
+					}
 				}
 			}
 		}

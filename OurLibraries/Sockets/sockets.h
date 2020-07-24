@@ -16,6 +16,7 @@
 #include<string.h>
 #include<pthread.h>
 #include<commons/log.h>
+#include<commons/string.h>
 #include<commons/collections/list.h>
 #include<signal.h>
 #include<unistd.h>
@@ -55,8 +56,10 @@ typedef struct
 } t_paquete;
 
 typedef struct {
-	char * IP;
-	int32_t PUERTO;
+	char * ip;
+	int32_t size_ip;
+	char * puerto;
+	int32_t size_puerto;
 } t_suscripcion;
 
 int32_t crear_conexion(char* ip, char* puerto);
@@ -80,6 +83,8 @@ void enviar_handshake(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_handshake(t_paquete* paquete, int32_t* bytes);
 void enviar_suscripcion(char* IP, char* PUERTO, op_code operacion, int32_t socket_cliente);
 void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes, t_suscripcion* suscripcion);
+t_suscripcion* deserializar_paquete_suscripcion (int32_t* socket_cliente);
+
 void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente);
 void * serializar_ACK(t_paquete* paquete, int32_t* bytes);
 void enviar_suscripcion_new(int32_t id_proceso, int32_t socket_cliente);

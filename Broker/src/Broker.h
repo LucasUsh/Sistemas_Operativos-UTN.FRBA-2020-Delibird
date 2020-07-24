@@ -35,8 +35,8 @@ typedef struct {
 typedef struct {
 	op_code op_code;
 	int32_t id;
-	int32_t IP_suscriptor;
-	int32_t PUERTO_suscriptor;
+	char * ip;
+	char * puerto;
 } t_suscriptor;
 
 typedef enum {
@@ -72,7 +72,8 @@ char * LOG_FILE;
 
 
 int32_t get_id();
-void manejoMensajeSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
+void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
+void recibirSuscripcionYaExistente(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);

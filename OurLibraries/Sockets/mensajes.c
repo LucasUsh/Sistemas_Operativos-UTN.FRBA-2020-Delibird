@@ -35,8 +35,6 @@ void enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* i
 
 void enviar_appeared_pokemon (char* pokemon, char* x, char* y, char* id_mensaje_correlativo, int32_t socket_cliente)
 {
-	printf("Appeared Pokemon\n");
-
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = APPEARED_POKEMON;
 	paquete->buffer = malloc(sizeof(t_buffer));

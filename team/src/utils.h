@@ -25,14 +25,19 @@ t_entrenador* get_entrenador(t_config* config, int32_t index);
 t_list* get_entrenadores(t_config* config, int32_t cantidadEntrenadores);
 int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2);
 t_list* get_objetivo_global(t_list* entrenadores);
+t_list* get_pokemones_capturados_global(t_list* entrenadores);
+t_list* get_pokemones_capturados_entrenador(t_entrenador* entrenador);
 t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_posicion posicion_pokemon);
 t_list* filtrar_localized_repetidos(t_list* mensajes_localized);
 t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* objetivo_global);
-int es_respuesta(int id, t_list* lista_ids);
+t_respuesta* get_respuesta(int32_t id, t_list* respuestas);
+int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* pokemones);
+bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global);
+bool fue_recibido(char* pokemon, t_list* pokemones_recibidos);
+bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar);
 bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* objetivo_global);
-bool pokemon_pendiente_de_capturar(t_pokemon pokemon, t_list* entrenadores, int necesito_capturar);
 bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos, t_list* objetivo_global);
-t_respuesta* caught_valido(int id, t_list* catchs_enviados);
 int32_t conexion_broker();
+bool cumplio_objetivo(t_entrenador* entrenador);
 
 #endif /* UTILS_H_ */
