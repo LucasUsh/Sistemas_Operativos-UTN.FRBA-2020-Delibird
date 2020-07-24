@@ -141,6 +141,8 @@ void recuperar_datos() {
 	}
 
 	closedir (Files);
+
+	sem_init (&bitmap, 0, 1);
 }
 
 void crear_servidor_GC() {

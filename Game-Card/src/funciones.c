@@ -104,7 +104,7 @@ void crear_metadata_new (t_New* new, char* ruta) {
 	FILE* ruta_metadata_new = abrir_para (ruta, "w+");
 
 	fprintf (ruta_metadata_new, "DIRECTORY=N\n");
-	fprintf (ruta_metadata_new, "SIZE=%d\n", tamanio_bloque);
+	fprintf (ruta_metadata_new, "SIZE=0\n");
 	fprintf (ruta_metadata_new, "BLOCKS=[]\n");
 	fprintf (ruta_metadata_new, "OPEN=Y\n");
 
@@ -361,7 +361,7 @@ void metadata_actualizar_size (char* ruta_metadata, char* pokemon, int32_t size_
 	else {
 		archivo_cargado = realloc(archivo_cargado, tam_archivo_cargado + strlen(str_size_nuevo) + 1);
 		linea_size = strstr(archivo_cargado, "SIZE=");
-		memmove(linea_size + 5 + strlen(str_size_nuevo), linea_size + 5 + i, strlen(linea_size + 5 + i) + 1);
+		memmove(linea_size + 5 + strlen(str_size_nuevo), linea_size + i, strlen(linea_size + i) + 1);
 		memcpy(linea_size + 5, str_size_nuevo, strlen(str_size_nuevo));
 	}
 
