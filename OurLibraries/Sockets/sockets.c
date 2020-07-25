@@ -372,24 +372,24 @@ void * serializar_handshake(t_paquete* paquete, int32_t* bytes){
 	return stream;
 }
 
-void enviar_suscripcion(char* IP, char* PUERTO, op_code operacion, int32_t socket_cliente)
+void enviar_suscripcion(op_code operacion, int32_t socket_cliente)
 {
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = operacion;
 	paquete->buffer = malloc(sizeof(t_buffer));
 
-	t_suscripcion suscripcion;
-	suscripcion.size_ip = string_length(IP)+1;
-	suscripcion.ip = IP;
-	suscripcion.size_puerto = string_length(PUERTO)+1;
-	suscripcion.puerto = PUERTO;
+//	t_suscripcion suscripcion;
+//	suscripcion.size_ip = string_length(IP)+1;
+//	suscripcion.ip = IP;
+//	suscripcion.size_puerto = string_length(PUERTO)+1;
+//	suscripcion.puerto = PUERTO;
 
-	paquete->buffer->size = sizeof(int32_t)*2+suscripcion.size_ip+suscripcion.size_puerto;
+	paquete->buffer->size = sizeof(NULL);
 	paquete->buffer->id_Mensaje = 0;
-	paquete->buffer->stream = &suscripcion;
+	paquete->buffer->stream = NULL;
 
 	int32_t bytes_a_enviar;
-	void *paqueteSerializado = serializar_paquete_suscripcion (paquete, &bytes_a_enviar, &suscripcion);
+	void *paqueteSerializado = serializar_paquete_suscripcion (paquete, &bytes_a_enviar);
 
 	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
 
@@ -398,9 +398,9 @@ void enviar_suscripcion(char* IP, char* PUERTO, op_code operacion, int32_t socke
 	free(paquete);
 }
 
-void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes, t_suscripcion* suscripcion){
+void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes){
 
-	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje) + paquete->buffer->size;
+	*bytes = sizeof(paquete->codigo_operacion) + sizeof(paquete->buffer->size) + sizeof(paquete->buffer->id_Mensaje);
 	void *stream = malloc(*bytes);
 	int32_t desplazamiento = 0;
 
@@ -410,16 +410,6 @@ void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes, t_suscr
 	memcpy(stream + desplazamiento, &(paquete->buffer->size), sizeof(paquete->buffer->size));
 	desplazamiento+= sizeof(paquete->buffer->size);
 	memcpy(stream + desplazamiento, &(paquete->buffer->id_Mensaje), sizeof(paquete->buffer->id_Mensaje));
-	desplazamiento+= sizeof(paquete->buffer->id_Mensaje);
-
-	memcpy(stream + desplazamiento, &(suscripcion->size_ip), sizeof(suscripcion->size_ip));
-	desplazamiento+= sizeof(suscripcion->size_ip);
-	memcpy(stream + desplazamiento, suscripcion->ip, suscripcion->size_ip);
-	desplazamiento+= suscripcion->size_ip;
-
-	memcpy(stream + desplazamiento, &(suscripcion->size_puerto), sizeof(suscripcion->size_puerto));
-	desplazamiento+= sizeof(suscripcion->size_puerto);
-	memcpy(stream + desplazamiento, suscripcion->puerto, suscripcion->size_puerto);
 
 	return stream;
 }

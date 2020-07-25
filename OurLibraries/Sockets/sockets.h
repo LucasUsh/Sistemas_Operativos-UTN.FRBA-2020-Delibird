@@ -81,8 +81,8 @@ t_Caught* deserializar_paquete_caught (int32_t* socket_cliente);
 
 void enviar_handshake(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_handshake(t_paquete* paquete, int32_t* bytes);
-void enviar_suscripcion(char* IP, char* PUERTO, op_code operacion, int32_t socket_cliente);
-void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes, t_suscripcion* suscripcion);
+void enviar_suscripcion(op_code operacion, int32_t socket_cliente);
+void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes);
 t_suscripcion* deserializar_paquete_suscripcion (int32_t* socket_cliente);
 
 void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente);
