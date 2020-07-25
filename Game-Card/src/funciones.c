@@ -30,11 +30,11 @@ void funcion_new_pokemon(t_New* new) {
 
 		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
 
-		liberar_bloques (strings_bloques, cantidad);
+		liberar_bloques (strings_bloques, cantidad, ruta_metadata, new->pokemon.nombre);
 
 		char* apuntador = apuntar_a_posicion(archivo_cargado, new->posicion);
-		if (apuntador != NULL) agregar_cantidad(archivo_cargado, apuntador, new->cant);
-		else agregar_nueva_posicion(archivo_cargado, new->posicion, new->cant);
+		if (apuntador != NULL) archivo_cargado = agregar_cantidad(archivo_cargado, apuntador, new->cant);
+		else archivo_cargado = agregar_nueva_posicion(archivo_cargado, new->posicion, new->cant);
 
 		volcar_archivo_cargado(archivo_cargado, ruta_metadata, new->pokemon.nombre);
 
@@ -60,8 +60,8 @@ void funcion_new_pokemon(t_New* new) {
 
 		char* posicion_nueva = posicion_a_string(new->posicion);
 		char* cantidad_nueva = string_itoa(new->cant);
-		char* archivo_nuevo = malloc (strlen(posicion_nueva) + strlen(cantidad_nueva) + 2); //Más 2 por el '=' y el '\0'
-		strcat (strcat (strcpy(archivo_nuevo, posicion_nueva), "="), cantidad_nueva);
+		char* archivo_nuevo = malloc (strlen(posicion_nueva) + strlen(cantidad_nueva) + 3); //Más 3 por el '=', el '\n' y el '\0'
+		strcat (strcat (strcat (strcpy(archivo_nuevo, posicion_nueva), "="), cantidad_nueva), "\n");
 		volcar_archivo_cargado(archivo_nuevo, ruta_metadata, new->pokemon.nombre);
 
 		sleep (tiempo_retardo_operacion);
@@ -187,7 +187,7 @@ int32_t cantidad_de_bloques (char* vector){
 	return comas+1;
 }
 
-void liberar_bloques (char** strings_bloques, int32_t cantidad){
+void liberar_bloques (char** strings_bloques, int32_t cantidad, char* ruta_metadata, char* pokemon){
 	int32_t indice = 0;
 	sem_wait(&bitmap);
 	while(indice < cantidad) {
@@ -196,6 +196,26 @@ void liberar_bloques (char** strings_bloques, int32_t cantidad){
 	}
 	actualizar_bitmap();
 	sem_post(&bitmap);
+
+	int32_t tam_archivo_cargado;
+
+	char* archivo_cargado = metadata_traer(ruta_metadata, pokemon, &tam_archivo_cargado);
+
+	int32_t i = 0, j = 0;
+	while (*(archivo_cargado+i) != ']') i++;
+	i--;
+
+	if (*(archivo_cargado+i) == '[') free(archivo_cargado);
+	else {
+		while (*(archivo_cargado+i-j) != '[') j++;
+
+		memmove(archivo_cargado + i + 1 - j, archivo_cargado + i + 1, strlen(archivo_cargado + i + 1) + 1);
+		archivo_cargado = realloc(archivo_cargado, tam_archivo_cargado - j);
+
+		metadata_volcar (ruta_metadata, pokemon, archivo_cargado);
+
+		free(archivo_cargado);
+	}
 }
 
 char* apuntar_a_posicion (char* archivo_cargado, t_posicion posicion) {
@@ -205,7 +225,7 @@ char* apuntar_a_posicion (char* archivo_cargado, t_posicion posicion) {
 	return puntero_substring;
 }
 
-void agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_nueva){
+char* agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_nueva){
 	int32_t i = 0;
 	int32_t tam = 0;
 	char* pos_cantidad_actual;
@@ -242,25 +262,30 @@ void agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_n
 
 	free(str_cantidad_actual);
 	free(str_cantidad_total);
+
+	return archivo_cargado;
 }
 
-void agregar_nueva_posicion(char* archivo_cargado, t_posicion posicion_nueva, int32_t cantidad_nueva) {
+char* agregar_nueva_posicion(char* archivo_cargado, t_posicion posicion_nueva, int32_t cantidad_nueva) {
 
 	char* str_posicion_nueva = posicion_a_string(posicion_nueva);
 
 	char* str_cantidad_nueva = string_itoa(cantidad_nueva);
 
 	char* nueva_linea = malloc(strlen(str_posicion_nueva) + strlen(str_cantidad_nueva) + 3); // +3 Para '=', '\n' y '\0'
-	strcat (strcat (strcat (strcat(nueva_linea, str_posicion_nueva), "="), str_cantidad_nueva), "'\n'");
+	strcat (strcat (strcat (strcpy(nueva_linea, str_posicion_nueva), "="), str_cantidad_nueva), "\n");
 
 	int32_t ultima_posicion = strlen(archivo_cargado);
+	int32_t len_nueva_linea = strlen(nueva_linea);
 	archivo_cargado = realloc(archivo_cargado, ultima_posicion + strlen(nueva_linea) + 1);
 
-	memcpy(archivo_cargado+ultima_posicion, nueva_linea, strlen(nueva_linea) + 1);
+	memmove(archivo_cargado + ultima_posicion, nueva_linea, len_nueva_linea + 1);
 
 	free(str_posicion_nueva);
 	free(nueva_linea);
 	free(str_cantidad_nueva);
+
+	return archivo_cargado;
 }
 
 void volcar_archivo_cargado(char* archivo_cargado, char* ruta_metadata, char* pokemon) {
@@ -283,7 +308,6 @@ void volcar_archivo_cargado(char* archivo_cargado, char* ruta_metadata, char* po
 	for (i = 0; i < bloques_necesarios; i++){
 		bloque_libre = asignar_bloque_libre();
 		str_bloque_libre = string_itoa (bloque_libre);
-
 		metadata_agregar_bloque (ruta_metadata, pokemon, str_bloque_libre);
 
 		ruta_dinamica = malloc(strlen (punto_de_montaje) + strlen("/Blocks/.bin") + strlen(str_bloque_libre) + 1);
@@ -356,7 +380,7 @@ void metadata_actualizar_size (char* ruta_metadata, char* pokemon, int32_t size_
 	int32_t i = 5;
 	while (linea_size[i] != '\n') i++;
 
-	if(strlen(str_size_nuevo) == i) strcpy(linea_size + 5, str_size_nuevo);
+	if(strlen(str_size_nuevo) == (i-5)) memcpy(linea_size + 5, str_size_nuevo, strlen(str_size_nuevo));
 
 	else {
 		archivo_cargado = realloc(archivo_cargado, tam_archivo_cargado + strlen(str_size_nuevo) + 1);

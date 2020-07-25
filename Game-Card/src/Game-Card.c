@@ -41,8 +41,6 @@ void instalar_filesystem (){
 
 	// Creación de carpetas:
 
-
-
 	if (mkdir (punto_de_montaje, S_IRWXU | S_IRWXO) != 0) {
 		if (errno == EEXIST) {
 			log_info(logger_GC, "Utilizacion de file system previamente formateado.");
