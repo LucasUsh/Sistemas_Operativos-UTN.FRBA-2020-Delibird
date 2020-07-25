@@ -16,6 +16,7 @@ int32_t cantidad_entrenadores = 0;
 
 int32_t socket_escucha_team;
 
+
 //colas de planificacion
 t_list* cola_ready;
 
@@ -38,38 +39,101 @@ t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
 	return posicion;
 }
 
+bool generar_y_enviar_catch(t_entrenador* entrenador){
+
+	int32_t socket = conexion_broker();
+
+	if(socket == 0){
+		log_error(logger,"Error al conectar al Broker...");
+		//logica de reintentar
+		return false;
+	}
+
+	int32_t operacion = 0;
+	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
+	int32_t tamanio_estructura = 0;
+
+	log_debug(logger,"Conectado al Broker para enviar CATCH");
+	enviar_handshake(PROCESS_ID, socket);
+	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
+			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+			printf("El broker me reconocio\n");
+
+			char* pokemon = entrenador->pokemon_destino->nombre;
+			char* posX = string_itoa(entrenador->pokemon_destino->posicion.X);
+			char* posY = string_itoa(entrenador->pokemon_destino->posicion.Y);
+
+			enviar_catch_pokemon(pokemon, posX, posY, string_itoa(0), socket);
+
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
+				if(operacion == ACK){
+					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
+
+					t_respuesta* respuesta = malloc(sizeof(respuesta));
+					respuesta->id_entrenador = entrenador->id;
+					respuesta->id_respuesta = id_mensaje;
+					list_add(mensajes_catch_esperando_respuesta, respuesta);
+				}
+			}
+		}
+	}
+
+	return true;
+}
 
 void planificar_fifo(){
 
 	printf("planificando FIFO...\n");
-	//while(cola_ready->elements_count > 0){
-		printf("proximo entrenador..\n");
 
-		// en fifo, el proximo entrenador es el que esté primero en la cola de ready
-		t_entrenador* entrenador = list_remove(cola_ready, 0);
-		entrenador->estado = EXEC;
+	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
+	t_entrenador* entrenador = list_remove(cola_ready, 0);
+	printf("se va a planificar el entrenador %d\n", entrenador->id + 1);
+	entrenador->estado = EXEC;
 
-		int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
-		int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
-		printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
+	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
-		entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
+	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
-		printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
 
-		entrenador->estado = BLOCKED;
-		//una vez que lo muevo llamo al broker y hago el catch
+	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
-	//}
+	entrenador->ocupado = true;
+	entrenador->estado = BLOCKED; // blockeado hasta que reciba una respuesta al catch
+
+	if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
+		list_add(entrenador->pokemones, entrenador->pokemon_destino);
+		entrenador->pokemon_destino = NULL;
+		log_info(logger, "POKEMON CAPTURADO!\n");
+
+		if(cumplio_objetivo(entrenador)){
+			log_info(logger, "el entrenador cumplio sus objetivos, pasandolo a EXIT\n");
+			entrenador->estado = EXIT;
+			entrenador->ocupado = false;
+		} else {
+			log_info(logger, "el entrenador aún no cumplio sus objetivos, pasandolo a BLOCKED\n");
+			entrenador->estado = BLOCKED;
+			entrenador->ocupado=false;
+
+			if(puede_capturar_pokemones(entrenador)){
+				printf("el entrenador puede capturar mas pokemones\n");
+			} else {
+				printf("el entrenador no puede capturar mas pokemones\n");
+			}
+		}
+	}
+
+
 
 	return;
 }
 
 void planificar_rr(t_list* entrenadores, int32_t quantum){
-	// en rr, el proximo entrenador es el que esté primero en la cola de ready
-	//printf("planificando RR...\n");
-	//while(cola_ready->elements_count > 0){
 
 	printf("planificando RR...\n");
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
@@ -114,8 +178,10 @@ void planificar_rr(t_list* entrenadores, int32_t quantum){
 
 		if(posicion_final_X == 0 && posicion_final_Y == 0){
 			printf("**Llegué a destino, hago el catch**\n");
-			entrenador->estado = EXIT; // este blocked en realidad permite que se pueda seguir planificando, cuando no.
+			entrenador->ocupado = true;
+			entrenador->estado = BLOCKED; //blocked hasta que reciba la respuesta
 			generar_y_enviar_catch(entrenador);
+
 			break;
 		} else {
 			printf("**me cansé, lo dejo a otro**\n");
@@ -129,7 +195,6 @@ void planificar_rr(t_list* entrenadores, int32_t quantum){
 
 	return;
 
-	//}
 }
 
 void planificar_sjfsd(){
@@ -162,7 +227,8 @@ void planificar(t_algoritmo algoritmo, t_list* entrenadores)
 
 }
 
-void show_entrenadores(t_algoritmo algoritmo, t_list* entrenadores, t_list* objetivo_global){
+void show_entrenadores(t_list* entrenadores){
+	sleep(15);
 	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
 	    printf("********************\n");
 
@@ -178,7 +244,7 @@ void show_entrenadores(t_algoritmo algoritmo, t_list* entrenadores, t_list* obje
 	    			i + 1,
 					entrenador_actual->posicion.X,
 					entrenador_actual->posicion.Y);
-
+	    	printf("|ESTADO %d\n", entrenador_actual->estado);
 
 	    	printf("|POKEMONES:\n");
 	    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
@@ -194,21 +260,6 @@ void show_entrenadores(t_algoritmo algoritmo, t_list* entrenadores, t_list* obje
 		printf("|OBJETIVO GLOBAL:\n");
 		list_iterate(objetivo_global, _mostrar_pokemon);
 
-/*
-		t_posicion* posicion;
-		posicion->X = 4;
-		posicion->Y = 4;
-*/
-		t_posicion posicion;
-			posicion.X = 4;
-			posicion.Y = 4;
-
-
-		t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, posicion);
-
-		printf("XXXXXXXXxx: %d", entrenador_mas_cercano->posicion.X);
-		printf("XXXXXXXXxx: %d", entrenador_mas_cercano->posicion.Y);
-
 		printf("********************\n");
 }
 
@@ -222,7 +273,7 @@ void generar_y_enviar_get(){
 			return;
 		}
 
-		log_debug(logger,"Conectado al Broker para enviar GET");
+		log_info(logger,"Conectado al Broker para enviar GET");
 
 		int32_t operacion = 0;
 		int32_t id_mensaje = 0;
@@ -252,45 +303,7 @@ void generar_y_enviar_get(){
 	return;
 }
 
-void generar_y_enviar_catch(t_entrenador* entrenador){
 
-	int32_t socket = conexion_broker();
-
-	if(socket == 0){
-		log_error(logger,"Error al conectar al Broker...");
-		//logica de reintentar
-		return;
-	}
-
-	int32_t operacion = 0;
-	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
-	int32_t tamanio_estructura = 0;
-
-	log_debug(logger,"Conectado al Broker para enviar CATCH");
-	enviar_handshake(PROCESS_ID, socket);
-	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
-			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-			printf("El broker me reconocio\n");
-
-			char* pokemon = entrenador->pokemon_destino->nombre;
-			char* posX = string_itoa(entrenador->pokemon_destino->posicion.X);
-			char* posY = string_itoa(entrenador->pokemon_destino->posicion.Y);
-
-			enviar_catch_pokemon(pokemon, posX, posY, string_itoa(0), socket);
-
-			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){// Esperamos confirmacion de recepcion del mensaje
-				if(operacion == ACK){
-					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
-				}
-			}
-		}
-	}
-
-	return;
-}
 
 t_Localized* generar_localized(char* pokemon, int cant_posiciones){
 	t_list* listaPosiciones = list_create();
@@ -398,6 +411,7 @@ void show_cola_ready(){
 
 void hilo_planificador(void* l_entrenadores){
 
+	sleep(10);
 	while(1){
 		printf("esperando que llegue algo a la cola de ready....\n");
 		sem_wait(&s_cola_ready_con_items);
@@ -475,11 +489,16 @@ void recibidor_mensajes_localized(void* l_entrenadores, t_Localized* mensaje_loc
 	}
 }
 
-void recibidor_mensajes_appeared(void* l_entrenadores, t_Appeared* mensaje){
+void recibidor_mensajes_appeared(void* args){
+	t_args_mensajes* arg = malloc(sizeof(t_args_mensajes));
+	arg = (t_args_mensajes*)args;
+	t_list* l_entrenadores = arg->entrenadores;
+	t_Appeared* mensaje = (t_Appeared*)arg->mensaje;
+
 
 	printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
 
-	if(appeared_valido(mensaje, pokemones_recibidos, objetivo_global)){
+	if(appeared_valido(mensaje, l_entrenadores, objetivo_global)){
 		printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
 
 		list_add(pokemones_recibidos, mensaje->pokemon.nombre);
@@ -507,7 +526,7 @@ void recibidor_mensajes_caught(void* l_entrenadores, t_Caught* mensaje_caught){
 
 	while(1){
 		sleep(5);
-		// esto simula que recibí un mensaje localized
+		// esto simula que recibí un mensaje caught
 		t_Caught* mensaje = generar_caught();
 		mensaje_caught = mensaje;
 		int id = (rand() % (10)) + 1; // genero el id acá para probar pero se recibe antes
@@ -526,8 +545,17 @@ void recibidor_mensajes_caught(void* l_entrenadores, t_Caught* mensaje_caught){
 			if(mensaje->fueAtrapado){
 				printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
 				list_add(entrenador->pokemones, entrenador->pokemon_destino);
+
+				if(cumplio_objetivo(entrenador)){
+					entrenador->estado = EXIT;
+				} else {
+					entrenador->estado = READY;
+					entrenador->ocupado = false;
+				}
 			} else {
 				printf("OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
+				entrenador->estado = READY;
+				entrenador->ocupado = false;
 				//cuando falla, tengo que ir a capturar otro pokemon de esa especie.
 				//mismo que antes, comparo entre todos los entrenadores disponibles y todas las posiciones de ese pokemon
 				//o voy por la primer posicion que encuentre?
@@ -570,12 +598,14 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 							mensaje_appeared->posicion.X,
 							mensaje_appeared->posicion.Y);
 
-					//debería ser un hilo
-					/*
-					    pthread_t p_generador_mensajes_appeared;
-						pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
-					*/
-					recibidor_mensajes_appeared(l_entrenadores, mensaje_appeared);
+					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+					args->entrenadores = (t_list*)l_entrenadores;
+					args->mensaje = mensaje_appeared;
+
+					pthread_t p_generador_mensajes_appeared;
+					pthread_create(&p_generador_mensajes_appeared, NULL, (void*)recibidor_mensajes_appeared, (void*)args);
+
+
 					break;
 
 				case LOCALIZED_POKEMON:
@@ -604,10 +634,10 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					break;
 
 				case CAUGHT_POKEMON:
-					log_debug(logger, "Recibí un mensaje CAUGHT desde el GAME BOY\n");
+					log_info(logger, "Recibí un mensaje CAUGHT desde el GAME BOY\n");
 					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_cliente);
 
-					log_debug(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
+					log_info(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
 												mensaje_caught->fueAtrapado);
 
 					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
@@ -684,8 +714,8 @@ void hilo_suscribirse_appeared(void* l_entrenadores){
 					/*
 						pthread_t p_generador_mensajes_appeared;
 						pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
-					*/
 					recibidor_mensajes_appeared((t_list*)l_entrenadores, mensaje_appeared);
+					*/
 				}
 			}
 		}
@@ -829,42 +859,19 @@ int inicializar_team(char* entrenador){
 	srand(time(NULL));
 	config = config_create(get_config_path(entrenador));
 	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
-	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/team/team.log", "Team", 1, LOG_LEVEL_INFO);
+	char* log_path = config_get_string_value(config, "LOG_FILE");
+	logger = log_create(log_path, "Team", 1, LOG_LEVEL_INFO);
 	IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
 	PROCESS_ID = atoi(config_get_string_value(config, "PROCESS_ID"));
+	algoritmo = get_algoritmo(config);
 
 	return 1;
 }
 
-bool hay_deadlock(t_list* entrenadores){
-	//hay deadlock cuando ningun entrenador cumplio sus objetivos y no pueden capturar mas
-
-	//en realidad esta mal, no necesariamente participan todos los entrenadores en un deadlock
-
-	//un entrenador PODRIA estar en deadlock si se cumple lo de abajo, pero no tienen que ser todos
-	//podria tener una funcion que sea GET ENTRENADORES EN DEADLOCK
-
-	//se debe cumplir que:
-	//el entrenador este blocked
-	//tiene pokemon/es que no necesita o en exceso
-	//debe haber espera circular
-
-
-	//O sea, que para que haya deadlock tienen que haber al menos dos entrenadores que cumplen lo de abajo.
-	bool _blockeado_sin_poder_hacer_nada(void* entrenador){
-		return ((t_entrenador*)entrenador)->estado == BLOCKED &&
-				!cumplio_objetivo((t_entrenador*)entrenador) &&
-				!puede_capturar_pokemones((t_entrenador*)entrenador);
-	}
-
-	return list_all_satisfy(entrenadores, _blockeado_sin_poder_hacer_nada);
-}
-
-
-
 bool esta_en_deadlock(t_entrenador* entrenador){
 	return ((t_entrenador*)entrenador)->estado == BLOCKED &&
+			!entrenador->ocupado &&
 			!cumplio_objetivo((t_entrenador*)entrenador) &&
 			!puede_capturar_pokemones((t_entrenador*)entrenador);
 }
@@ -876,23 +883,38 @@ int32_t main(int32_t argc, char** argv){
 	}
 
 	inicializar_team(argv[1]);
-    int32_t cantidad_entrenadores = array_length(config_get_array_value(config, "POKEMON_ENTRENADORES"));
+	log_info(logger, "inicializacion finalizada\n");
+    cantidad_entrenadores = array_length(config_get_array_value(config, "POSICIONES_ENTRENADORES"));
 
-
-    algoritmo = get_algoritmo(config);
     t_list* entrenadores = get_entrenadores(config, cantidad_entrenadores);
 
     printf("En este team hay %d entrenadores\n", cantidad_entrenadores);
 
     objetivo_global = get_objetivo_global(entrenadores);
 
-	generar_y_enviar_get();
-	suscribirse_colas(entrenadores);
+
+    //show_entrenadores(algoritmo, entrenadores, objetivo_global);
 
 
+//	generar_y_enviar_get();
+
+/*
+ *
+ *  pthread_t p_suscribirse_appeared;
+	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, entrenadores);
+
+	pthread_t p_suscribirse_caught;
+	pthread_create(&p_suscribirse_caught, NULL, (void*)hilo_suscribirse_caught, entrenadores);
+
+	pthread_t p_suscribirse_localized;
+	pthread_create(&p_suscribirse_localized, NULL, (void*)hilo_suscribirse_localized, entrenadores);
+
+
+ *
+ *
+ */
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
-
 
     char* ip = config_get_string_value(config, "IP");
 	char* puerto = config_get_string_value(config, "PUERTO");
@@ -909,6 +931,10 @@ int32_t main(int32_t argc, char** argv){
 		  pthread_create(&p_escuchador, NULL, (void*)hilo_escuchador_mensajes, (void*)entrenadores);
 	}
 
+//    pthread_t p_mostrador;
+// 	pthread_create(&p_mostrador, NULL, (void*)show_entrenadores, (void*)entrenadores);
+
+
 	while(1){}
 
 	free(objetivo_global);
@@ -920,7 +946,5 @@ int32_t main(int32_t argc, char** argv){
 
     return EXIT_SUCCESS;
 }
-
-
 
 

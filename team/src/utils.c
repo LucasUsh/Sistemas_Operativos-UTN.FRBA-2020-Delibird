@@ -10,7 +10,14 @@ char** get_array_by_index(char** array_from_config, int32_t index){
 	  */
 
 	//value_string = Pikachu|Squirtle|Pidgey
+	int array_l = array_length(array_from_config);
+
+	if(index >= array_l ){
+		return NULL;
+	}
+
 	char* value_string = array_from_config[index];
+
 	/*
 	  * value_array:
 	  *  0 -> Pikachu
@@ -112,6 +119,7 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 	entrenador->pokemones = sumarizar_pokemones(get_pokemones(config, index));
 	entrenador->objetivo = sumarizar_pokemones(get_objetivos(config, index));
 	entrenador->id = index;
+	entrenador->ocupado = false;
 
 	return entrenador;
 }
@@ -163,7 +171,7 @@ t_list* get_objetivo_global(t_list* entrenadores){
 	return objetivo_global;
 }
 
-t_list* get_pokemones_capturados_global(t_list* entrenadores){
+t_list* get_pokemones_capturados_sumarizados_global(t_list* entrenadores){
 
 	t_list* pokemones_capturados = list_create();
 
@@ -185,7 +193,7 @@ t_list* get_pokemones_capturados_global(t_list* entrenadores){
 	return pokemones_capturados;
 }
 
-t_list* get_pokemones_capturados_entrenador(t_entrenador* entrenador){
+t_list* get_pokemones_capturados_sumarizados_entrenador(t_entrenador* entrenador){
 
 	t_list* pokemones_capturados = list_create();
 
@@ -213,7 +221,7 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 
 		entrenador = list_get(entrenadores, i);
 
-		if((entrenador->estado == BLOCKED || entrenador->estado == NEW) && (puede_capturar_pokemones(entrenador))){
+		if((entrenador->estado == BLOCKED || entrenador->estado == NEW) && !entrenador->ocupado && (puede_capturar_pokemones(entrenador))){
 			int32_t distancia_entrenador = get_distancia_entre_puntos(entrenador->posicion, posicion_pokemon);
 
 			if(distancia_mas_chica == -1){
@@ -332,27 +340,22 @@ bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
 	return false;
 };
 
-bool puedo_capturar(char* pokemon, t_list* entrenadores, int necesito_capturar){
+bool puedo_capturar(char* pokemon, t_list* entrenadores, t_list* objetivo_global){
 
-	t_list* pokemones_capturados = get_pokemones_capturados_global(entrenadores);
+	t_list* pokemones_capturados = get_pokemones_capturados_sumarizados_global(entrenadores);
+	int cantidad_capturados = get_cantidad_by_nombre_pokemon(pokemon, pokemones_capturados);
+	int necesito_capturar = get_cantidad_by_nombre_pokemon(pokemon, objetivo_global);
 
-	for(int j = 0; j < pokemones_capturados->elements_count; j++){
-		t_pokemon_team* pokemon_actual = list_get(pokemones_capturados, j);
-		if(string_equals_ignore_case(pokemon, pokemon_actual->nombre)){
-			//printf("tengo %d capturados\n", pokemon_actual->cantidad);
-			return pokemon_actual->cantidad < necesito_capturar;
-		}
-	}
-
-	return false;
+	return cantidad_capturados < necesito_capturar;
 };
 
-bool appeared_valido(t_Appeared* mensaje, t_list* pokemones_recibidos, t_list* objetivo_global){
+bool appeared_valido(t_Appeared* mensaje, t_list* entrenadores, t_list* objetivo_global){
 
 	bool en_objetivo = esta_en_objetivos_globales(mensaje->pokemon.nombre, objetivo_global);
-	bool recibido = fue_recibido(mensaje->pokemon.nombre, pokemones_recibidos);
 
-	return en_objetivo && !recibido;
+	bool puedo = puedo_capturar(mensaje->pokemon.nombre, entrenadores, objetivo_global);
+
+	return en_objetivo && puedo;
 }
 
 bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_list* pokemones_recibidos, t_list* objetivo_global){
@@ -372,13 +375,11 @@ int32_t conexion_broker()
 }
 
 bool cumplio_objetivo(t_entrenador* entrenador){
-	printf("viendo si cumple\n");
 	entrenador->pokemones = sumarizar_pokemones(entrenador->pokemones);
-	printf("cantidd de objetivos: %d\n", entrenador->objetivo->elements_count);
 	for(int i = 0; i < entrenador->objetivo->elements_count; i++){
-		t_pokemon* pokemon_actual = list_get(entrenador->objetivo, i);
+		t_pokemon_team* pokemon_actual = list_get(entrenador->objetivo, i);
 		int cantidad_capturados = get_cantidad_by_nombre_pokemon(pokemon_actual->nombre, entrenador->pokemones);
-		int cantidad_objetivo = get_cantidad_by_nombre_pokemon(pokemon_actual->nombre, entrenador->objetivo);
+		int cantidad_objetivo = pokemon_actual->cantidad;
 
 		if(cantidad_objetivo != cantidad_capturados){
 			 return false;

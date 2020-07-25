@@ -21,11 +21,12 @@ t_list* get_pokemones(t_config* config, int32_t index){
 	t_list* pokemones_list = list_create();
 
 	char** pokemon_entrenadores = config_get_array_value(config, "POKEMON_ENTRENADORES");
+
 	char** pokemones = get_array_by_index(pokemon_entrenadores, index);
 
-	int32_t i = 0;
+	int i = 0;
 
-	while(pokemones[i] != NULL){
+	while(pokemones != NULL && pokemones[i] != NULL){
 		t_pokemon_team* pokemon = get_pokemon(pokemones[i]);
 		list_add_in_index(pokemones_list, i, pokemon);
 		i++;

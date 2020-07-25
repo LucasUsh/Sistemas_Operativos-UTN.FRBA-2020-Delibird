@@ -44,6 +44,11 @@ typedef struct {
 }t_algoritmo;
 
 typedef struct {
+	t_list* entrenadores;
+	void* mensaje;
+}t_args_mensajes;
+
+typedef struct {
 	//uint32_t size_Nombre;
 	char * 	 	nombre;
 	int32_t 	cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
@@ -57,6 +62,7 @@ typedef struct {
 	t_list* 	objetivo; //list of t_pokemon
 	estado_code estado;
 	int32_t id;
+	bool ocupado;
 
 } t_entrenador;
 
