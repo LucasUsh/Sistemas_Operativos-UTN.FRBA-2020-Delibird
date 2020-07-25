@@ -36,6 +36,9 @@ char* punto_de_montaje = NULL;
 char* tam_bloque = NULL;
 char* cant_bloques = NULL;
 char* magic_number = NULL;
+char* ip_broker = NULL;
+char* puerto_broker = NULL;
+int32_t id_proceso = NULL;
 
 t_dictionary* semaforos = NULL;
 
@@ -60,6 +63,9 @@ void recuperar_datos();
 void crear_servidor_GC();
 void responder_mensaje(int32_t* socket_cliente);
 void conexionBroker(int32_t *socket);
+void hilo_suscriptor_new();
+void hilo_suscriptor_catch();
+void hilo_suscriptor_get();
 void suscribirse_broker();
 void salir (const char* mensaje);
 void inicializaciones_globales();

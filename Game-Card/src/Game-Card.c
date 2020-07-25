@@ -10,13 +10,28 @@ int32_t main(void)
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (logger_GC, "Hilo servidor creado correctamente.");
 
-	pthread_t hilo_conexion_broker;
-	int32_t socket;
-	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
-			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
+	//pthread_t hilo_conexion_broker;
+//	int32_t socket;
+//	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
+//			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
+
+	pthread_t hilo_new;
+	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor_new, NULL) == 0)
+		log_debug (logger_GC, "Hilo cola new creado correctamente.");
+
+	pthread_t hilo_catch;
+	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor_catch, NULL) == 0)
+		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
+
+	pthread_t hilo_get;
+	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor_get, NULL) == 0)
+		log_debug (logger_GC, "Hilo cola get creado correctamente.");
+
 
 	pthread_join(hilo_servidor_GC, NULL);
-	pthread_join(hilo_conexion_broker,NULL);
+	pthread_join(hilo_new,NULL);
+	pthread_join(hilo_catch,NULL);
+	pthread_join(hilo_get,NULL);
 
 	liberar_memoria(socket);
 
@@ -189,35 +204,6 @@ void responder_mensaje(int32_t* socket_cliente) {
 
 			funcion_new_pokemon(new);
 
-
-/*
-			if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(codigo_operacion == ACK){
-					recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					//id_mensaje = cantidad de mensajes que va a enviar el Broker
-					log_info(logger_GC,"Suscripto a la cola new");
-					for(int i=0; i<id_mensaje; i++){
-						if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-							if(codigo_operacion == NEW_POKEMON){
-								recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-								recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-								new = deserializar_paquete_new (socket_cliente);
-
-								funcion_new_pokemon(new);
-
-								log_debug (logger_GC, "***Estructura t_New recibida*** \n");
-								log_debug (logger_GC, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
-								log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
-								log_debug (logger_GC, "Cantidad: %d", new->cant);
-
-								enviar_ACK(0, *socket_cliente);
-							} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-						} else printf("Fallo al recibir codigo de operacion = -1\n");
-					}
-				} else log_info(logger_GC,"Conectado al Broker"); printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-			} else printf("Fallo al recibir codigo de operacion = -1\n");
-*/
 			break;
 
 		case CATCH_POKEMON:
@@ -252,19 +238,19 @@ void responder_mensaje(int32_t* socket_cliente) {
 
 void conexionBroker(int32_t *socket)
 {
-	char* ip_broker;
-	char* puerto_broker;
+//	char* ip_broker;
+//	char* puerto_broker;
 	int32_t codigo_operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 
 	//config_GC = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/Game-Card.config");
-	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
-	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
+//	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
+//	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
 	char* ip_gamecard = config_get_string_value(config_GC,"IP_GAMECARD");
 	char* puerto_gamecard = config_get_string_value(config_GC,"PUERTO_GAMECARD"); //mati dice: esto definan uds si queda aca o se mueve
-	//int32_t id_proceso = atoi(config_get_string_value(config_GC,"ID_PROCESO")); //agregar en archivo de configuracion
-	int32_t id_proceso = 2;
+//	int32_t id_proceso = atoi(config_get_string_value(config_GC,"ID_PROCESO")); //agregar en archivo de configuracion
+//	int32_t id_proceso = 2;
 
 	*socket = 0;
 	while(*socket == 0)
@@ -348,6 +334,38 @@ void conexionBroker(int32_t *socket)
 
 }
 
+void hilo_suscriptor_new(){
+	int32_t operacion=0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje=0;
+	int32_t socket_broker_new = crear_conexion(ip_broker,puerto_broker);
+
+	while(1){
+		if(socket_broker_new != 0){
+//			enviar_handshake(2, socket_broker_new);
+//			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+//				if(operacion == ACK){
+//					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+//					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+//					printf("ACKAA \n");
+//				}
+//			}
+		}else{
+			socket_broker_new = crear_conexion(ip_broker,puerto_broker);
+		}
+
+		sleep(tiempo_reintento_conexion);
+	}
+}
+
+void hilo_suscriptor_catch(){
+
+}
+
+void hilo_suscriptor_get(){
+
+}
+
 void salir (const char* mensaje) {
 	log_error(logger_GC, mensaje);
 	perror (mensaje);
@@ -361,6 +379,10 @@ void inicializaciones_globales() {
 	semaforos = dictionary_create();
 	tiempo_reintento_con = config_get_string_value(config_GC,"TIEMPO_DE_REINTENTO_CONEXION");
 	tiempo_reintento_conexion = (int32_t) atoi (tiempo_reintento_con);
+	ip_broker = config_get_string_value(config_GC,"IP_BROKER");
+	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
+//	id_proceso = atoi(config_get_string_value(config_GC,"ID_PROCESO"));
+	id_proceso = 2;
 }
 
 void liberar_memoria(int32_t socket) {
@@ -377,10 +399,3 @@ void liberar_memoria(int32_t socket) {
     dictionary_destroy_and_destroy_elements(semaforos, (void*) sem_destroy);
 }
 
-/*
-log_debug (debug, "***Estructura t_New recibida*** \n");
-log_debug (debug, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
-log_debug (debug, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
-log_debug (debug, "Cantidad: %d", new->cant);
-log_debug (debug, "*******************************");
- */
