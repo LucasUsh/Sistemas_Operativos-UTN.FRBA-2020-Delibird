@@ -13,7 +13,6 @@
 
 //constantes una vez que se inicialicen
 int32_t cantidad_entrenadores = 0;
-
 int32_t socket_escucha_team;
 
 
@@ -22,6 +21,7 @@ t_list* cola_ready;
 
 //semaforos
 sem_t s_cola_ready_con_items;
+t_list* semaforos_entrenadores;
 
 //colas de mensajes
 t_list* pokemones_recibidos; // registro para saber si rechazar appeareds y localizeds
@@ -90,10 +90,15 @@ void planificar_fifo(){
 
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
-	printf("se va a planificar el entrenador %d\n", entrenador->id + 1);
-	entrenador->estado = EXEC;
+	//printf("se va a planificar el entrenador %d\n", entrenador->id + 1);
+	//entrenador->estado = EXEC;
+
+	//printf("cantidad de semaforos: %d\n", semaforos_entrenadores->elements_count);
+	sem_t* semaforo_actual = list_get(semaforos_entrenadores, entrenador->id);
+	sem_post(semaforo_actual);
 
 
+/*
 	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
 	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
@@ -128,7 +133,7 @@ void planificar_fifo(){
 		}
 	}
 
-
+*/
 
 	return;
 }
@@ -411,7 +416,6 @@ void show_cola_ready(){
 
 void hilo_planificador(void* l_entrenadores){
 
-	sleep(10);
 	while(1){
 		printf("esperando que llegue algo a la cola de ready....\n");
 		sem_wait(&s_cola_ready_con_items);
@@ -433,19 +437,22 @@ void ubicar_pokemones_localized(t_Localized* pokemones_a_ubicar){
 	}
 }
 
-void recibidor_mensajes_localized(void* l_entrenadores, t_Localized* mensaje_localized){
-	t_list* entrenadores = (t_list*)l_entrenadores;
+void recibidor_mensajes_localized(void* args){
+	t_args_mensajes* arg = (t_args_mensajes*)args;
+	t_list* entrenadores = arg->entrenadores;
+	t_Localized* mensaje = (t_Localized*)arg->mensaje;
+	t_respuesta* respuesta = arg->respuesta;
 
 	while(1){
 		sleep(5);
 		// esto simula que recibí un mensaje localized
-		t_Localized* mensaje = simular_localized(1);
+		//t_Localized* mensaje = simular_localized(1);
 
-		int id = (rand() % (15)) + 1; // genero el id acá para probar
+		//int id = (rand() % (15)) + 1; // genero el id acá para probar
 
-		printf("Se recibió un LOCALIZED %s (id: %d)\n", mensaje->pokemon.nombre, id);
+		printf("Se recibió un LOCALIZED %s (id: %d)\n", mensaje->pokemon.nombre, respuesta->id_respuesta);
 
-		if(localized_valido(mensaje, id, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
+		if(localized_valido(mensaje, respuesta->id_respuesta, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
 			printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
 			list_add(pokemones_recibidos, mensaje->pokemon.nombre);
 
@@ -490,8 +497,7 @@ void recibidor_mensajes_localized(void* l_entrenadores, t_Localized* mensaje_loc
 }
 
 void recibidor_mensajes_appeared(void* args){
-	t_args_mensajes* arg = malloc(sizeof(t_args_mensajes));
-	arg = (t_args_mensajes*)args;
+	t_args_mensajes* arg = (t_args_mensajes*)args;
 	t_list* l_entrenadores = arg->entrenadores;
 	t_Appeared* mensaje = (t_Appeared*)arg->mensaje;
 
@@ -521,51 +527,40 @@ void recibidor_mensajes_appeared(void* args){
 
 }
 
-void recibidor_mensajes_caught(void* l_entrenadores, t_Caught* mensaje_caught){
-	t_list* entrenadores = (t_list*)l_entrenadores;
+void recibidor_mensajes_caught(void* args){
+	t_args_mensajes* arg = (t_args_mensajes*)args;
+	t_list* l_entrenadores = arg->entrenadores;
+	t_Caught* mensaje = (t_Caught*)arg->mensaje;
+	t_respuesta* respuesta = arg->respuesta;
 
-	while(1){
-		sleep(5);
-		// esto simula que recibí un mensaje caught
-		t_Caught* mensaje = generar_caught();
-		mensaje_caught = mensaje;
-		int id = (rand() % (10)) + 1; // genero el id acá para probar pero se recibe antes
+	t_entrenador* entrenador = list_get(l_entrenadores, respuesta->id_entrenador);
 
-		printf("se recibió un mensaje CAUGHT (id: %d)\n", id);
-		t_respuesta* respuesta = get_respuesta(id, mensajes_catch_esperando_respuesta);
+	printf("TRYING TO CATCH A %s \nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, entrenador->id);
+	printf("3...\n2... \n1... \n");
+	sleep(3);
 
-		if(respuesta != NULL){
+	if(mensaje->fueAtrapado){
+		printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
+		list_add(entrenador->pokemones, entrenador->pokemon_destino);
 
-			t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
-
-			printf("TRYING TO CATCH A %s (ID: %d)\nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, respuesta->id_respuesta ,respuesta->id_entrenador);
-			printf("3...\n2... \n1... \n");
-			sleep(3);
-
-			if(mensaje->fueAtrapado){
-				printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
-				list_add(entrenador->pokemones, entrenador->pokemon_destino);
-
-				if(cumplio_objetivo(entrenador)){
-					entrenador->estado = EXIT;
-				} else {
-					entrenador->estado = READY;
-					entrenador->ocupado = false;
-				}
-			} else {
-				printf("OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
-				entrenador->estado = READY;
-				entrenador->ocupado = false;
-				//cuando falla, tengo que ir a capturar otro pokemon de esa especie.
-				//mismo que antes, comparo entre todos los entrenadores disponibles y todas las posiciones de ese pokemon
-				//o voy por la primer posicion que encuentre?
-			}
-
-			entrenador->estado = BLOCKED;
-
+		if(cumplio_objetivo(entrenador)){
+			entrenador->estado = EXIT;
+		} else {
+			entrenador->estado = READY;
+			entrenador->ocupado = false;
 		}
-
+	} else {
+		log_info(logger, "OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
+		entrenador->estado = READY;
+		entrenador->ocupado = false;
+		//cuando falla, tengo que ir a capturar otro pokemon de esa especie.
+		//mismo que antes, comparo entre todos los entrenadores disponibles y todas las posiciones de ese pokemon
+		//o voy por la primer posicion que encuentre?
 	}
+
+	entrenador->estado = BLOCKED;
+
+	return;
 }
 
 void hilo_escuchador_mensajes(void* l_entrenadores){
@@ -601,7 +596,7 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 					args->entrenadores = (t_list*)l_entrenadores;
 					args->mensaje = mensaje_appeared;
-
+					args->respuesta = NULL;
 					pthread_t p_generador_mensajes_appeared;
 					pthread_create(&p_generador_mensajes_appeared, NULL, (void*)recibidor_mensajes_appeared, (void*)args);
 
@@ -622,13 +617,16 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
-					//debería ser un hilo
-					/*
-					 pthread_t p_generador_mensajes_localized;
-					 pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
-*/
 					if(respuesta_get != NULL){
-						recibidor_mensajes_localized(l_entrenadores, mensaje_localized);
+						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+						args->entrenadores = (t_list*)l_entrenadores;
+						args->mensaje = mensaje_localized;
+						args->respuesta = respuesta_get;
+
+
+
+						 pthread_t p_generador_mensajes_localized;
+						 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
 					}
 
 					break;
@@ -644,12 +642,15 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 
 					//debería ser un hilo
 					if(respuesta_catch != NULL){
-				/*
-					pthread_t p_generador_mensajes_caught;
-					pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
-				*/
 
-						recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
+						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+						args->entrenadores = (t_list*)l_entrenadores;
+						args->mensaje = mensaje_localized;
+						args->respuesta = respuesta_catch;
+
+						pthread_t p_generador_mensajes_caught;
+						pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
+
 					}
 
 					break;
@@ -673,36 +674,37 @@ char* get_config_path(char* entrenador){
 
 void hilo_suscribirse_appeared(void* l_entrenadores){
 
-	int32_t socket = conexion_broker();
-
-	if(socket == 0){
+	int32_t socket_suscripcion = conexion_broker();
+	if(socket_suscripcion == 0){
 		log_error(logger,"Error al conectar al Broker para suscribirse a Appeared...");
 		//logica para reintentar
 		return;
 	}
 
-	log_debug(logger,"Conectado al Broker para suscribirse a APPEARED...\n");
+	log_info(logger,"Conectado al Broker para suscribirse a APPEARED...\n");
 
 	int32_t operacion = 0;
 	int32_t id_mensaje = 0;
 	int32_t tamanio_estructura = 0;
 
-	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+	if(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		printf("codigo de op respuesta: %d", operacion);
 		if(operacion == ACK){
-			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+			printf("el broker me dio el OK\n");
+			recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			//voy a ir recibiendo mensajes APPEARED
 			log_info(logger, "Esperando que llegue algún APPEARED de la cola de suscripcion...\n");
-			while(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-				enviar_handshake(PROCESS_ID, socket);
+				enviar_handshake(PROCESS_ID, socket_suscripcion);
 
 				if(operacion == APPEARED_POKEMON){
-					log_debug(logger, "Llego un mensaje APPEARED \n");
-					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket);
+					log_debug(logger, "Llego un mensaje APPEARED desde el GAME BOY\n");
+					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_suscripcion);
 
 					log_debug(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
 							mensaje_appeared->pokemon.size_Nombre,
@@ -710,51 +712,57 @@ void hilo_suscribirse_appeared(void* l_entrenadores){
 							mensaje_appeared->posicion.X,
 							mensaje_appeared->posicion.Y);
 
-					//debería ser un hilo
-					/*
-						pthread_t p_generador_mensajes_appeared;
-						pthread_create(&p_generador_mensajes_appeared, NULL, (void*)hilo_recibidor_mensajes_appeared, (void*)entrenadores);
-					recibidor_mensajes_appeared((t_list*)l_entrenadores, mensaje_appeared);
-					*/
+					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+					args->entrenadores = (t_list*)l_entrenadores;
+					args->mensaje = mensaje_appeared;
+					args->respuesta = NULL;
+
+					pthread_t p_generador_mensajes_appeared;
+					pthread_create(&p_generador_mensajes_appeared, NULL, (void*)recibidor_mensajes_appeared, (void*)args);
 				}
 			}
 		}
+	} else {
+		log_error(logger, "puede que el broker no tenga todavía el codigo de operacion reconocido\n");
 	}
 
 	return;
 }
 
 void hilo_suscribirse_caught(void* l_entrenadores){
-	int32_t socket = conexion_broker();
 
-	if(socket == 0){
+	int32_t socket_suscripcion = conexion_broker();
+
+	if(socket_suscripcion == 0){
 		log_error(logger,"Error al conectar al Broker para suscribirse a CAUGHT...");
-		//logica para reintentar
+		//logica para reintentar (signal a un hilo?)
 		return;
 	}
 
-	log_debug(logger,"Conectado al Broker para suscribirse a CAUGHT...\n");
+	log_info(logger,"Conectado al Broker para suscribirse a CAUGHT...\n");
 
 	int32_t operacion = 0;
 	int32_t id_mensaje = 0;
 	int32_t tamanio_estructura = 0;
 
-	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+	if(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		printf("codigo de op respuesta: %d", operacion);
 		if(operacion == ACK){
-			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+			printf("el broker me dio el OK\n");
+			recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			//voy a ir recibiendo mensajes CAUGHT
 			log_info(logger, "Esperando que llegue algún CAUGHT de la cola de suscripcion...\n");
-			while(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-				enviar_handshake(PROCESS_ID, socket);
+				enviar_handshake(PROCESS_ID, socket_suscripcion);
 
 				if(operacion == CAUGHT_POKEMON){
 					log_debug(logger, "Recibí un mensaje CAUGHT\n");
-					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket);
+					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_suscripcion);
 
 					log_debug(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
 												mensaje_caught->fueAtrapado);
@@ -763,16 +771,23 @@ void hilo_suscribirse_caught(void* l_entrenadores){
 
 					//debería ser un hilo
 					if(respuesta_catch != NULL){
-				/*
-					pthread_t p_generador_mensajes_caught;
-					pthread_create(&p_generador_mensajes_caught, NULL, (void*)hilo_recibidor_mensajes_caught, (void*)entrenadores);
-				*/
 
-						recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
+					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+					args->entrenadores = (t_list*)l_entrenadores;
+					args->mensaje = mensaje_caught;
+					args->respuesta = respuesta_catch;
+
+					pthread_t p_generador_mensajes_caught;
+					pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
+
+
+						//recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
 					}
 				}
 			}
 		}
+	} else {
+		log_error(logger, "puede que el broker no tenga todavía el codigo de operacion reconocido\n");
 	}
 
 
@@ -781,31 +796,30 @@ void hilo_suscribirse_caught(void* l_entrenadores){
 
 void hilo_suscribirse_localized(void* l_entrenadores){
 
-	int32_t socket = conexion_broker();
+	int32_t socket_suscripcion = conexion_broker();
 
-	if(socket == 0){
+	if(socket_suscripcion == 0){
 		log_error(logger,"Error al conectar al Broker para suscribirse a Appeared...");
 		//logica para reintentar
 		return;
 	}
 
-	log_debug(logger,"Conectado al Broker para suscribirse a LOCALIZED...\n");
+	log_info(logger,"Conectado al Broker para suscribirse a LOCALIZED...\n");
 
 
 	int32_t operacion = 0;
 	int32_t id_mensaje = 0;
 	int32_t tamanio_estructura = 0;
 
-	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+	if(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 		if(operacion == ACK){
-			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
+			recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 			//voy a ir recibiendo mensajes LOCALIZED
 			log_info(logger, "Esperando que llegue algún LOCALIZED de la cola de suscripcion...");
-			while(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				log_debug(logger, "Recibí un mensaje LOCALIZED\n");
-				t_Localized* mensaje_localized = deserializar_paquete_localized(&socket);
+				t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_suscripcion);
 
 				log_debug(logger, "Llego un mensaje LOCALIZED Pokemon con los siguientes datos: %d\n",
 						mensaje_localized->pokemon.nombre);
@@ -817,14 +831,14 @@ void hilo_suscribirse_localized(void* l_entrenadores){
 
 				t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
-				//debería ser un hilo
-				/*
-				 pthread_t p_generador_mensajes_localized;
-				 pthread_create(&p_generador_mensajes_localized, NULL, (void*)hilo_recibidor_mensajes_localized, (void*)entrenadores);
-				*/
-				if(respuesta_get != NULL){
-					recibidor_mensajes_localized(l_entrenadores, mensaje_localized);
-				}
+				t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+				args->entrenadores = (t_list*)l_entrenadores;
+				args->mensaje = mensaje_localized;
+				args->respuesta = respuesta_get;
+
+				pthread_t p_generador_mensajes_localized;
+				pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+
 			}
 		}
 	}
@@ -855,6 +869,7 @@ int inicializar_team(char* entrenador){
 	pokemones_ubicados = list_create();
 	mensajes_get_esperando_respuesta = list_create();
 	mensajes_catch_esperando_respuesta = list_create();
+	semaforos_entrenadores = list_create();
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	srand(time(NULL));
 	config = config_create(get_config_path(entrenador));
@@ -874,6 +889,20 @@ bool esta_en_deadlock(t_entrenador* entrenador){
 			!entrenador->ocupado &&
 			!cumplio_objetivo((t_entrenador*)entrenador) &&
 			!puede_capturar_pokemones((t_entrenador*)entrenador);
+}
+
+void* entrenador(t_entrenador* entrenador){
+	printf("hola soy un hilo de entrenador\n");
+	printf("este hilo maneja al entrenador %d\n", entrenador->id);
+	sem_t s_entrenador;
+	sem_init(&s_entrenador, 0, 0);
+	list_add_in_index(semaforos_entrenadores, entrenador->id, &s_entrenador);
+	printf("cantidad de semaforos en la lista: %d\n", semaforos_entrenadores->elements_count);
+	sem_wait(&s_entrenador);
+	//queda bloqueado hasta que pueda ejecutar
+	printf("soy el entrenador %d y estoy ejecutando \n", index);
+	entrenador->estado = EXEC;
+
 }
 
 int32_t main(int32_t argc, char** argv){
@@ -896,25 +925,36 @@ int32_t main(int32_t argc, char** argv){
     //show_entrenadores(algoritmo, entrenadores, objetivo_global);
 
 
-//	generar_y_enviar_get();
 
-/*
- *
- *  pthread_t p_suscribirse_appeared;
-	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, entrenadores);
+    //generar_y_enviar_get();
+
+    pthread_t p_suscribirse_appeared;
+   	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, (void*)entrenadores);
+
 
 	pthread_t p_suscribirse_caught;
-	pthread_create(&p_suscribirse_caught, NULL, (void*)hilo_suscribirse_caught, entrenadores);
+	pthread_create(&p_suscribirse_caught, NULL, (void*)hilo_suscribirse_caught, (void*)entrenadores);
 
 	pthread_t p_suscribirse_localized;
-	pthread_create(&p_suscribirse_localized, NULL, (void*)hilo_suscribirse_localized, entrenadores);
+	pthread_create(&p_suscribirse_localized, NULL, (void*)hilo_suscribirse_localized, (void*)entrenadores);
+/*
+ *
+ *
 
 
  *
  *
- */
     pthread_t p_planificador;
 	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
+
+
+    for(int x = 0; x < entrenadores->elements_count; x++){
+    	t_entrenador* entrenador_actual = list_get(entrenadores, x);
+    	pthread_t p_entrenador;
+		pthread_create(&p_entrenador, NULL, (void*)entrenador, (void*)entrenador_actual);
+		sleep(1); // ver como hacer para que se carguen en orden
+    }
+
 
     char* ip = config_get_string_value(config, "IP");
 	char* puerto = config_get_string_value(config, "PUERTO");
@@ -931,10 +971,8 @@ int32_t main(int32_t argc, char** argv){
 		  pthread_create(&p_escuchador, NULL, (void*)hilo_escuchador_mensajes, (void*)entrenadores);
 	}
 
-//    pthread_t p_mostrador;
-// 	pthread_create(&p_mostrador, NULL, (void*)show_entrenadores, (void*)entrenadores);
 
-
+ */
 	while(1){}
 
 	free(objetivo_global);
@@ -946,5 +984,6 @@ int32_t main(int32_t argc, char** argv){
 
     return EXIT_SUCCESS;
 }
+
 
 

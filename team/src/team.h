@@ -44,8 +44,15 @@ typedef struct {
 }t_algoritmo;
 
 typedef struct {
+	int32_t id_respuesta;
+	int32_t id_entrenador;
+
+} t_respuesta;
+
+typedef struct {
 	t_list* entrenadores;
 	void* mensaje;
+	t_respuesta* respuesta;
 }t_args_mensajes;
 
 typedef struct {
@@ -65,12 +72,6 @@ typedef struct {
 	bool ocupado;
 
 } t_entrenador;
-
-typedef struct {
-	int32_t id_respuesta;
-	int32_t id_entrenador;
-
-} t_respuesta;
 
 
 t_log* logger;
