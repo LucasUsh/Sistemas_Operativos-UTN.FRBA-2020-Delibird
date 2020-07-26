@@ -10,10 +10,11 @@ int32_t main(void)
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_debug (logger_GC, "Hilo servidor creado correctamente.");
 
-	//pthread_t hilo_conexion_broker;
-//	int32_t socket;
-//	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
-//			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
+/*	pthread_t hilo_conexion_broker;
+	int32_t socket;
+	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
+			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
+*/
 
 	pthread_t hilo_new;
 	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor_new, NULL) == 0)
@@ -33,7 +34,7 @@ int32_t main(void)
 	pthread_join(hilo_get,NULL);
 	pthread_join(hilo_servidor_GC, NULL);
 
-	liberar_memoria(socket);
+	liberar_memoria();
 
     return 0;
 }
@@ -295,11 +296,10 @@ void inicializaciones_globales() {
 	id_proceso = 2;
 }
 
-void liberar_memoria(int32_t socket) {
+void liberar_memoria() {
 	free(mapa_de_bloques.bitarray);
 	bitarray_destroy(&mapa_de_bloques);
 
-    liberar_conexion(socket);
     config_destroy(config_GC);
     log_destroy(logger_GC);
 

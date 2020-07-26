@@ -38,7 +38,6 @@ char* cant_bloques = NULL;
 char* magic_number = NULL;
 char* ip_broker = NULL;
 char* puerto_broker = NULL;
-int32_t id_proceso = NULL;
 
 t_dictionary* semaforos = NULL;
 
@@ -57,6 +56,8 @@ int32_t tamanio_bloque;
 int32_t cantidad_bloques;
 int32_t tam_punto_de_montaje;
 
+int32_t id_proceso = 0;
+
 //Prototipos de funciones:
 void instalar_filesystem();
 void recuperar_datos();
@@ -69,6 +70,6 @@ void hilo_suscriptor_get();
 void suscribirse_broker();
 void salir (const char* mensaje);
 void inicializaciones_globales();
-void liberar_memoria (int32_t socket);
+void liberar_memoria ();
 
 #endif
