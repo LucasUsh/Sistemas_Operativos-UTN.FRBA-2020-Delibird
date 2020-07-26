@@ -28,10 +28,10 @@ int32_t main(void)
 		log_debug (logger_GC, "Hilo cola get creado correctamente.");
 
 
-	pthread_join(hilo_servidor_GC, NULL);
 	pthread_join(hilo_new,NULL);
 	pthread_join(hilo_catch,NULL);
 	pthread_join(hilo_get,NULL);
+	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria(socket);
 
