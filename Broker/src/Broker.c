@@ -9,7 +9,8 @@
  */
 
 #include "Broker.h"
-#include "pruebas.h"
+//#include "pruebas.h"
+#include "Particiones.h"
 #include "../../OurLibraries/Sockets/mensajes.h"
 
 int32_t id_mensaje_global = 0;
@@ -194,17 +195,14 @@ int32_t get_id(){
 
 void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
 	t_suscriptor * suscriptor;
-	t_suscripcion * suscripcion;
 	info_mensaje * mensaje;
 	t_list * mensajesAEnviar = NULL;
 	int32_t tamanio_estructura = 0;
 
-	suscripcion = deserializar_paquete_suscripcion(&socket_cliente);
+	//suscripcion = deserializar_paquete_suscripcion(&socket_cliente);
 
 	suscriptor = malloc(sizeof(t_suscriptor));
 	suscriptor->id = id_proceso;
-	suscriptor->ip = suscripcion->ip;
-	suscriptor->puerto = suscripcion->puerto;
 	suscriptor->op_code = operacion;
 	list_add(list_suscriptores, suscriptor);
 
@@ -234,12 +232,10 @@ void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t
 
 void recibirSuscripcionYaExistente(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
 	t_suscriptor * suscriptor;
-	t_suscripcion * suscripcion;
 	info_mensaje * mensaje;
 	t_list * mensajesAEnviar = NULL;
 	int32_t tamanio_estructura = 0;
 
-	suscripcion = deserializar_paquete_suscripcion(&socket_cliente);
 	//actualizar IP y PUERTO del id_proceso que ya estaba suscripto
 
 	mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
