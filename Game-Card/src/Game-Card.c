@@ -242,6 +242,7 @@ void hilo_suscriptor_new(){
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 	int32_t socket_broker_new = crear_conexion(ip_broker,puerto_broker);
+	t_New * new;
 
 	while(1){
 		if(socket_broker_new != 0){
@@ -253,19 +254,32 @@ void hilo_suscriptor_new(){
 
 
 					enviar_suscripcion(SUSCRIPCION_NEW, socket_broker_new);
-//					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-//						if(operacion == ACK){
-//							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-//							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-//						}
-//					}
-				}
-		}
+					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							printf("Suscripto a cola New\n");
+							printf("Esperando mensajes...\n");
+							while(1){
+								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+									if(operacion == NEW_POKEMON){
+										recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+										recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+										new = deserializar_paquete_new (&socket_broker_new);
+										printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
+												new->cant, new->posicion.X, new->posicion.Y);
+										enviar_ACK(0, socket_broker_new);
+										}
+									} else printf("Se cayo la conexion\n");
+							}
+					}else printf("Fallo la suscripcion, respondieron algo que no era un ACK\n");
+				}printf("Se cayo la conexion\n");
+			}printf("Fallo el ACK del handshake\n");
 		}else{
+			sleep(tiempo_reintento_conexion);
 			socket_broker_new = crear_conexion(ip_broker,puerto_broker);
+			}
 		}
-
-		sleep(tiempo_reintento_conexion);
 	}
 }
 

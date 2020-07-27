@@ -73,8 +73,7 @@ int32_t main(void) {
 							if(esCorrelativo(id_mensaje)){
 								mensaje->id_mensaje_correlativo = id_mensaje;
 							}
-							mensaje->process_id=id_proceso; //SE ACTUALIZA EN LA LISTA?
-							//obtenerMensaje(mensaje->id_mensaje)
+							mensaje->process_id=id_proceso;
 
 							//CONFIRMAR RECEPCION DEL MENSAJE
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
@@ -163,7 +162,6 @@ int32_t main(void) {
 				}else printf("El proceso no se identifico \n");
 			}
 			else printf("Fallo al recibir codigo de operacion = -1\n");
-			liberar_conexion(socket_cliente);
 		}else {
 			printf("Fallo al recibir/aceptar al cliente\n");
 			liberar_conexion(socket_cliente);
@@ -186,7 +184,11 @@ int32_t get_id(){
 	return id_mensaje_global;
 }
 
-void manejoSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
+void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t operacion = estructura_suscriptor->operacion;
+
 	t_suscriptor * suscriptor;
 	info_mensaje * mensaje;
 	t_list * mensajesAEnviar = NULL;
@@ -203,12 +205,12 @@ void manejoSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t opera
 		list_add(list_suscriptores, suscriptor);
 
 	}
+	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
 		//chequear mensajes nuevos filtrados por operacion. Agregar semaforo?
 		mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
 		if(mensajesAEnviar->elements_count > 0){
-			enviar_ACK(0, socket_cliente);
 			for(int i=0; i<mensajesAEnviar->elements_count; i++){
 					mensaje = list_get(mensajesAEnviar, i);
 					enviarMensaje(operacion, mensaje, socket_cliente);

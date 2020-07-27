@@ -76,7 +76,7 @@ char * LOG_FILE;
 
 
 int32_t get_id();
-void manejoSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
+void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);
