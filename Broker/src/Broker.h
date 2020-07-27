@@ -37,6 +37,12 @@ typedef struct {
 	int32_t id;
 } t_suscriptor;
 
+typedef struct {
+	int32_t socket_cliente;
+	int32_t operacion;
+	int32_t id_proceso;
+} t_estructura_hilo_suscriptor;
+
 typedef enum {
 	BS,
 	PARTICIONES
@@ -70,8 +76,7 @@ char * LOG_FILE;
 
 
 int32_t get_id();
-void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
-void recibirSuscripcionYaExistente(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
+void manejoSuscripcion(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);
