@@ -73,7 +73,9 @@ int32_t main(void) {
 							if(esCorrelativo(id_mensaje)){
 								mensaje->id_mensaje_correlativo = id_mensaje;
 							}
-							mensaje->process_id=id_proceso;
+							mensaje->process_id=id_proceso; //SE ACTUALIZA EN LA LISTA?
+							//obtenerMensaje(mensaje->id_mensaje)
+
 							//CONFIRMAR RECEPCION DEL MENSAJE
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
