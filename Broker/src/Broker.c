@@ -187,21 +187,22 @@ int32_t get_id(){
 void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
 	int32_t id_proceso = estructura_suscriptor->id_proceso;
-	int32_t operacion = estructura_suscriptor->operacion;
+	int32_t suscripcion = estructura_suscriptor->operacion;
 
 	t_suscriptor * suscriptor;
 	info_mensaje * mensaje;
 	t_list * mensajesAEnviar = NULL;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje;
+	int32_t operacion;
 	bool fin = false;
 
-	if(procesoSuscriptoACola(operacion, id_proceso)){
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
 		suscriptor = obtenerSuscriptor(id_proceso);
 	} else{
 		suscriptor = malloc(sizeof(t_suscriptor));
 		suscriptor->id = id_proceso;
-		suscriptor->op_code = operacion;
+		suscriptor->op_code = suscripcion;
 		list_add(list_suscriptores, suscriptor);
 
 	}
@@ -209,11 +210,11 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 
 	while(fin == false){
 		//chequear mensajes nuevos filtrados por operacion. Agregar semaforo?
-		mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		if(mensajesAEnviar->elements_count > 0){
 			for(int i=0; i<mensajesAEnviar->elements_count; i++){
 					mensaje = list_get(mensajesAEnviar, i);
-					enviarMensaje(operacion, mensaje, socket_cliente);
+					enviarMensaje(suscripcion, mensaje, socket_cliente);
 					mensaje = obtenerMensaje(mensaje->id_mensaje);
 					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
 					//esperar ACK:
@@ -673,6 +674,7 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	}
 	//Obtenemos los info_mensaje de los mensajes a enviar
 	for(int i=0; i<mensajesCacheados->elements_count; i++){
+		mensajeCacheado = list_get(mensajesCacheados, i);
 		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
 		list_add(mensajesAEnviar, mensaje);
 	}

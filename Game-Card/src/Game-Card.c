@@ -243,6 +243,7 @@ void hilo_suscriptor_new(){
 	int32_t id_mensaje=0;
 	int32_t socket_broker_new = crear_conexion(ip_broker,puerto_broker);
 	t_New * new;
+	bool fin = false;
 
 	while(1){
 		if(socket_broker_new != 0){
@@ -260,7 +261,7 @@ void hilo_suscriptor_new(){
 							recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							printf("Suscripto a cola New\n");
 							printf("Esperando mensajes...\n");
-							while(1){
+							while(fin == false){
 								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 									if(operacion == NEW_POKEMON){
 										recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -270,7 +271,10 @@ void hilo_suscriptor_new(){
 												new->cant, new->posicion.X, new->posicion.Y);
 										enviar_ACK(0, socket_broker_new);
 										}
-									} else printf("Se cayo la conexion\n");
+									} else {
+										printf("Se cayo la conexion\n");
+										fin = true;
+										}
 							}
 					}else printf("Fallo la suscripcion, respondieron algo que no era un ACK\n");
 				}printf("Se cayo la conexion\n");
