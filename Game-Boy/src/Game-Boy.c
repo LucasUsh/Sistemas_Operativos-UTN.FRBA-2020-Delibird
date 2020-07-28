@@ -168,7 +168,42 @@ int32_t main(int32_t argc, char *argv[])
 			finalizar(logger, config, socket);
 			return 0;
 		}
-		//Obtener los mensajes de una cola
+
+		enviar_handshake(1, socket);
+		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(operacion == ACK){
+				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+				if(string_contains(argv[2], "NEW_POKEMON")){
+					t_New* new = NULL;
+					log_info(logger,"Suscribo a NEW POKEMON");
+					enviar_suscripcion(SUSCRIPCION_NEW, socket);
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+							while(1){
+								//por un tiempo determinado
+								if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+									recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+									recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+									new = deserializar_paquete_new (&socket);
+									enviar_ACK(0, socket);
+
+									log_info (logger, "Paquete deserializado con los siguientes datos:");
+									log_info (logger, "Pokemon: %s, tamanio cadena: %d", new->pokemon.nombre, new->pokemon.size_Nombre);
+									log_info (logger, "Posicion: (%d, %d)", new->posicion.X, new->posicion.Y);
+									log_info (logger, "Cantidad: %d", new->cant);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	finalizar(logger, config, socket);
