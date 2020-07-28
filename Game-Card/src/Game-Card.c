@@ -17,15 +17,15 @@ int32_t main(void)
 */
 
 	pthread_t hilo_new;
-	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor_new, NULL) == 0)
+	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_NEW) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
 
 	pthread_t hilo_catch;
-	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor_catch, NULL) == 0)
+	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_CATCH) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
 	pthread_t hilo_get;
-	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor_get, NULL) == 0)
+	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_GET) == 0)
 		log_debug (logger_GC, "Hilo cola get creado correctamente.");
 
 
@@ -187,7 +187,6 @@ void crear_servidor_GC() {
 
 void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 	pthread_t hilo;
-	log_debug (logger_GC, "Código de operación %d", codigo_operacion);
 
 	switch (codigo_operacion) {
 
@@ -197,10 +196,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			log_info (logger_GC, "Paquete deserializado con los siguientes datos:");
-			log_debug (logger_GC, "Pokemon: %s, tamanio cadena: %d", new->pokemon.nombre, new->pokemon.size_Nombre);
-			log_debug (logger_GC, "Posicion: (%d, %d)", new->posicion.X, new->posicion.Y);
-			log_debug (logger_GC, "Cantidad: %d", new->cant);
+			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
 			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0) {
 				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
@@ -215,8 +211,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			catch = deserializar_paquete_catch (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			log_debug(logger_GC, "Nombre: %s", catch->pokemon.nombre);
-			log_debug(logger_GC, "Posicion: x %d, y %d", catch->posicion.X, catch->posicion.Y);
+			log_debug(logger_GC, "Nombre: %s, Posicion: x %d, y %d", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
 
 			funcion_catch_pokemon(catch);
 
@@ -239,7 +234,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 }
 
 
-void hilo_suscriptor_new(){
+void hilo_suscriptor(op_code code){
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
@@ -255,22 +250,21 @@ void hilo_suscriptor_new(){
 					recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
-					enviar_suscripcion(SUSCRIPCION_NEW, socket_broker_new);
+					enviar_suscripcion(code, socket_broker_new);
 					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						if(operacion == ACK){
 							recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							printf("Suscripto a cola New\n");
-							printf("Esperando mensajes...\n");
 
 							while(fin == false){
 								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 									recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+									log_debug(logger_GC, "ID de Mensaje: %d", id_mensaje);
 									responder_mensaje(socket_broker_new, operacion);
 
 									} else {
-										printf("Se cayo la conexion\n");
+										log_debug(logger_GC, "Se cayo la conexion");
 										fin = true;
 										}
 							}
