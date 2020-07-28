@@ -232,7 +232,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						fin = true;
 						break;
 					}
-			} list_destroy(mensajesAEnviar);
+			}
 		}
 		//si hay, se envia y espera ACK; si el recv es -1 se cayo el suscriptor asi que libero conexion
 	}
@@ -633,7 +633,6 @@ void hacerDump(){
 t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	info_mensaje * mensaje;
 	t_particion * mensajeCacheado;
-	t_suscriptor * suscriptor;
 	t_list* mensajesAEnviar=list_create();
 	mensajesAEnviar->elements_count=0;
 	op_code tipoMensajeABuscar;
@@ -663,23 +662,28 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 
 	for(int i=0; i<mensajesCacheados->elements_count; i++){
 		mensajeCacheado = list_get(mensajesCacheados, i);
-		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje); // obtenemos el info_mensaje de list_mensajes
-
-		for(int j=0; j<mensaje->suscriptoresQueRecibieron->elements_count; j++){
-			suscriptor = list_get(mensaje->suscriptoresQueRecibieron, j);
-			if(suscriptor->id == id_proceso){
-				list_remove(mensajesCacheados, i);
-			}
+		if(!recibioMensaje(id_proceso, mensajeCacheado->id_mensaje)){
+			mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
+			list_add(mensajesAEnviar, mensaje);
 		}
-	}
-	//Obtenemos los info_mensaje de los mensajes a enviar
-	for(int i=0; i<mensajesCacheados->elements_count; i++){
-		mensajeCacheado = list_get(mensajesCacheados, i);
-		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
-		list_add(mensajesAEnviar, mensaje);
 	}
 	list_destroy(mensajesCacheados);
 	return mensajesAEnviar;
+}
+
+bool recibioMensaje(int32_t id_proceso, int32_t id_mensaje){
+	info_mensaje * mensaje;
+	t_suscriptor * suscriptor;
+	mensaje = obtenerMensaje(id_mensaje); // obtenemos el info_mensaje de list_mensajes
+
+	for(int j=0; j<mensaje->suscriptoresQueRecibieron->elements_count; j++){
+		suscriptor = list_get(mensaje->suscriptoresQueRecibieron, j);
+
+		if(suscriptor->id == id_proceso){
+			return true;
+		}
+	}
+	return false;
 }
 
 bool mensajeCacheadoDeOperacion(t_particion * particion, op_code operacion){

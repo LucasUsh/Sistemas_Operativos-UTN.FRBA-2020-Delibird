@@ -178,17 +178,8 @@ void crear_servidor_GC() {
 
 }
 
-void responder_mensaje(int32_t* socket_cliente) {
-
-	int32_t codigo_operacion = 0;
-	int32_t tamanio_estructura = 0;
-	int32_t id_mensaje = 0;
-
-	if(recv(*socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
-			codigo_operacion = -1;
-	recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-	recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
+void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
+	pthread_t hilo;
 	log_debug (logger_GC, "Código de operación %d", codigo_operacion);
 
 	switch (codigo_operacion) {
@@ -196,22 +187,25 @@ void responder_mensaje(int32_t* socket_cliente) {
 		case NEW_POKEMON:
 			;
 			t_New* new = NULL;
-			new = deserializar_paquete_new (socket_cliente);
-			enviar_ACK(0, *socket_cliente);
+			new = deserializar_paquete_new (&socket_cliente);
+			enviar_ACK(0, socket_cliente);
 
 			log_debug (logger_GC, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
 			log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
 			log_debug (logger_GC, "Cantidad: %d", new->cant);
 
-			funcion_new_pokemon(new);
+			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0){
+				printf("Creado el hilo de funcion_new_pokemon\n");
+			}
+			pthread_detach(hilo);
 
 			break;
 
 		case CATCH_POKEMON:
 			;
 			t_Catch* catch = NULL;
-			catch = deserializar_paquete_catch (socket_cliente);
-			enviar_ACK(0, *socket_cliente);
+			catch = deserializar_paquete_catch (&socket_cliente);
+			enviar_ACK(0, socket_cliente);
 
 			log_debug(logger_GC, "Nombre: %s", catch->pokemon.nombre);
 			log_debug(logger_GC, "Posicion: x %d, y %d", catch->posicion.X, catch->posicion.Y);
@@ -223,8 +217,8 @@ void responder_mensaje(int32_t* socket_cliente) {
 		case GET_POKEMON:
 			;
 			t_Get* get = NULL;
-			get = deserializar_paquete_get (socket_cliente);
-			enviar_ACK(0, *socket_cliente);
+			get = deserializar_paquete_get (&socket_cliente);
+			enviar_ACK(0, socket_cliente);
 
 			log_debug(logger_GC, "Nombre: %s", get->pokemon.nombre);
 
@@ -242,7 +236,6 @@ void hilo_suscriptor_new(){
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 	int32_t socket_broker_new = crear_conexion(ip_broker,puerto_broker);
-	t_New * new;
 	bool fin = false;
 
 	while(1){
@@ -261,24 +254,21 @@ void hilo_suscriptor_new(){
 							recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							printf("Suscripto a cola New\n");
 							printf("Esperando mensajes...\n");
+
 							while(fin == false){
 								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-									if(operacion == NEW_POKEMON){
-										recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-										recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-										new = deserializar_paquete_new (&socket_broker_new);
-										printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
-												new->cant, new->posicion.X, new->posicion.Y);
-										enviar_ACK(0, socket_broker_new);
-										}
+									recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+									responder_mensaje(socket_broker_new, operacion);
+
 									} else {
 										printf("Se cayo la conexion\n");
 										fin = true;
 										}
 							}
 					}else printf("Fallo la suscripcion, respondieron algo que no era un ACK\n");
-				}printf("Se cayo la conexion\n");
-			}printf("Fallo el ACK del handshake\n");
+				}else printf("Se cayo la conexion\n");
+			}else printf("Fallo el ACK del handshake\n");
 		}else{
 			sleep(tiempo_reintento_conexion);
 			socket_broker_new = crear_conexion(ip_broker,puerto_broker);

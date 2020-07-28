@@ -88,6 +88,8 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 bool esCorrelativo(int32_t id_mensaje);
 void enviarMensajeNew(t_New * new, int32_t id_mensaje, int32_t socket_cliente);
 
+bool recibioMensaje(int32_t id_proceso, int32_t id_mensaje);
+
 void iniciarBroker();
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
