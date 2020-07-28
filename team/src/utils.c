@@ -240,6 +240,72 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 	return entrenador_cercano;
 }
 
+
+bool alguien_yendo(t_pokemon_team* pokemon){
+
+	for(int i = 0; i < entrenadores->elements_count; i++){
+		t_entrenador* e = list_get(entrenadores, i);
+
+		if(e->pokemon_destino != NULL &&
+		   e->pokemon_destino->nombre == pokemon->nombre &&
+		   e->pokemon_destino->posicion.X == pokemon->posicion.X &&
+	       e->pokemon_destino->posicion.Y == pokemon->posicion.Y) return true;
+	}
+
+	return false;
+}
+
+int get_cantidad_entrenadores_yendo(char* pokemon){
+
+	bool _yendo(void* entrenador){
+		t_entrenador* e = (t_entrenador*)entrenador;
+		return e->pokemon_destino != NULL &&
+				e->pokemon_destino->nombre == pokemon;
+	}
+
+	return list_filter(entrenadores, _yendo)->elements_count;
+}
+
+
+bool pokemon_necesario(t_pokemon_team* pokemon){
+
+	if(alguien_yendo(pokemon)) return false;
+
+	t_list* pokemones_capturados = get_pokemones_capturados_sumarizados_global(entrenadores);
+	int cantidad_capturados = get_cantidad_by_nombre_pokemon(pokemon->nombre, pokemones_capturados);
+	int necesito_capturar = get_cantidad_by_nombre_pokemon(pokemon->nombre, objetivo_global);
+	int estan_yendo_a_buscar = get_cantidad_entrenadores_yendo(pokemon->nombre);
+
+	return (cantidad_capturados + estan_yendo_a_buscar) < necesito_capturar;
+}
+
+t_pokemon_team* get_pokemon_necesario_mas_cercano(t_list* pokemones_ubicados, t_posicion posicion_entrenador){
+
+	t_pokemon_team* pokemon_cercano = malloc(sizeof(t_pokemon_team));
+	int32_t distancia_mas_chica = -1;
+
+	for(int i = 0; i < pokemones_ubicados->elements_count; i++){
+
+		t_pokemon_team* pokemon = list_get(pokemones_ubicados, i);
+
+		if(pokemon_necesario(pokemon)){
+			int32_t distancia_pokemon = get_distancia_entre_puntos(posicion_entrenador, pokemon->posicion);
+
+			if(distancia_mas_chica == -1){
+				distancia_mas_chica = distancia_pokemon;
+				pokemon_cercano= pokemon;
+			} else if (distancia_pokemon < distancia_mas_chica) {
+				distancia_mas_chica = distancia_pokemon;
+				pokemon_cercano = pokemon;
+			}
+		}
+	}
+
+	if(distancia_mas_chica == -1) return NULL; // no hay pokemones ubicados
+
+	return pokemon_cercano;
+}
+
 t_list* filtrar_localized_repetidos(t_list* mensajes_localized){
 
 	//								**************************************
@@ -391,3 +457,12 @@ bool cumplio_objetivo(t_entrenador* entrenador){
 }
 
 
+t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
+	int32_t nuevaPosicionX = posicion.X + posX;
+	int32_t nuevaPosicionY = posicion.Y + posY;
+
+	posicion.X = nuevaPosicionX;
+	posicion.Y = nuevaPosicionY;
+
+	return posicion;
+}

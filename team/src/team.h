@@ -88,6 +88,7 @@ char* IP_BROKER;
 char* PUERTO_BROKER;
 int32_t PROCESS_ID;
 t_list* objetivo_global;
+t_list* entrenadores;
 t_algoritmo algoritmo;
 
 

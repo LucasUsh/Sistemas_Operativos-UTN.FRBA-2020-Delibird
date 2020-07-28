@@ -39,5 +39,7 @@ bool appeared_valido(t_Appeared* mensaje, t_list* entrenadores, t_list* objetivo
 bool localized_valido(t_Localized* mensaje, int id, t_list* gets_recibidos, t_list* pokemones_recibidos, t_list* objetivo_global);
 int32_t conexion_broker();
 bool cumplio_objetivo(t_entrenador* entrenador);
+t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY);
+t_pokemon_team* get_pokemon_necesario_mas_cercano(t_list* pokemones_ubicados, t_posicion posicion_entrenador);
 
 #endif /* UTILS_H_ */
