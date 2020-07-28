@@ -163,17 +163,27 @@ void crear_servidor_GC() {
 
 	char* ip_gamecard = config_get_string_value(config_GC,"IP_GAMECARD");
 	char* puerto_gamecard = config_get_string_value(config_GC,"PUERTO_GAMECARD");
+	int32_t operacion=0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje=0;
 
 	int32_t socket_servidor_GC = crear_socket_escucha(ip_gamecard, puerto_gamecard);
 	int32_t socket_cliente_entrante;
 
+
     while(1) {
     	socket_cliente_entrante = recibir_cliente(socket_servidor_GC);
 
-    	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)
-    		log_debug (logger_GC, "Hilo para responder al cliente creado correctamente.");
+    	recv(socket_cliente_entrante, &operacion, sizeof(int32_t), MSG_WAITALL);
+		recv(socket_cliente_entrante, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+		recv(socket_cliente_entrante, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-    	pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
+		responder_mensaje(socket_cliente_entrante, operacion);
+
+//    	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)
+//    		log_debug (logger_GC, "Hilo para responder al cliente creado correctamente.");
+
+    	//pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
     }
 
 }
