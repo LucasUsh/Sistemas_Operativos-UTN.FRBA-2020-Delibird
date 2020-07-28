@@ -9,7 +9,7 @@
  */
 
 #include "Broker.h"
-#include "pruebas.h"
+#include "Particiones.h"
 #include "../../OurLibraries/Sockets/mensajes.h"
 
 int32_t id_mensaje_global = 0;
@@ -49,25 +49,21 @@ int32_t main(void) {
 					//ESPERA EL MENSAJE
 					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						switch(operacion){
-						//case SUSCRIPCION_NEW:
-							/*printf("new suscriptor \n");
-							liberar_conexion(socket_cliente);
-							break;*/
 						case SUSCRIPCION_APPEARED:
 						case SUSCRIPCION_GET:
 						case SUSCRIPCION_LOCALIZED:
 						case SUSCRIPCION_CATCH:
 						case SUSCRIPCION_CAUGHT:
 						case SUSCRIPCION_NEW:
-							if(procesoSuscriptoACola(operacion, id_proceso)){ // si es un proceso que ya se suscribio
-								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-								recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-								recibirSuscripcionYaExistente(socket_cliente, id_proceso, operacion);
-							} else{
-								recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-								recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-								recibirSuscripcionNueva(socket_cliente, id_proceso, operacion);
-								}
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							t_estructura_hilo_suscriptor estructura_suscriptor;
+							estructura_suscriptor.socket_cliente = socket_cliente;
+							estructura_suscriptor.operacion = operacion;
+							estructura_suscriptor.id_proceso = id_proceso;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcion, &estructura_suscriptor) == 0){
+							}else return -1;
+							pthread_detach(hilo);
 						break;
 						case NEW_POKEMON:
 							log_info(logger, "Llego un mensaje NEW_POKEMON \n");
@@ -78,14 +74,13 @@ int32_t main(void) {
 								mensaje->id_mensaje_correlativo = id_mensaje;
 							}
 							mensaje->process_id=id_proceso;
+
 							//CONFIRMAR RECEPCION DEL MENSAJE
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
+							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-								printf("Creado el hilo que maneja el mensaje New\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
-							//info_mensaje * mensaje;
-							//mensaje = obtenerMensaje(particion->codigo_operacion, particion->id_mensaje);
 							break;
 						case APPEARED_POKEMON:
 							log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
@@ -97,11 +92,10 @@ int32_t main(void) {
 							}
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
+							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-								printf("Creado el hilo que maneja el mensaje Appeared\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Appeared\n");
 							pthread_detach(hilo);
-							//enviar suscriptores
 							break;
 						case GET_POKEMON:
 							log_info(logger, "Llego un mensaje GET_POKEMON \n");
@@ -113,8 +107,8 @@ int32_t main(void) {
 							}
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
+							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-								printf("Creado el hilo que maneja el mensaje Get\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Get\n");
 							pthread_detach(hilo);
 							break;
@@ -128,8 +122,8 @@ int32_t main(void) {
 							}
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
+							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-								printf("Creado el hilo que maneja el mensaje Localized\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Localized\n");
 							pthread_detach(hilo);
 							break;
@@ -143,8 +137,8 @@ int32_t main(void) {
 							}
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
+							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-								printf("Creado el hilo que maneja el mensaje Catch\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Catch\n");
 							pthread_detach(hilo);
 							break;
@@ -158,8 +152,8 @@ int32_t main(void) {
 							}
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
+							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-								printf("Creado el hilo que maneja el mensaje Caught\n");
 							}else printf("Fallo al crear el hilo que maneja el mensaje Caught\n");
 							pthread_detach(hilo);
 							break;
@@ -168,17 +162,15 @@ int32_t main(void) {
 				}else printf("El proceso no se identifico \n");
 			}
 			else printf("Fallo al recibir codigo de operacion = -1\n");
-			liberar_conexion(socket_cliente);
 		}else {
 			printf("Fallo al recibir/aceptar al cliente\n");
 			liberar_conexion(socket_cliente);
-			sleep(2);
+			sleep(5);
 		}
 	}
 	if(socketEscucha == -1){
 		printf("Fallo al crear socket de escucha = -1\n");
 		sleep(2);
-		//return EXIT_FAILURE;
 	}
 
 	return EXIT_SUCCESS;
@@ -192,75 +184,58 @@ int32_t get_id(){
 	return id_mensaje_global;
 }
 
-void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
+void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t suscripcion = estructura_suscriptor->operacion;
+
 	t_suscriptor * suscriptor;
-	t_suscripcion * suscripcion;
 	info_mensaje * mensaje;
 	t_list * mensajesAEnviar = NULL;
 	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje;
+	int32_t operacion;
+	bool fin = false;
 
-	suscripcion = deserializar_paquete_suscripcion(&socket_cliente);
-
-	suscriptor = malloc(sizeof(t_suscriptor));
-	suscriptor->id = id_proceso;
-	suscriptor->ip = suscripcion->ip;
-	suscriptor->puerto = suscripcion->puerto;
-	suscriptor->op_code = operacion;
-	list_add(list_suscriptores, suscriptor);
-
-	mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
-	enviar_ACK(mensajesAEnviar->elements_count, socket_cliente);
-	//Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
-	for(int i=0; i<mensajesAEnviar->elements_count; i++){
-			mensaje = list_get(mensajesAEnviar, i);
-			enviarMensaje(operacion, mensaje, socket_cliente);
-			mensaje = obtenerMensaje(mensaje->id_mensaje);
-			list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
-			//esperar ACK:
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				if(operacion == ACK){
-					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
-					mensaje = obtenerMensaje(mensaje->id_mensaje);
-					list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
-					//APPEARED
-					// ENVIO APPEARED A TEAM
-					//
-				} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-			} else printf("Fallo al recibir codigo de operacion = -1\n");
-			//agregar suscriptor en info_mensaje.suscriptoresALosQueSeEnvio
-		}
-}
-
-void recibirSuscripcionYaExistente(int32_t socket_cliente, int32_t id_proceso, int32_t operacion){
-	t_suscriptor * suscriptor;
-	t_suscripcion * suscripcion;
-	info_mensaje * mensaje;
-	t_list * mensajesAEnviar = NULL;
-	int32_t tamanio_estructura = 0;
-
-	suscripcion = deserializar_paquete_suscripcion(&socket_cliente);
-	//actualizar IP y PUERTO del id_proceso que ya estaba suscripto
-
-	mensajesAEnviar = getMensajesAEnviar(operacion, id_proceso);
-	enviar_ACK(mensajesAEnviar->elements_count, socket_cliente); //Aca el suscriptor va a saber por el ID la cantidad de mensajes que Broker le va a enviar
-	for(int i = 0; i<mensajesAEnviar->elements_count; i++){
-		mensaje = list_get(mensajesAEnviar, i);
-		enviarMensaje(operacion, mensaje, socket_cliente);
-		mensaje = obtenerMensaje(mensaje->id_mensaje);
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
 		suscriptor = obtenerSuscriptor(id_proceso);
-		list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
-		//esperar ACK:
-		if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-			if(operacion == ACK){
-				recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
-				list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
-				//agregar suscriptor en suscriptoresQueRecibieron
-			} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-		} else printf("Fallo al recibir codigo de operacion = -1\n");
-	} list_destroy(mensajesAEnviar);
+	} else{
+		suscriptor = malloc(sizeof(t_suscriptor));
+		suscriptor->id = id_proceso;
+		suscriptor->op_code = suscripcion;
+		list_add(list_suscriptores, suscriptor);
 
+	}
+	enviar_ACK(0, socket_cliente);
+
+	while(fin == false){
+		//chequear mensajes nuevos filtrados por operacion. Agregar semaforo?
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		if(mensajesAEnviar->elements_count > 0){
+			for(int i=0; i<mensajesAEnviar->elements_count; i++){
+					mensaje = list_get(mensajesAEnviar, i);
+					enviarMensaje(suscripcion, mensaje, socket_cliente);
+					mensaje = obtenerMensaje(mensaje->id_mensaje);
+					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+					//esperar ACK:
+					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+						if(operacion == ACK){
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							mensaje = obtenerMensaje(mensaje->id_mensaje);
+							list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+					} else {
+						liberar_conexion(socket_cliente);
+						list_destroy(mensajesAEnviar);
+						printf("Fallo al recibir codigo de operacion = -1\n");
+						fin = true;
+						break;
+					}
+			}
+		}
+		//si hay, se envia y espera ACK; si el recv es -1 se cayo el suscriptor asi que libero conexion
+	}
 }
 
 void manejoMensaje(info_mensaje* mensaje){
@@ -274,9 +249,6 @@ void manejoMensaje(info_mensaje* mensaje){
 		break;
 		}
 	pthread_mutex_unlock(&mutex_guardar_en_memoria);
-	//pruebaMostrarEstadoMemoria();
-	//opcional: informar a todos los suscriptores (definir si esto se hace aca y se crea un hilo para esperar el ACK
-	// o se hace en otro hilo)
 }
 
 info_mensaje * recibirMensajeNew(int32_t socket_cliente){
@@ -661,7 +633,6 @@ void hacerDump(){
 t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	info_mensaje * mensaje;
 	t_particion * mensajeCacheado;
-	t_suscriptor * suscriptor;
 	t_list* mensajesAEnviar=list_create();
 	mensajesAEnviar->elements_count=0;
 	op_code tipoMensajeABuscar;
@@ -691,22 +662,28 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 
 	for(int i=0; i<mensajesCacheados->elements_count; i++){
 		mensajeCacheado = list_get(mensajesCacheados, i);
-		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje); // obtenemos el info_mensaje de list_mensajes
-
-		for(int j=0; j<mensaje->suscriptoresQueRecibieron->elements_count; j++){
-			suscriptor = list_get(mensaje->suscriptoresQueRecibieron, j);
-			if(suscriptor->id == id_proceso){
-				list_remove(mensajesCacheados, i);
-			}
+		if(!recibioMensaje(id_proceso, mensajeCacheado->id_mensaje)){
+			mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
+			list_add(mensajesAEnviar, mensaje);
 		}
-	}
-	//Obtenemos los info_mensaje de los mensajes a enviar
-	for(int i=0; i<mensajesCacheados->elements_count; i++){
-		mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
-		list_add(mensajesAEnviar, mensaje);
 	}
 	list_destroy(mensajesCacheados);
 	return mensajesAEnviar;
+}
+
+bool recibioMensaje(int32_t id_proceso, int32_t id_mensaje){
+	info_mensaje * mensaje;
+	t_suscriptor * suscriptor;
+	mensaje = obtenerMensaje(id_mensaje); // obtenemos el info_mensaje de list_mensajes
+
+	for(int j=0; j<mensaje->suscriptoresQueRecibieron->elements_count; j++){
+		suscriptor = list_get(mensaje->suscriptoresQueRecibieron, j);
+
+		if(suscriptor->id == id_proceso){
+			return true;
+		}
+	}
+	return false;
 }
 
 bool mensajeCacheadoDeOperacion(t_particion * particion, op_code operacion){

@@ -62,7 +62,7 @@ int32_t id_proceso = 0;
 void instalar_filesystem();
 void recuperar_datos();
 void crear_servidor_GC();
-void responder_mensaje(int32_t* socket_cliente);
+void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion);
 void conexionBroker(int32_t *socket);
 void hilo_suscriptor_new();
 void hilo_suscriptor_catch();

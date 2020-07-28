@@ -35,9 +35,13 @@ typedef struct {
 typedef struct {
 	op_code op_code;
 	int32_t id;
-	char * ip;
-	char * puerto;
 } t_suscriptor;
+
+typedef struct {
+	int32_t socket_cliente;
+	int32_t operacion;
+	int32_t id_proceso;
+} t_estructura_hilo_suscriptor;
 
 typedef enum {
 	BS,
@@ -72,8 +76,7 @@ char * LOG_FILE;
 
 
 int32_t get_id();
-void recibirSuscripcionNueva(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
-void recibirSuscripcionYaExistente(int32_t socket_cliente, int32_t id_proceso, int32_t operacion);
+void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor);
 void manejoMensaje(info_mensaje* mensaje);
 info_mensaje * recibirMensajeNew(int32_t socket_cliente);
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente);
@@ -84,6 +87,8 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente);
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente);
 bool esCorrelativo(int32_t id_mensaje);
 void enviarMensajeNew(t_New * new, int32_t id_mensaje, int32_t socket_cliente);
+
+bool recibioMensaje(int32_t id_proceso, int32_t id_mensaje);
 
 void iniciarBroker();
 t_log* iniciar_logger(void);

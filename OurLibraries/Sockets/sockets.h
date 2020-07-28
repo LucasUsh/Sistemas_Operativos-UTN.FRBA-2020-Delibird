@@ -55,12 +55,6 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
-typedef struct {
-	char * ip;
-	int32_t size_ip;
-	char * puerto;
-	int32_t size_puerto;
-} t_suscripcion;
 
 int32_t crear_conexion(char* ip, char* puerto);
 void liberar_conexion(int32_t socket_cliente);
@@ -83,14 +77,9 @@ void enviar_handshake(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_handshake(t_paquete* paquete, int32_t* bytes);
 void enviar_suscripcion(op_code operacion, int32_t socket_cliente);
 void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes);
-t_suscripcion* deserializar_paquete_suscripcion (int32_t* socket_cliente);
 
 void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente);
 void * serializar_ACK(t_paquete* paquete, int32_t* bytes);
-void enviar_suscripcion_new(int32_t id_proceso, int32_t socket_cliente);
-void * serializar_suscripcion_new(t_paquete* paquete, int32_t* bytes);
-void enviar_suscripcion_catch(int32_t id_proceso, int32_t socket_cliente);
-void enviar_suscripcion_get(int32_t id_proceso, int32_t socket_cliente);
 
 
 #endif /* SOCKETS_H_ */
