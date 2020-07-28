@@ -181,11 +181,6 @@ void crear_servidor_GC() {
 		recv(socket_cliente_entrante, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 		responder_mensaje(socket_cliente_entrante, operacion);
-
-//    	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)
-//    		log_debug (logger_GC, "Hilo para responder al cliente creado correctamente.");
-
-    	//pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
     }
 }
 
@@ -198,19 +193,17 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 
 		case NEW_POKEMON:
 			;
-
 			t_New* new = NULL;
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			//enviar_ACK(0, *socket_cliente);
 			log_info (logger_GC, "Paquete deserializado con los siguientes datos:");
 			log_debug (logger_GC, "Pokemon: %s, tamanio cadena: %d", new->pokemon.nombre, new->pokemon.size_Nombre);
 			log_debug (logger_GC, "Posicion: (%d, %d)", new->posicion.X, new->posicion.Y);
 			log_debug (logger_GC, "Cantidad: %d", new->cant);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0){
-				printf("Creado el hilo de funcion_new_pokemon\n");
+			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0) {
+				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
 			}
 			pthread_detach(hilo);
 

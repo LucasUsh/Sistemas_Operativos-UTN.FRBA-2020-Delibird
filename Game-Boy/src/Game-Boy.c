@@ -13,6 +13,11 @@ int32_t main(int32_t argc, char *argv[])
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 
+	sem_t* envio_GC;
+	char ruta_envio_GC[] = "/dev/shm/sem.envio_GC";
+	if (!existe(ruta_envio_GC)) envio_GC = sem_open("/envio_GC", O_CREAT | O_EXCL, 0644, 1);
+	else envio_GC = sem_open ("/envio_GC", 0);
+
 	printf("GAME BOY iniciando ... \n");
 
 	// BROKER:
@@ -91,16 +96,19 @@ int32_t main(int32_t argc, char *argv[])
 	// GAME-CARD:
 
 	else if(string_contains(argv[1], "GAMECARD")) {
+		sem_wait(envio_GC);
 		socket = conexionGameCard();
 		if(socket == 0){
 			log_info(logger,"Error al conectar con Game-Card");
 			finalizar(logger, config, socket);
+			sem_post(envio_GC);
 			return 0;
 		}
 		log_info(logger,"Conectado al Game Card");
 		if(string_contains(argv[2], "NEW_POKEMON")){
 			log_info(logger,"Envio new_pokemon");
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], argv[7], socket);
+			sem_post(envio_GC);
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -112,6 +120,7 @@ int32_t main(int32_t argc, char *argv[])
 		if(string_contains(argv[2], "CATCH_POKEMON")){
 			log_info(logger,"Envio Catch Pokemon");
 			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
+			sem_post(envio_GC);
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -123,6 +132,7 @@ int32_t main(int32_t argc, char *argv[])
 		if(string_contains(argv[2], "GET_POKEMON")){
 			log_info(logger,"Envio Get Pokemon");
 			enviar_get_pokemon(argv[3], argv[4], socket);
+			sem_post(envio_GC);
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -180,6 +190,11 @@ void finalizar(t_log* logger, t_config* config, int32_t socket)
 	liberar_conexion(socket);
 	config_destroy(config);
 	log_destroy(logger);
+}
+
+int32_t existe (char* ruta) {
+	struct stat estado_archivo;
+	return (stat (ruta, &estado_archivo) == 0);
 }
 
 
