@@ -8,14 +8,14 @@ int32_t main(void)
 
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
-		log_debug (logger_GC, "Hilo servidor creado correctamente.");
+		log_info (logger_GC, "Hilo servidor creado correctamente.");
 
 /*	pthread_t hilo_conexion_broker;
 	int32_t socket;
 	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
 			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
 */
-
+/*
 	pthread_t hilo_new;
 	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor_new, NULL) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
@@ -32,7 +32,7 @@ int32_t main(void)
 	pthread_join(hilo_new,NULL);
 	pthread_join(hilo_catch,NULL);
 	pthread_join(hilo_get,NULL);
-	pthread_join(hilo_servidor_GC, NULL);
+*/	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();
 
@@ -118,6 +118,8 @@ void instalar_filesystem (){
 
 	// Inicializo semaforos:
 	sem_init (&bitmap, 0, 1);
+
+	log_info(logger_GC, "Listo.");
 }
 
 void recuperar_datos() {
@@ -170,8 +172,10 @@ void crear_servidor_GC() {
     while(1) {
     	socket_cliente_entrante = recibir_cliente(socket_servidor_GC);
 
+    	log_info (logger_GC, "Se conecto Game-Boy.");
+
     	if (pthread_create(&hilo_global_cliente_GC, NULL, (void*) responder_mensaje, &socket_cliente_entrante) == 0)
-    		log_debug (logger_GC, "Hilo para responder al cliente creado correctamente.");
+    		log_info (logger_GC, "Hilo para responder su solicitud creado correctamente.");
 
     	pthread_detach(hilo_global_cliente_GC); //lo desasocio aunque sigue su curso
     }
@@ -189,18 +193,17 @@ void responder_mensaje(int32_t* socket_cliente) {
 	recv(*socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 	recv(*socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-	log_debug (logger_GC, "Código de operación %d", codigo_operacion);
-
 	switch (codigo_operacion) {
 
 		case NEW_POKEMON:
 			;
-			t_New* new = NULL;
-			new = deserializar_paquete_new (socket_cliente);
-			enviar_ACK(0, *socket_cliente);
+			log_info (logger_GC, "Código de operación solicitado: NEW_POKEMON.");
+			t_New* new = deserializar_paquete_new (socket_cliente);
 
-			log_debug (logger_GC, "Nombre: %s, tamanio: %d \n", new->pokemon.nombre, new->pokemon.size_Nombre);
-			log_debug (logger_GC, "Posicion: (%d, %d) \n", new->posicion.X, new->posicion.Y);
+			//enviar_ACK(0, *socket_cliente);
+			log_info (logger_GC, "Paquete deserializado con los siguientes datos:");
+			log_debug (logger_GC, "Pokemon: %s, tamanio cadena: %d", new->pokemon.nombre, new->pokemon.size_Nombre);
+			log_debug (logger_GC, "Posicion: (%d, %d)", new->posicion.X, new->posicion.Y);
 			log_debug (logger_GC, "Cantidad: %d", new->cant);
 
 			funcion_new_pokemon(new);

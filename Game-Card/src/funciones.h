@@ -53,12 +53,13 @@ void actualizar_bitmap (void);
 int32_t cantidad_de_bloques (char* vector);
 void liberar_bloques (char** strings_bloques, int32_t cantidad, char* ruta_metadata, char* pokemon);
 char* apuntar_a_posicion (char* archivo_cargado, t_posicion posicion);
-char* agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_nueva);
+char* agregar_cantidad(char* archivo_cargado, char* apuntador, int32_t cantidad_nueva, t_posicion posicion);
 char* agregar_nueva_posicion(char* archivo_cargado, t_posicion posicion_nueva, int32_t cantidad_nueva);
 void volcar_archivo_cargado(char* archivo_cargado, char* ruta_metadata, char* pokemon);
 void metadata_agregar_bloque (char* ruta_metadata, char* pokemon, char* bloque);
 void metadata_actualizar_size (char* ruta_metadata, char* pokemon, int32_t size_nuevo);
 void metadata_volcar (char* ruta_metadata, char* pokemon, char* archivo_cargado);
+void liberar_strings(char** cadenas);
 
 extern void salir (const char* mensaje);
 
@@ -66,8 +67,8 @@ extern void salir (const char* mensaje);
 char* ruta_metadata_pokemon_teorica (t_pokemon pokemon);
 char* ruta_carpeta_pokemon_teorica (t_pokemon pokemon);
 FILE* abrir_para (char* ruta, char* modo);
-char* copiar_stream(FILE* archivo_lectura, char* ruta_archivo);
-char* copiar_linea(int32_t numero_de_linea, FILE* archivo_lectura, char* ruta_archivo);
+char* copiar_stream(FILE* archivo_lectura, char* ruta);
+char* metadata_copiar_linea_bloques(FILE* metadata, char* ruta_metadata);
 char* traer_bloques(char** bloques, int32_t cantidad);
 char* posicion_a_string (t_posicion posicion);
 char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamiento);
