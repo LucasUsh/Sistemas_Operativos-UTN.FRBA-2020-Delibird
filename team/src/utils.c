@@ -149,8 +149,8 @@ int32_t get_distancia_entre_puntos(t_posicion pos1, t_posicion pos2){
 	int32_t distX = pos2.X - pos1.X;
 	int32_t distY = pos2.Y - pos1.Y;
 
-	return sqrt(pow(distX,2) + pow(distY,2));
-
+	//return sqrt(pow(distX,2) + pow(distY,2));
+	return abs(distX) + abs(distY);
 }
 
 t_list* get_objetivo_global(t_list* entrenadores){
