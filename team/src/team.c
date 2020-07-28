@@ -18,10 +18,10 @@ int32_t socket_escucha_team;
 
 //colas de planificacion
 t_list* cola_ready;
+t_list* entrenadores;
 
 //semaforos
 sem_t s_cola_ready_con_items;
-t_list* semaforos_entrenadores;
 sem_t s_reconnect_broker;
 
 //colas de mensajes
@@ -91,12 +91,7 @@ void planificar_fifo(){
 
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
-	//printf("se va a planificar el entrenador %d\n", entrenador->id + 1);
-	//entrenador->estado = EXEC;
-
-	//printf("cantidad de semaforos: %d\n", semaforos_entrenadores->elements_count);
-	sem_t* semaforo_actual = list_get(semaforos_entrenadores, entrenador->id);
-	sem_post(semaforo_actual);
+	sem_post(entrenador->semaforo);
 
 
 /*
@@ -139,7 +134,7 @@ void planificar_fifo(){
 	return;
 }
 
-void planificar_rr(t_list* entrenadores, int32_t quantum){
+void planificar_rr(){
 
 	printf("planificando RR...\n");
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
@@ -211,7 +206,7 @@ void planificar_sjfcd(){
 	return;
 }
 
-void planificar(t_algoritmo algoritmo, t_list* entrenadores)
+void planificar()
 {
 
 	switch(algoritmo.algoritmo_code){
@@ -219,7 +214,7 @@ void planificar(t_algoritmo algoritmo, t_list* entrenadores)
 		planificar_fifo();
 		break;
 	case RR:
-		planificar_rr(entrenadores, algoritmo.quantum);
+		planificar_rr();
 		break;
 	case SJFSD:
 		planificar_sjfsd();
@@ -233,8 +228,8 @@ void planificar(t_algoritmo algoritmo, t_list* entrenadores)
 
 }
 
-void show_entrenadores(t_list* entrenadores){
-	sleep(15);
+void show_entrenadores(){
+
 	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
 	    printf("********************\n");
 
@@ -247,10 +242,11 @@ void show_entrenadores(t_list* entrenadores){
 	    for(int32_t i = 0; i < entrenadores->elements_count; i++){
 	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
 	    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
-	    			i + 1,
+	    			i,
 					entrenador_actual->posicion.X,
 					entrenador_actual->posicion.Y);
 	    	printf("|ESTADO %d\n", entrenador_actual->estado);
+	    	if(entrenador_actual->ocupado) printf("|ESTA OCUPADO\n");
 
 	    	printf("|POKEMONES:\n");
 	    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
@@ -415,13 +411,14 @@ void show_cola_ready(){
 	}
 }
 
-void hilo_planificador(void* l_entrenadores){
+void hilo_planificador(){
 
-	while(1){
+	while(1){ // while no haya otro en EXEC (semaforo?)
 		printf("esperando que llegue algo a la cola de ready....\n");
 		sem_wait(&s_cola_ready_con_items);
-		printf("arrancó el planificador: %s (%d)\n", algoritmo.algoritmo_string, algoritmo.algoritmo_code);
-		planificar(algoritmo, (t_list*)l_entrenadores);
+		printf("llegó algo a la cola de READY\n");
+		//printf("arrancó el planificador: %s (%d)\n", algoritmo.algoritmo_string, algoritmo.algoritmo_code);
+		planificar();
 	}
 }
 
@@ -515,13 +512,16 @@ void recibidor_mensajes_appeared(void* args){
 			entrenador_mas_cercano->estado = READY;
 
 			t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
+			pokemon_destino->planificable = false;
 			entrenador_mas_cercano->pokemon_destino = pokemon_destino;
+			entrenador_mas_cercano->ocupado = true;
 
 			list_add(cola_ready, entrenador_mas_cercano);
 			sem_post(&s_cola_ready_con_items);
+
 		} else {
 			t_pokemon_team* pokemon_ubicado = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
-
+			pokemon_ubicado->planificable = true;
 			list_add(pokemones_ubicados, pokemon_ubicado);
 		}
 	}
@@ -570,7 +570,7 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
 
 		if(socket_cliente != -1){
-			log_info(logger, "Se conecto el GAME BOY \n");
+			//log_info(logger, "Se conecto el GAME BOY \n");
 
 			int32_t codigo_operacion = 0;
 			int32_t tamanio_estructura = 0;
@@ -581,7 +581,7 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-			log_info(logger, "Código de operación %d\n", codigo_operacion);
+			//log_info(logger, "Código de operación %d\n", codigo_operacion);
 
 			switch(codigo_operacion){
 				case APPEARED_POKEMON:
@@ -600,7 +600,7 @@ void hilo_escuchador_mensajes(void* l_entrenadores){
 					args->respuesta = NULL;
 					pthread_t p_generador_mensajes_appeared;
 					pthread_create(&p_generador_mensajes_appeared, NULL, (void*)recibidor_mensajes_appeared, (void*)args);
-
+					pthread_detach(p_generador_mensajes_appeared);
 
 					break;
 
@@ -861,7 +861,7 @@ int inicializar_team(char* entrenador){
 	pokemones_ubicados = list_create();
 	mensajes_get_esperando_respuesta = list_create();
 	mensajes_catch_esperando_respuesta = list_create();
-	semaforos_entrenadores = list_create();
+	entrenadores = list_create();
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	srand(time(NULL));
 	config = config_create(get_config_path(entrenador));
@@ -883,18 +883,67 @@ bool esta_en_deadlock(t_entrenador* entrenador){
 			!puede_capturar_pokemones((t_entrenador*)entrenador);
 }
 
-void entrenador(t_entrenador* entrenador){
-	printf("hola soy un hilo de entrenador\n");
-	printf("este hilo maneja al entrenador %d\n", entrenador->id);
-	sem_t s_entrenador;
-	sem_init(&s_entrenador, 0, 0);
-	list_add_in_index(semaforos_entrenadores, entrenador->id, &s_entrenador);
-	printf("cantidad de semaforos en la lista: %d\n", semaforos_entrenadores->elements_count);
-	sem_wait(&s_entrenador);
-	//queda bloqueado hasta que pueda ejecutar
-	printf("soy el entrenador %d y estoy ejecutando \n", entrenador->id);
-	entrenador->estado = EXEC;
+void entrenador(void* index){
 
+	t_entrenador* entrenador = list_get(entrenadores, (int)index);
+
+	//NEW
+	printf("este hilo maneja al entrenador %d\n", entrenador->id);
+
+	while(!cumplio_objetivo(entrenador)){
+		sem_wait(entrenador->semaforo);
+
+		//mientras no llegue a destino ejecuto
+		while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X &&
+				entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
+			//EXEC
+
+			//AL MENOS EN FIFO ES ASI: poner logica del algoritmo de planificacion acá o que lo maneje el planificador?
+			printf("soy el entrenador %d y voy a EXEC\n", entrenador->id);
+			printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+			printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
+			entrenador->posicion = entrenador->pokemon_destino->posicion;
+			entrenador->estado = BLOCKED;
+			entrenador->ocupado=false;
+		}
+	}
+
+
+	/*
+	while(cumplio_objetivo(entrenador)){
+
+	}
+	//EXEC se mueve
+	while(entrenador.posicion != entrenador.posicionDestino){
+		sem_wait(s_entrenador);
+
+		movete(1);
+	}
+	*/
+
+	//catch
+
+	//exit
+
+
+
+}
+
+void hilo_escuchador(){
+	char* ip = config_get_string_value(config, "IP");
+	char* puerto = config_get_string_value(config, "PUERTO");
+
+	socket_escucha_team = crear_socket_escucha(ip, puerto);
+
+	log_info(logger, "Creado socket de escucha \n");
+
+	if(socket_escucha_team == -1){
+		log_error(logger, "Fallo al crear socket de escucha = -1\n");
+	} else {
+		  pthread_t p_escuchador;
+		  pthread_create(&p_escuchador, NULL, (void*)hilo_escuchador_mensajes, (void*)entrenadores);
+		  pthread_detach(p_escuchador);
+	}
 }
 
 void reconectar_broker(){
@@ -921,18 +970,15 @@ int32_t main(int32_t argc, char** argv){
 	log_info(logger, "inicializacion finalizada\n");
     cantidad_entrenadores = array_length(config_get_array_value(config, "POSICIONES_ENTRENADORES"));
 
-    t_list* entrenadores = get_entrenadores(config, cantidad_entrenadores);
+    entrenadores = get_entrenadores(config, cantidad_entrenadores);
 
     printf("En este team hay %d entrenadores\n", cantidad_entrenadores);
 
     objetivo_global = get_objetivo_global(entrenadores);
 
 
-    //show_entrenadores(algoritmo, entrenadores, objetivo_global);
-
-
-
-    //generar_y_enviar_get();
+/*
+    generar_y_enviar_get();
 
     pthread_t p_suscribirse_appeared;
    	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, (void*)entrenadores);
@@ -946,40 +992,26 @@ int32_t main(int32_t argc, char** argv){
 
 	pthread_t p_reconnect;
 	pthread_create(&p_reconnect, NULL, (void*)reconectar_broker, NULL);
-/*
- *
- *
-
-
- *
- *
-    pthread_t p_planificador;
-	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, (void*)entrenadores);
-
-
-    for(int x = 0; x < entrenadores->elements_count; x++){
-    	t_entrenador* entrenador_actual = list_get(entrenadores, x);
-    	pthread_t p_entrenador;
-		pthread_create(&p_entrenador, NULL, (void*)entrenador, (void*)entrenador_actual);
-		sleep(1); // ver como hacer para que se carguen en orden
-    }
 
  */
 
-    char* ip = config_get_string_value(config, "IP");
-	char* puerto = config_get_string_value(config, "PUERTO");
+    /* HILO PLANIFICADOR */
+    pthread_t p_planificador;
+	pthread_create(&p_planificador, NULL, (void*)hilo_planificador, NULL);
+	pthread_detach(p_planificador);
 
-	socket_escucha_team = crear_socket_escucha(ip, puerto);
+	/* UN HILO POR PROCESO */
+    for(int x = 0; x < cantidad_entrenadores; x++){
+    	pthread_t p_entrenador;
+		pthread_create(&p_entrenador, NULL, (void*)entrenador, (void*)x);
+		pthread_detach(p_entrenador);
+    }
 
-	log_info(logger, "Creado socket de escucha \n");
 
-	if(socket_escucha_team == -1){
-		log_error(logger, "Fallo al crear socket de escucha = -1\n");
-		return EXIT_FAILURE;
-	} else {
-		  pthread_t p_escuchador;
-		  pthread_create(&p_escuchador, NULL, (void*)hilo_escuchador_mensajes, (void*)entrenadores);
-	}
+    /* HILO ESCUCHADOR DE GAMEBOY */
+    pthread_t p_hilo_escuchador;
+	pthread_create(&p_hilo_escuchador, NULL, (void*)hilo_escuchador, NULL);
+	pthread_detach(p_hilo_escuchador);
 
 
 	while(1){}
