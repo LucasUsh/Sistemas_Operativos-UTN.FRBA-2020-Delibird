@@ -120,7 +120,8 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 	entrenador->objetivo = sumarizar_pokemones(get_objetivos(config, index));
 	entrenador->id = index;
 	entrenador->ocupado = false;
-
+	entrenador->semaforo = (sem_t*)malloc(sizeof(sem_t));
+	sem_init(entrenador->semaforo, 0, 0);
 	return entrenador;
 }
 

@@ -55,24 +55,30 @@ typedef struct {
 	t_respuesta* respuesta;
 }t_args_mensajes;
 
+
 typedef struct {
-	//uint32_t size_Nombre;
 	char * 	 	nombre;
-	int32_t 	cantidad; // creo que no deberia estar pero no quiero romper nada de Team asi que lo dejo :p
-	t_posicion posicion; //supongo que pasará lo mismo con esto jajajaja
+	int32_t 	cantidad;
+	t_posicion posicion;
+	bool planificable;
 }t_pokemon_team;
 
 typedef struct {
 	t_posicion posicion;
 	t_pokemon_team* pokemon_destino;
-	t_list* 	pokemones; //list of t_pokemon_team
-	t_list* 	objetivo; //list of t_pokemon
+	t_list* 	pokemones;
+	t_list* 	objetivo;
 	estado_code estado;
 	int32_t id;
 	bool ocupado;
+	sem_t* semaforo;
 
 } t_entrenador;
 
+typedef struct {
+	t_entrenador* entrenador;
+	sem_t semaforo_entrenador;
+}t_args_entrenador;
 
 t_log* logger;
 t_config* config;
@@ -83,5 +89,6 @@ char* PUERTO_BROKER;
 int32_t PROCESS_ID;
 t_list* objetivo_global;
 t_algoritmo algoritmo;
+
 
 #endif /* TEAM_H_ */
