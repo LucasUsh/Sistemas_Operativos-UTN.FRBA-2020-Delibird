@@ -74,8 +74,6 @@ int32_t main(void) {
 								mensaje->id_mensaje_correlativo = id_mensaje;
 							}
 							mensaje->process_id=id_proceso;
-
-							//CONFIRMAR RECEPCION DEL MENSAJE
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
@@ -165,7 +163,7 @@ int32_t main(void) {
 		}else {
 			printf("Fallo al recibir/aceptar al cliente\n");
 			liberar_conexion(socket_cliente);
-			sleep(5);
+			sleep(10);
 		}
 	}
 	if(socketEscucha == -1){
@@ -380,6 +378,11 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente){
 	int32_t id_mensaje;
 	t_New * new;
+	t_Appeared * app;
+	t_Get * get;
+	t_Localized * loc;
+	t_Catch * catch;
+	t_Caught * caught;
 
 	if(esCorrelativo(mensaje->id_mensaje_correlativo)){
 		id_mensaje = mensaje->id_mensaje_correlativo;
@@ -388,29 +391,32 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	switch(operacion){
 	case SUSCRIPCION_NEW:
 		new = mensaje->mensaje;
-		//enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* id_mensaje, int32_t socket_cliente)
-		//char* string_itoa(int number)
 		enviar_new_pokemon(new->pokemon.nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje New a un suscriptor\n");
 		break;
 	case SUSCRIPCION_APPEARED:
-		//enviar mensaje appeared
+		app = mensaje->mensaje;
+		enviar_appeared_pokemon(app->pokemon.nombre, string_itoa(app->posicion.X), string_itoa(app->posicion.Y), string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje Appeared a un suscriptor\n");
 		break;
 	case SUSCRIPCION_GET:
-		//enviar mensaje get
+		get = mensaje->mensaje;
+		enviar_get_pokemon(get->pokemon.nombre,string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje Get a un suscriptor\n");
 		break;
 	case SUSCRIPCION_LOCALIZED:
+		loc = mensaje->mensaje;
 		//enviar mensaje localized
-		log_info(logger, "Se envio un mensaje Localized a un suscriptor\n");
+		//log_info(logger, "Se envio un mensaje Localized a un suscriptor\n");
 		break;
 	case SUSCRIPCION_CATCH:
-		//enviar mensaje catch
+		catch = mensaje->mensaje;
+		enviar_catch_pokemon(catch->pokemon.nombre, string_itoa(catch->posicion.X), string_itoa(catch->posicion.Y), string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje Catch a un suscriptor\n");
 		break;
 	case SUSCRIPCION_CAUGHT:
-		//enviar mensaje caught
+		caught = mensaje->mensaje;
+		enviar_caught_pokemon(string_itoa(id_mensaje), string_itoa(caught->fueAtrapado), socket_cliente);
 		log_info(logger, "Se envio un mensaje Caught a un suscriptor\n");
 		break;
 	default:
