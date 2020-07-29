@@ -24,7 +24,9 @@ sem_t s_cola_ready_con_items;
 sem_t s_procesos_en_exec;
 sem_t s_reconnect_broker;
 sem_t s_posiciones_a_mover;
+sem_t s_control_planificador_rr;
 pthread_mutex_t mutex_cola_ready;
+
 
 //colas de mensajes
 t_list* pokemones_recibidos; // registro para saber si rechazar appeareds y localizeds
@@ -39,7 +41,7 @@ void replanificar_entrenador(t_entrenador* entrenador){
 		printf("No hay pokemones ubicados, me bloqueo\n");
 
 	} else {
-	entrenador->estado = READY;
+		entrenador->estado = READY;
 		pthread_mutex_lock(&mutex_cola_ready);
 		list_add(cola_ready, entrenador);
 		pthread_mutex_unlock(&mutex_cola_ready);
@@ -153,24 +155,47 @@ void planificar_fifo(){
 void planificar_rr(){
 
 	printf("planificando RR...\n");
+
+	// en RR, el proximo entrenador es el que esté primero en la cola de ready
+	pthread_mutex_lock(&mutex_cola_ready);
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
+	pthread_mutex_unlock(&mutex_cola_ready);
 	entrenador->estado = EXEC;
 	entrenador->ocupado = true;
 	int cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
 	int movimientos = cantidad_a_moverse < algoritmo.quantum ? cantidad_a_moverse : algoritmo.quantum;
+	printf("necesito moverme: %d\n", cantidad_a_moverse);
+	printf("quantum: %d\n", algoritmo.quantum);
+
+	printf("%d\n", (-1) * algoritmo.quantum);
+	sem_init(&s_control_planificador_rr, 0, ((-1) * algoritmo.quantum));
 
 	for(int i = 0; i < movimientos; i++){
-		sem_post(entrenador->semaforo);
+		printf("movs: %d\n", movimientos - (i + 1));
+		sem_post(&s_posiciones_a_mover);
 	}
 
-	//wait(s_entrenador_en_exec);
+	sem_post(entrenador->semaforo);
+	printf("SOY EL PLANIFICADOR Y BLOQUEO\n");
+	sem_wait(&s_control_planificador_rr); // se blockea hasta que el hilo entrenador le devuelva el control
+	printf("VOLVÍ EN FORMA DE FICHAS\n");
 
+	//mutex (lock) para que sea deterministico?
 	cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
+	//mutex (unlock) para que sea deterministico?
 
-	if(cantidad_a_moverse != 0){
-		entrenador->estado=READY;
-		list_add(cola_ready, entrenador);
+
+	if(cantidad_a_moverse == 0){
+		printf("el hilo llegó a destino, nothing else to do\n");
+		return; // se encarga el hilo entrenador de hacer lo suyo
+	} else { // el hilo se bloqueó y se encarga el planificador
+		entrenador->estado = READY;
+		pthread_mutex_lock(&mutex_cola_ready);
+		t_entrenador* entrenador = list_add(cola_ready, entrenador);
+		pthread_mutex_unlock(&mutex_cola_ready);
+		sem_post(&s_cola_ready_con_items);
 	}
+
 
 	/*
 	entrenador->estado = EXEC;
@@ -902,6 +927,7 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	sem_init(&s_posiciones_a_mover, 0, 0);
 	sem_init(&s_procesos_en_exec, 0, 1);
+
 	pthread_mutex_init(&mutex_cola_ready, NULL);
 	srand(time(NULL));
 	config = config_create(get_config_path(entrenador));
@@ -913,6 +939,8 @@ int inicializar_team(char* entrenador){
 	PROCESS_ID = atoi(config_get_string_value(config, "PROCESS_ID"));
 	RETARDO_CICLO_CPU = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
 	algoritmo = get_algoritmo(config);
+
+	sem_init(&s_control_planificador_rr, 0, algoritmo.quantum);
 
 	return 1;
 }
@@ -938,7 +966,7 @@ void entrenador(void* index){
 				entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
 			sem_wait(&s_posiciones_a_mover);//EXEC
 			sleep(2);
-			printf("soy el entrenador %d y voy a EXEC\n", entrenador->id);
+			printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
 			printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 			printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
 
@@ -953,9 +981,9 @@ void entrenador(void* index){
 				}
 
 				printf("**Avanzo 1 paso en X**\n");
+				sem_post(&s_control_planificador_rr);
 				continue;
 			}
-
 
 			if(posicion_final_Y != 0){
 				if(posicion_final_Y < 0){
@@ -964,10 +992,9 @@ void entrenador(void* index){
 					entrenador->posicion = avanzar(entrenador->posicion, 0, 1);
 				}
 				printf("**Avanzo 1 paso en Y**\n");
+				sem_post(&s_control_planificador_rr);
 				continue;
 			}
-
-
 
 		}
 
