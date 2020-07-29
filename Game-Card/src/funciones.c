@@ -76,18 +76,78 @@ void funcion_new_pokemon(t_New* new) {
 		free(cantidad_nueva);
 	}
 
+	// TODO: Enviar appeared
+
 	free (ruta_metadata);
 	free(new->pokemon.nombre);
 	free(new);
 }
 
 void funcion_catch_pokemon(t_Catch* catch) {
-	log_info(logger_GC, "Iniciando operacion Catch para%s...\n", catch->pokemon.nombre);
+	log_info(logger_GC, "Iniciando operacion CATCH para %s...\n", catch->pokemon.nombre);
 
+	char* ruta_metadata = ruta_metadata_pokemon_teorica (catch->pokemon);
 
+	if (existe (ruta_metadata)) {
 
+		sem_wait (dictionary_get(semaforos, catch->pokemon.nombre));
+		while (get_open (ruta_metadata) == 'Y') {
+			sem_post (dictionary_get(semaforos, catch->pokemon.nombre));
+			sleep (tiempo_reintento_operacion);
+			sem_wait (dictionary_get(semaforos, catch->pokemon.nombre));
+		}
+		set_open (ruta_metadata, 'Y');
+		FILE* metadata = abrir_para (ruta_metadata, "r");
+		char* linea_con_bloques = metadata_copiar_linea_bloques(metadata, ruta_metadata);
+		fclose(metadata);
+		sem_post (dictionary_get(semaforos, catch->pokemon.nombre));
 
+		char** linea_dividida = string_split(linea_con_bloques, "=");
 
+		int32_t cantidad = cantidad_de_bloques (linea_dividida[1]);
+
+		char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
+
+		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
+
+		liberar_bloques (strings_bloques, cantidad, ruta_metadata, catch->pokemon.nombre);
+
+		char* apuntador = apuntar_a_posicion(archivo_cargado, catch->posicion);
+
+		if (apuntador == NULL)
+			log_info (logger_GC, "No hay ningun %s en la posicion (%d, %d).", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
+
+		else {
+			archivo_cargado = quitar_pokemon(archivo_cargado, apuntador, catch->posicion);
+		}
+
+		volcar_archivo_cargado(archivo_cargado, ruta_metadata, catch->pokemon.nombre);
+
+		sleep(tiempo_retardo_operacion);
+
+		sem_wait (dictionary_get(semaforos, catch->pokemon.nombre));
+		set_open (ruta_metadata, 'N');
+		sem_post (dictionary_get(semaforos, catch->pokemon.nombre));
+
+		free(linea_con_bloques);
+		liberar_strings(linea_dividida);
+		string_iterate_lines(strings_bloques, (void*) free);
+		free(strings_bloques);
+
+		if (apuntador == NULL) {
+			// TODO: Enviar catch fallido
+		}
+		else {
+			// TODO: Enviar catch ok
+		}
+
+	}
+	else {
+		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", catch->pokemon.nombre);
+		// TODO: Enviar catch fallido
+	}
+
+	free (ruta_metadata);
 	free(catch->pokemon.nombre);
 	free(catch);
 }
@@ -344,6 +404,12 @@ char* agregar_nueva_posicion(char* archivo_cargado, t_posicion posicion_nueva, i
 
 void volcar_archivo_cargado(char* archivo_cargado, char* ruta_metadata, char* pokemon) {
 
+	if (archivo_cargado == NULL) {
+		log_info (logger_GC, "El archivo quedo vacio. Recursos liberados.");
+		metadata_actualizar_size (ruta_metadata, pokemon, 0);
+		return;
+	}
+
 	int32_t tam_total = strlen(archivo_cargado) + 1; // +1 por el EOF = #
 
 	archivo_cargado = realloc(archivo_cargado, tam_total + 1); // +1 para '\0'
@@ -476,6 +542,63 @@ void liberar_strings(char** cadenas) {
 	free(cadenas);
 }
 
+char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicion) {
+	int32_t i = 0;
+	int32_t tam = 0;
+	char* pos_cantidad_actual;
+
+	while (apuntador[i] != '=' && apuntador[i] != '\0') i++;
+	if(apuntador[i] == '\0') salir("Error en quitar_pokemon");
+
+	i++;
+	pos_cantidad_actual = apuntador + i;
+
+	while (apuntador[i] != '\n' && apuntador[i] != '\0') {tam++; i++;}
+
+	char* str_cantidad_actual = malloc (tam+1);
+	strncpy(str_cantidad_actual, pos_cantidad_actual, tam);
+	str_cantidad_actual[tam] = '\0';
+
+	int32_t cantidad_actual = (int32_t) atoi (str_cantidad_actual);
+	int32_t cantidad_total = cantidad_actual - 1;
+
+	char* str_cantidad_total = string_itoa(cantidad_total);
+	int32_t tam_nuevo = strlen(str_cantidad_total);
+
+	if (tam_nuevo == tam && cantidad_total != 0) strncpy(pos_cantidad_actual, str_cantidad_total, tam);
+
+	if (tam_nuevo != tam && cantidad_total != 0) {
+
+		memmove(apuntador + i - 1, apuntador + i, strlen(apuntador + i) + 1);
+		archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
+	}
+
+	else {
+		if(*(apuntador-1) == '\n') {
+			memmove(apuntador - 1, apuntador + i, strlen(apuntador + i) + 1);
+			archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
+		}
+		else {
+			if (apuntador + i == '\0') {
+				free (archivo_cargado);
+				archivo_cargado = NULL;
+			}
+			else {
+				memmove(apuntador, apuntador + i + 1, strlen(apuntador + i + 1) + 1);
+				archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
+			}
+		}
+	}
+
+	free(str_cantidad_actual);
+	free(str_cantidad_total);
+
+	log_info (logger_GC, "Se produjo un catch en la posicion (%d, %d).", posicion.X, posicion.Y);
+	log_info (logger_GC, "Se elimino un ejemplar de este pokemon");
+
+	return archivo_cargado;
+}
+
 /*¡¡¡Se debe liberar memoria luego de usarlas!!!*/
 char* ruta_carpeta_pokemon_teorica (t_pokemon pokemon) {
 
@@ -502,9 +625,11 @@ char* copiar_stream(FILE* archivo_lectura, char* ruta) {
 	struct stat estado_archivo;
 	stat(ruta, &estado_archivo);
 
-	char* stream = malloc(estado_archivo.st_size - 1);
+	char* stream = malloc(estado_archivo.st_size);
 
-	fread(stream, estado_archivo.st_size - 1, 1, archivo_lectura);
+	fread(stream, estado_archivo.st_size, 1, archivo_lectura);
+
+	if (stream[estado_archivo.st_size-1] == '#') stream = realloc(stream, estado_archivo.st_size-1);
 
 	return stream;
 }

@@ -60,6 +60,7 @@ void metadata_agregar_bloque (char* ruta_metadata, char* pokemon, char* bloque);
 void metadata_actualizar_size (char* ruta_metadata, char* pokemon, int32_t size_nuevo);
 void metadata_volcar (char* ruta_metadata, char* pokemon, char* archivo_cargado);
 void liberar_strings(char** cadenas);
+char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicion);
 
 extern void salir (const char* mensaje);
 
