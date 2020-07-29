@@ -26,7 +26,6 @@ t_particion* crearParticion(int inicio, int size, bool ocupada){
 	newParticion->posicion_final = inicio+size-1; //para contemplar el 0. Ej: si es de 128bytes arranca en 0 y va a 127
 	newParticion->size = size;
 	newParticion->id = get_id_particion();
-	//newParticion->ramaBuddy = ramaBuddy;
 	newParticion->codigo_operacion = -1;
 	newParticion->id_mensaje = 0;
 
@@ -34,7 +33,7 @@ t_particion* crearParticion(int inicio, int size, bool ocupada){
 }
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
-	return !particion->ocupada && sizeMensaje <= particion->size;
+	return !particion->ocupada && sizeMensaje <= particion->size && (particion->size-sizeMensaje) >= sizeMinParticion;
 }
 
 bool hayParticionesCandidatas(int32_t sizeMsg){
@@ -119,26 +118,61 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 	case FIFO:
 		particion = algoritmoFIFO();
 		posicion = obtenerPosicion(particion);
-		particion=consolidarParticionBS(particion, posicion);
 		particion->ocupada= false;
 		particion->codigo_operacion =-1;
 		particion->id=0;
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		particion=consolidarParticion(particion, posicion);
 		break;
 	case LRU:
 		particion = algoritmoLRU();
 		posicion = obtenerPosicion(particion);
-		particion=consolidarParticionBS(particion, posicion);
 		particion->ocupada= false;
 		particion->codigo_operacion =-1;
 		particion->id=0;
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		particion=consolidarParticion(particion, posicion);
+		break;
+	default:
+		printf("Ese algoritmo de liberacion no esta implementado\n");
+		return;
+	}
+}
+
+void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
+	t_particion * particion;
+	int posicion;
+
+	switch(algoritmoReemplazo){
+	case FIFO:
+		particion = algoritmoFIFO();
+		posicion = obtenerPosicion(particion);
+		particion->ocupada= false;
+		particion->codigo_operacion =-1;
+		particion->id= 0;
+		particion->id_mensaje =0;
+		list_remove(tabla_particiones, posicion);
+		list_add_in_index(tabla_particiones,posicion, particion);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		particion=consolidarParticionBS(particion, posicion);
+		break;
+	case LRU:
+		particion = algoritmoLRU();
+		posicion = obtenerPosicion(particion);
+		particion->ocupada= false;
+		particion->codigo_operacion =-1;
+		particion->id=0;
+		particion->id_mensaje =0;
+		list_remove(tabla_particiones, posicion);
+		list_add_in_index(tabla_particiones,posicion, particion);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		particion=consolidarParticionBS(particion, posicion);
 		break;
 	default:
 		printf("Ese algoritmo de liberacion no esta implementado\n");
@@ -176,8 +210,12 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
 					particion->posicion_inicial = particionAMirar->posicion_inicial;
 					particion->size += particionAMirar->size;
-					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d. "
-							"Posicion de inicio particion 2: %d \n", particion->posicion_inicial, particionAMirar->posicion_inicial);
+
+					list_remove(tabla_particiones, posicion-1);
+					list_add_in_index(tabla_particiones,posicion-1, particion);
+
+					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n Indice: %d \n"
+							"Posicion de inicio particion 2: %d \n Indice: %d \n", particion->posicion_inicial, posicion, particionAMirar->posicion_inicial, posicion-1);
 				}
 			}
 		}
@@ -189,8 +227,12 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
 					particion->posicion_final = particionAMirar->posicion_final;
 					particion->size += particionAMirar->size;
-					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d."
-							"Posicion de inicio particion 2: %d \n", particion->posicion_inicial, particionAMirar->posicion_inicial);
+
+					list_remove(tabla_particiones, posicion+1);
+					list_add_in_index(tabla_particiones,posicion+1, particion);
+
+					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n Indice: %d \n"
+							"Posicion de inicio particion 2: %d \n Indice: %d \n", particion->posicion_inicial, posicion, particionAMirar->posicion_inicial, posicion+1);
 				}
 			}
 		}
@@ -301,7 +343,9 @@ void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
 	particion->codigo_operacion = mensaje->op_code;
 	particion->ocupada = true;
 	particion->id_mensaje = mensaje->id_mensaje;
-	log_info(logger, "Se guardo un mensaje en la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
+	particion->id = get_id_particion();
+	int indice = obtenerPosicion(particion);
+	log_info(logger, "Se guardo un mensaje en la memoria. Indice: %d /n Posicion de inicio: %d \n", indice, particion->posicion_inicial);
 }
 
 int32_t tamanioMinimo(int32_t sizeMsg){
@@ -383,7 +427,7 @@ void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 				guardarMensaje(mensaje, particion);
 				buscar= false;
 				}else {
-					algoritmoLiberacion(algoritmoReemplazo);
+					algoritmoLiberacionBS(algoritmoReemplazo);
 					liberadas++;
 				}
 			}

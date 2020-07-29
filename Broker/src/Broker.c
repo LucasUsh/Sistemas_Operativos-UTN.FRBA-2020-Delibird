@@ -206,6 +206,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		list_add(list_suscriptores, suscriptor);
 
 	}
+	log_info(logger, "Proceso suscripto a cola %s\n", suscripcion);
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
@@ -215,6 +216,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 			for(int i=0; i<mensajesAEnviar->elements_count; i++){
 					mensaje = list_get(mensajesAEnviar, i);
 					enviarMensaje(suscripcion, mensaje, socket_cliente);
+					log_info(logger, "Se envio un mensaje a un suscriptor\n");
 					mensaje = obtenerMensaje(mensaje->id_mensaje);
 					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
 					//esperar ACK:
@@ -223,6 +225,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = obtenerMensaje(mensaje->id_mensaje);
+							log_info(logger, "Se recibio el ACK\n");
 							list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
 						} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 					} else {
@@ -234,7 +237,6 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 					}
 			}
 		}
-		//si hay, se envia y espera ACK; si el recv es -1 se cayo el suscriptor asi que libero conexion
 	}
 }
 
@@ -254,8 +256,8 @@ void manejoMensaje(info_mensaje* mensaje){
 info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	t_New* new = NULL;
 	new = deserializar_paquete_new (&socket_cliente);
-	printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
-			new->cant, new->posicion.X, new->posicion.Y);
+	/*printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
+			new->cant, new->posicion.X, new->posicion.Y);*/
 	info_mensaje * mensajeNew = malloc(sizeof(info_mensaje));
 	mensajeNew->op_code = NEW_POKEMON;
 	mensajeNew->id_mensaje = get_id();
@@ -275,8 +277,8 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	t_Appeared* app = NULL;
 	app = deserializar_paquete_appeared(&socket_cliente);
-	printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
-			app->posicion.X, app->posicion.Y);
+	/*printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
+			app->posicion.X, app->posicion.Y);*/
 	info_mensaje * mensajeAppeared = malloc(sizeof(info_mensaje));
 	mensajeAppeared->op_code = APPEARED_POKEMON;
 	mensajeAppeared->id_mensaje = get_id();
@@ -284,6 +286,10 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	mensajeAppeared->process_id = 1;
 	mensajeAppeared->mensaje = app;
 	mensajeAppeared->sizeMsg = getSizeMensajeAppeared(*app);
+	mensajeAppeared->suscriptoresALosQueSeEnvio = list_create();
+	mensajeAppeared->suscriptoresALosQueSeEnvio->elements_count=0;
+	mensajeAppeared->suscriptoresQueRecibieron = list_create();
+	mensajeAppeared->suscriptoresQueRecibieron->elements_count=0;
 	list_add(list_mensajes, mensajeAppeared);
 	return mensajeAppeared;
 }
@@ -291,7 +297,7 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	t_Get* get = NULL;
 	get = deserializar_paquete_get(&socket_cliente);
-	printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);
+	/*printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);*/
 	info_mensaje * mensajeGet = malloc(sizeof(info_mensaje));
 	mensajeGet->op_code = GET_POKEMON;
 	mensajeGet->id_mensaje = get_id();
@@ -299,6 +305,10 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	mensajeGet->process_id = 1;
 	mensajeGet->mensaje = get;
 	mensajeGet->sizeMsg = getSizeMensajeGet(*get);
+	mensajeGet->suscriptoresALosQueSeEnvio = list_create();
+	mensajeGet->suscriptoresALosQueSeEnvio->elements_count=0;
+	mensajeGet->suscriptoresQueRecibieron = list_create();
+	mensajeGet->suscriptoresQueRecibieron->elements_count=0;
 	list_add(list_mensajes, mensajeGet);
 	return mensajeGet;
 }
@@ -306,8 +316,8 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	t_Localized* localized = NULL;
 	localized = deserializar_paquete_localized(&socket_cliente);
-	printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
-			localized->pokemon.nombre);
+	/*printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
+			localized->pokemon.nombre);*/
 	int i;
 	for(i=0; i<localized->listaPosiciones->elements_count; i++){
 		t_posicion * posicion = list_get(localized->listaPosiciones, i);
@@ -320,6 +330,10 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	mensajeLocalized->process_id = 1;
 	mensajeLocalized->mensaje = localized;
 	mensajeLocalized->sizeMsg = getSizeMensajeLocalized(*localized);
+	mensajeLocalized->suscriptoresALosQueSeEnvio = list_create();
+	mensajeLocalized->suscriptoresALosQueSeEnvio->elements_count=0;
+	mensajeLocalized->suscriptoresQueRecibieron = list_create();
+	mensajeLocalized->suscriptoresQueRecibieron->elements_count=0;
 	list_add(list_mensajes, mensajeLocalized);
 	return mensajeLocalized;
 }
@@ -327,8 +341,8 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	t_Catch* catch = NULL;
 	catch = deserializar_paquete_catch(&socket_cliente);
-	printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
-			catch->posicion.X, catch->posicion.Y);
+	/*printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
+			catch->posicion.X, catch->posicion.Y);*/
 	info_mensaje * mensajeCatch = malloc(sizeof(info_mensaje));
 	mensajeCatch->op_code = CATCH_POKEMON;
 	mensajeCatch->id_mensaje = get_id();
@@ -336,6 +350,10 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	mensajeCatch->process_id = 1;
 	mensajeCatch->mensaje = catch;
 	mensajeCatch->sizeMsg = getSizeMensajeCatch(*catch);
+	mensajeCatch->suscriptoresALosQueSeEnvio = list_create();
+	mensajeCatch->suscriptoresALosQueSeEnvio->elements_count=0;
+	mensajeCatch->suscriptoresQueRecibieron = list_create();
+	mensajeCatch->suscriptoresQueRecibieron->elements_count=0;
 	list_add(list_mensajes, mensajeCatch);
 	return mensajeCatch;
 }
@@ -343,7 +361,7 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	t_Caught* caught = NULL;
 	caught = deserializar_paquete_caught(&socket_cliente);
-	printf("Llego un mensaje Caught Pokemon con los siguientes datos:  %d\n", caught->fueAtrapado);
+	/*printf("Llego un mensaje Caught Pokemon con los siguientes datos:  %d\n", caught->fueAtrapado);*/
 	info_mensaje * mensajeCaught = malloc(sizeof(info_mensaje));
 	mensajeCaught->op_code = CAUGHT_POKEMON;
 	mensajeCaught->id_mensaje = get_id();
@@ -351,6 +369,10 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	mensajeCaught->process_id = 1;
 	mensajeCaught->mensaje = caught;
 	mensajeCaught->sizeMsg = getSizeMensajeCaught(*caught);
+	mensajeCaught->suscriptoresALosQueSeEnvio = list_create();
+	mensajeCaught->suscriptoresALosQueSeEnvio->elements_count=0;
+	mensajeCaught->suscriptoresQueRecibieron = list_create();
+	mensajeCaught->suscriptoresQueRecibieron->elements_count=0;
 	list_add(list_mensajes, mensajeCaught);
 	return mensajeCaught;
 }
@@ -369,21 +391,27 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		//enviar_new_pokemon(char* pokemon, char* x, char* y, char* cantidad, char* id_mensaje, int32_t socket_cliente)
 		//char* string_itoa(int number)
 		enviar_new_pokemon(new->pokemon.nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
+		log_info(logger, "Se envio un mensaje New a un suscriptor\n");
 		break;
 	case SUSCRIPCION_APPEARED:
 		//enviar mensaje appeared
+		log_info(logger, "Se envio un mensaje Appeared a un suscriptor\n");
 		break;
 	case SUSCRIPCION_GET:
 		//enviar mensaje get
+		log_info(logger, "Se envio un mensaje Get a un suscriptor\n");
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		//enviar mensaje localized
+		log_info(logger, "Se envio un mensaje Localized a un suscriptor\n");
 		break;
 	case SUSCRIPCION_CATCH:
 		//enviar mensaje catch
+		log_info(logger, "Se envio un mensaje Catch a un suscriptor\n");
 		break;
 	case SUSCRIPCION_CAUGHT:
 		//enviar mensaje caught
+		log_info(logger, "Se envio un mensaje Caught a un suscriptor\n");
 		break;
 	default:
 		break;
