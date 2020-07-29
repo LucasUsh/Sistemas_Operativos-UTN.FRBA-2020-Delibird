@@ -573,11 +573,10 @@ void recibidor_mensajes_appeared(void* args){
 
 void recibidor_mensajes_caught(void* args){
 	t_args_mensajes* arg = (t_args_mensajes*)args;
-	t_list* l_entrenadores = arg->entrenadores;
 	t_Caught* mensaje = (t_Caught*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
-	t_entrenador* entrenador = list_get(l_entrenadores, respuesta->id_entrenador);
+	t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
 
 	printf("TRYING TO CATCH A %s \nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, entrenador->id);
 	printf("3...\n2... \n1... \n");
@@ -638,7 +637,6 @@ void hilo_recibidor_mensajes_gameboy(){
 							mensaje_appeared->posicion.Y);
 
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->entrenadores = entrenadores;
 					args->mensaje = mensaje_appeared;
 					args->respuesta = NULL;
 
@@ -664,7 +662,6 @@ void hilo_recibidor_mensajes_gameboy(){
 
 					if(respuesta_get != NULL){
 						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-						args->entrenadores =entrenadores;
 						args->mensaje = mensaje_localized;
 						args->respuesta = respuesta_get;
 
@@ -689,7 +686,6 @@ void hilo_recibidor_mensajes_gameboy(){
 					if(respuesta_catch != NULL){
 
 						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-						args->entrenadores = entrenadores;
 						args->mensaje = mensaje_localized;
 						args->respuesta = respuesta_catch;
 
@@ -758,7 +754,6 @@ void hilo_suscribirse_appeared(void* l_entrenadores){
 							mensaje_appeared->posicion.Y);
 
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->entrenadores = (t_list*)l_entrenadores;
 					args->mensaje = mensaje_appeared;
 					args->respuesta = NULL;
 
@@ -819,7 +814,6 @@ void hilo_suscribirse_caught(void* l_entrenadores){
 					if(respuesta_catch != NULL){
 
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->entrenadores = (t_list*)l_entrenadores;
 					args->mensaje = mensaje_caught;
 					args->respuesta = respuesta_catch;
 
@@ -880,7 +874,6 @@ void hilo_suscribirse_localized(void* l_entrenadores){
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->entrenadores = (t_list*)l_entrenadores;
 					args->mensaje = mensaje_localized;
 					args->respuesta = respuesta_get;
 
@@ -1009,30 +1002,7 @@ void entrenador(void* index){
 			entrenador->estado = BLOCKED;
 			entrenador->ocupado=true;
 		}
-
-
-
 	}
-
-
-	/*
-	while(cumplio_objetivo(entrenador)){
-
-	}
-	//EXEC se mueve
-	while(entrenador.posicion != entrenador.posicionDestino){
-		sem_wait(s_entrenador);
-
-		movete(1);
-	}
-	*/
-
-	//catch
-
-	//exit
-
-
-
 }
 
 
