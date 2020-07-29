@@ -33,7 +33,7 @@ t_particion* crearParticion(int inicio, int size, bool ocupada){
 }
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
-	return !particion->ocupada && sizeMensaje <= particion->size && (particion->size-sizeMensaje) >= sizeMinParticion;
+	return !particion->ocupada && sizeMensaje <= particion->size && ((particion->size-sizeMensaje) >= sizeMinParticion || (particion->size-sizeMensaje) == 0);
 }
 
 bool hayParticionesCandidatas(int32_t sizeMsg){
@@ -124,7 +124,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
 		particion=consolidarParticion(particion, posicion);
 		break;
 	case LRU:
@@ -136,7 +136,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
 		particion=consolidarParticion(particion, posicion);
 		break;
 	default:
@@ -159,7 +159,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
 		particion=consolidarParticionBS(particion, posicion);
 		break;
 	case LRU:
@@ -171,7 +171,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d /n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
 		particion=consolidarParticionBS(particion, posicion);
 		break;
 	default:
@@ -345,7 +345,7 @@ void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
 	particion->id_mensaje = mensaje->id_mensaje;
 	particion->id = get_id_particion();
 	int indice = obtenerPosicion(particion);
-	log_info(logger, "Se guardo un mensaje en la memoria. Indice: %d /n Posicion de inicio: %d \n", indice, particion->posicion_inicial);
+	log_info(logger, "Se guardo un mensaje en la memoria. Indice: %d \n Posicion de inicio: %d \n", indice, particion->posicion_inicial);
 }
 
 int32_t tamanioMinimo(int32_t sizeMsg){

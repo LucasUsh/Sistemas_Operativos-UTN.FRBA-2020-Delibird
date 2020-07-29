@@ -30,7 +30,6 @@ int32_t main(void) {
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
 
 		if(socket_cliente != -1){
-			log_info(logger, "Se conecto un proceso \n");
 
 			int32_t tamanio_estructura = 0;
 			int32_t id_mensaje=0;
@@ -44,6 +43,7 @@ int32_t main(void) {
 				if(operacion == HANDSHAKE){
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
+					log_info(logger, "Se conecto el proceso %d\n", id_proceso);
 					//ACK DEL HANDSHAKE
 					enviar_ACK(0, socket_cliente);
 					//ESPERA EL MENSAJE
@@ -548,7 +548,7 @@ int getMemoriaDisponible(){
 }
 
 int32_t getSizePokemon(t_pokemon pokemon){
-	return sizeof(typeof(pokemon.size_Nombre)) + sizeof(typeof(char)) * pokemon.size_Nombre;
+	return sizeof(typeof(pokemon.size_Nombre)) + sizeof(typeof(char)) * pokemon.size_Nombre -1; //-1 para restar el centinela
 }
 
 int32_t getSizeMensajeNew(t_New msgNew){
@@ -658,9 +658,10 @@ void hacerDump(){
 	int i;
 	for(i=0; i<tabla_particiones->elements_count; i++){
 		particion = list_get(tabla_particiones, i);
-		log_info(dump, "Particion %d: %p - %p.	[%d]	Size: %db	LRU: %f		COLA: %d		ID_MENSAJE: %f \n",
+		log_info(dump, "Particion %d: %p - %p.	[%d]	Size: %db	LRU: %d		COLA: %d		ID_MENSAJE: %d \n",
 				i, particion->posicion_inicial, particion->posicion_final, particion->ocupada, particion->size, particion->id,
 				particion->codigo_operacion, particion->id_mensaje);
+		//%06p
 	}
 }
 
