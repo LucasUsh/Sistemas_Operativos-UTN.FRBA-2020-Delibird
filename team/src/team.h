@@ -50,7 +50,6 @@ typedef struct {
 } t_respuesta;
 
 typedef struct {
-	t_list* entrenadores;
 	void* mensaje;
 	t_respuesta* respuesta;
 }t_args_mensajes;
