@@ -33,12 +33,19 @@ t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
 
 void replanificar_entrenador(t_entrenador* entrenador){
-	entrenador->estado = READY;
 	entrenador->pokemon_destino = get_pokemon_necesario_mas_cercano(pokemones_ubicados, entrenador->posicion);
-	pthread_mutex_lock(&mutex_cola_ready);
-	list_add(cola_ready, entrenador);
-	pthread_mutex_unlock(&mutex_cola_ready);
-	sem_post(&s_cola_ready_con_items);
+	if(entrenador->pokemon_destino == NULL){
+		entrenador->estado = BLOCKED;
+		printf("No hay pokemones ubicados, me bloqueo\n");
+
+	} else {
+	entrenador->estado = READY;
+		pthread_mutex_lock(&mutex_cola_ready);
+		list_add(cola_ready, entrenador);
+		pthread_mutex_unlock(&mutex_cola_ready);
+		sem_post(&s_cola_ready_con_items);
+	}
+
 }
 
 bool generar_y_enviar_catch(t_entrenador* entrenador){
