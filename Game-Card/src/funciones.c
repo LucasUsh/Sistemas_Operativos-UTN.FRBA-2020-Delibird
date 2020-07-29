@@ -77,16 +77,31 @@ void funcion_new_pokemon(t_New* new) {
 	}
 
 	free (ruta_metadata);
+	free(new->pokemon.nombre);
+	free(new);
 }
 
 void funcion_catch_pokemon(t_Catch* catch) {
 	log_info(logger_GC, "Iniciando operacion Catch para%s...\n", catch->pokemon.nombre);
 
+
+
+
+
+	free(catch->pokemon.nombre);
+	free(catch);
 }
 
 void funcion_get_pokemon(t_Get* get) {
 	log_info(logger_GC, "Iniciando operacion Get para%s...\n", get->pokemon.nombre);
 
+
+
+
+
+
+	free(get->pokemon.nombre);
+	free(get);
 }
 
 /****************************************************************************/

@@ -259,6 +259,9 @@ int32_t main(int32_t argc, char *argv[])
 		}
 	}
 
+	sem_close (envio_GC);
+	sem_close (envio_Broker);
+	sem_close (envio_Team);
 	finalizar(logger, config, socket);
 	return 0;
 }

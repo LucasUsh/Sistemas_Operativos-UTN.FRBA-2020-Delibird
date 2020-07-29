@@ -10,12 +10,6 @@ int32_t main(void)
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_info (logger_GC, "Hilo servidor creado correctamente.");
 
-/*	pthread_t hilo_conexion_broker;
-	int32_t socket;
-	if (pthread_create(&hilo_conexion_broker, NULL, (void*) &conexionBroker, &socket) == 0)
-			log_debug (logger_GC, "Hilo conexion broker creado correctamente.");
-*/
-
 	pthread_t hilo_new;
 	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_NEW) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
