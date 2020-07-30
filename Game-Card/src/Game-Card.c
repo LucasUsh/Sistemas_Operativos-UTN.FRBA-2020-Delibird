@@ -10,7 +10,7 @@ int32_t main(void)
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_info (logger_GC, "Hilo servidor creado correctamente.");
 
-/*	pthread_t hilo_new;
+	pthread_t hilo_new;
 	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_NEW) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
 
@@ -26,7 +26,7 @@ int32_t main(void)
 	pthread_join(hilo_new,NULL);
 	pthread_join(hilo_catch,NULL);
 	pthread_join(hilo_get,NULL);
-*/	pthread_join(hilo_servidor_GC, NULL);
+	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();
 
