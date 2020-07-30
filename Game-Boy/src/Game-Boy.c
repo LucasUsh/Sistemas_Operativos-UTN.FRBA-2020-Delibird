@@ -216,6 +216,12 @@ int32_t main(int32_t argc, char *argv[])
 			return 0;
 		}
 
+		sem_init(cronometro, 0, 1);
+
+		int32_t tiempo = (int32_t) atoi(argv[3]);
+
+		pthread_t hilo_temporizador;
+
 		enviar_handshake(1, socket);
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 			if(operacion == ACK){
@@ -235,8 +241,9 @@ int32_t main(int32_t argc, char *argv[])
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
+							pthread_create(&hilo_temporizador, NULL, (void*)cronometrar, (void*) &tiempo);
+
 							while(1){
-								//por un tiempo determinado
 								if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 									recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -251,7 +258,12 @@ int32_t main(int32_t argc, char *argv[])
 									log_info (logger, "Posicion: (%d, %d)", new->posicion.X, new->posicion.Y);
 									log_info (logger, "Cantidad: %d", new->cant);
 								}
+								sem_wait(cronometro);
+								if (!sigue_corriendo) break;
+								sem_post(cronometro);
 							}
+
+							sem_destroy(cronometro);
 						}
 					}
 				}
@@ -286,6 +298,13 @@ void finalizar(t_log* logger, t_config* config, int32_t socket)
 int32_t existe (char* ruta) {
 	struct stat estado_archivo;
 	return (stat (ruta, &estado_archivo) == 0);
+}
+
+void cronometrar(int32_t* tiempo) {
+	sleep(*tiempo);
+	sem_wait(cronometro);
+	sigue_corriendo = 0;
+	sem_post(cronometro);
 }
 
 

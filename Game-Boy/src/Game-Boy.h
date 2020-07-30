@@ -2,6 +2,7 @@
 #define SRC_GAME_BOY_H_
 
 #include<stdio.h>
+#include<string.h>
 #include<commons/string.h>
 #include<commons/log.h>
 #include <fcntl.h>
@@ -16,7 +17,12 @@
 
 void validar_Argc(t_log* logger, int32_t arg);
 void finalizar(t_log* logger, t_config* config, int32_t socket);
+void cronometrar (int32_t*);
 
 int32_t existe (char* nombre_pokemon);
+
+int32_t sigue_corriendo = 1;
+
+sem_t* cronometro;
 
 #endif
