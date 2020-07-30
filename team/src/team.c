@@ -169,22 +169,56 @@ void planificar_rr(){
 	return;
 }
 
-void planificar_sjfsd(){
+int get_index_entrenador_estimacion_mas_corta(){
 
-	pthread_mutex_lock(&mutex_cola_ready);
+	// FORMULA DE ESTIMACION: ESTn+1 = alpha * TEn + (1-alpha) * ESTn
 
-	t_list* lista_ordenada = list_create();
+	//TE: t ejec rafaga actual
+	//EST: estimado de la rafaga actual
+
+	double estimacion_mas_corta = -1;
+	t_entrenador* entrenador_mas_rapido=NULL;
+	int indice = 0;
 
 	for(int i = 0; i < cola_ready->elements_count; i++){
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+		int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
+		double EST = entrenador_actual->estimacion_anterior;
+		printf("estimacion entrenador: %d\n", entrenador_actual->id);
+		printf("| Rafaga real: %d\n", TE);
+		printf("| Estimada: %f\n", EST);
+		double EST_siguiente = algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
+		printf("| estimacion: %f\n", EST_siguiente);
+		printf("_______________\n");
 
+		if(estimacion_mas_corta == -1){
+			estimacion_mas_corta = EST_siguiente;
+			entrenador_mas_rapido = entrenador_actual;
+		} else if(EST_siguiente < estimacion_mas_corta) {
+			estimacion_mas_corta = EST_siguiente;
+			entrenador_mas_rapido= entrenador_actual;
+			indice = i;
+		}
 
 
 	}
 
-	t_entrenador* entrenador = list_remove(cola_ready, 0);
+	printf("el próximo va a ser el entrenador %d\n", entrenador_mas_rapido->id);
+	entrenador_mas_rapido->estimacion_anterior = estimacion_mas_corta;
+	return indice;
+
+
+
+}
+
+void planificar_sjfsd(){
+
+	pthread_mutex_lock(&mutex_cola_ready);
+	int i = get_index_entrenador_estimacion_mas_corta();
+	t_entrenador* entrenador = list_remove(cola_ready, i);
 	pthread_mutex_unlock(&mutex_cola_ready);
 
+	sem_post(entrenador->semaforo);
 	return;
 }
 
@@ -243,6 +277,7 @@ void ejecutar_fifo(t_entrenador* entrenador){
 				replanificar_entrenador(entrenador);
 			} else {
 				printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
+				show_entrenadores();
 			}
 		}
 
@@ -308,7 +343,7 @@ void ejecutar_rr(t_entrenador* entrenador){
 }
 
 void ejecutar_sjfsd(t_entrenador* entrenador){
-	return;
+	return ejecutar_fifo(entrenador);
 }
 
 void ejecutar_sjfcd(t_entrenador* entrenador){

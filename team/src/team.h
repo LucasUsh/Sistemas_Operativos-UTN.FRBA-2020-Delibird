@@ -41,6 +41,7 @@ typedef struct {
 	char* 	algoritmo_string;
 	int32_t 	quantum;
 	int32_t 	retardo;
+	double alpha;
 }t_algoritmo;
 
 typedef struct {
@@ -71,6 +72,7 @@ typedef struct {
 	int32_t id;
 	bool ocupado;
 	sem_t* semaforo;
+	int estimacion_anterior;
 
 } t_entrenador;
 

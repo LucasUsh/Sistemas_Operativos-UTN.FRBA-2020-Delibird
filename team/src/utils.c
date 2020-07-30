@@ -70,6 +70,11 @@ t_algoritmo get_algoritmo(t_config* config){
 	algoritmo.algoritmo_code = get_algoritmo_code(algoritmo_string);
 	algoritmo.retardo = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
 
+	char* stralpha= config_get_string_value(config, "ALPHA");
+	double alpha;
+	sscanf(stralpha, "%lf", &alpha);
+	algoritmo.alpha = alpha;
+
 
 	if(algoritmo.algoritmo_code == RR){
 		algoritmo.quantum = atoi(config_get_string_value(config, "QUANTUM"));
@@ -121,6 +126,8 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 	entrenador->id = index;
 	entrenador->ocupado = false;
 	entrenador->semaforo = (sem_t*)malloc(sizeof(sem_t));
+	entrenador->estimacion_anterior= atoi(config_get_string_value(config, "ESTIMACION_INICIAL"));
+
 	sem_init(entrenador->semaforo, 0, 0);
 	return entrenador;
 }
