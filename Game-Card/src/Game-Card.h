@@ -20,6 +20,8 @@
 #include <dirent.h>
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/sockets.h"
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/mensajes.c"
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/mensajes.h"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.c"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.h"
 #include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Card/src/funciones.h"
@@ -65,8 +67,7 @@ void crear_servidor_GC();
 void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion);
 void conexionBroker(int32_t *socket);
 void hilo_suscriptor(op_code code);
-void hilo_suscriptor_catch();
-void hilo_suscriptor_get();
+void enviar_appeared(char* pokemon, char* x, char* y);
 void suscribirse_broker();
 void salir (const char* mensaje);
 void inicializaciones_globales();
