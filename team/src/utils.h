@@ -41,5 +41,6 @@ int32_t conexion_broker();
 bool cumplio_objetivo(t_entrenador* entrenador);
 t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY);
 t_pokemon_team* get_pokemon_necesario_mas_cercano(t_list* pokemones_ubicados, t_posicion posicion_entrenador);
+void show_semaforo(sem_t* semaforo);
 
 #endif /* UTILS_H_ */

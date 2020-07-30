@@ -466,3 +466,11 @@ t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
 
 	return posicion;
 }
+
+
+void show_semaforo(sem_t* semaforo){
+	int i = 0;
+	sem_getvalue(semaforo, &i);
+	printf("El valor del semaforo es : %d\n", i);
+	return;
+}

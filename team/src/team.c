@@ -34,10 +34,50 @@ t_list* pokemones_ubicados; // estos son los pokemones capturables. Esta lista v
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
 
+
+
+void ejecuta(t_entrenador* entrenador){
+	sleep(2);
+	entrenador->estado = EXEC;
+	entrenador->ocupado= true;
+	printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
+	printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+	printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
+
+	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
+	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
+
+	if(posicion_final_X != 0){
+		if(posicion_final_X < 0){
+			entrenador->posicion = avanzar(entrenador->posicion, -1, 0);
+		} else {
+			entrenador->posicion = avanzar(entrenador->posicion, 1, 0);
+		}
+
+		printf("**Avanzo 1 paso en X**\n");
+
+		return;
+
+	}
+
+	if(posicion_final_Y != 0){
+		if(posicion_final_Y < 0){
+			entrenador->posicion = avanzar(entrenador->posicion, 0, -1);
+		} else {
+			entrenador->posicion = avanzar(entrenador->posicion, 0, 1);
+		}
+		printf("**Avanzo 1 paso en Y**\n");
+
+
+		return;
+
+	}
+}
+
+
 void replanificar_entrenador(t_entrenador* entrenador){
 	entrenador->pokemon_destino = get_pokemon_necesario_mas_cercano(pokemones_ubicados, entrenador->posicion);
 	if(entrenador->pokemon_destino == NULL){
-		entrenador->estado = BLOCKED;
 		printf("No hay pokemones ubicados, me bloqueo\n");
 
 	} else {
@@ -47,7 +87,6 @@ void replanificar_entrenador(t_entrenador* entrenador){
 		pthread_mutex_unlock(&mutex_cola_ready);
 		sem_post(&s_cola_ready_con_items);
 	}
-
 }
 
 bool generar_y_enviar_catch(t_entrenador* entrenador){
@@ -99,55 +138,15 @@ void planificar_fifo(){
 
 	printf("planificando FIFO...\n");
 
+
 	// en fifo, el proximo entrenador es el que esté primero en la cola de ready
 	pthread_mutex_lock(&mutex_cola_ready);
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	pthread_mutex_unlock(&mutex_cola_ready);
-	entrenador->estado = EXEC;
-	entrenador->ocupado = true;
+
 	int cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
-	printf("voy a ejecutar %d veces!", cantidad_a_moverse);
-	for(int i = 0; i < cantidad_a_moverse; i++){
-		sem_post(&s_posiciones_a_mover);
-	}
-
+	printf("voy a ejecutar %d veces!\n", cantidad_a_moverse);
 	sem_post(entrenador->semaforo);
-/*
-	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
-	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
-
-	printf("posicion vieja: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-
-	entrenador->posicion = avanzar(entrenador->posicion, posicion_final_X , posicion_final_Y);
-
-	printf("posicion nueva: x-> %d, y-> %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-
-	entrenador->ocupado = true;
-	entrenador->estado = BLOCKED; // blockeado hasta que reciba una respuesta al catch
-
-	if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
-		list_add(entrenador->pokemones, entrenador->pokemon_destino);
-		entrenador->pokemon_destino = NULL;
-		log_info(logger, "POKEMON CAPTURADO!\n");
-
-		if(cumplio_objetivo(entrenador)){
-			log_info(logger, "el entrenador cumplio sus objetivos, pasandolo a EXIT\n");
-			entrenador->estado = EXIT;
-			entrenador->ocupado = false;
-		} else {
-			log_info(logger, "el entrenador aún no cumplio sus objetivos, pasandolo a BLOCKED\n");
-			entrenador->estado = BLOCKED;
-			entrenador->ocupado=false;
-
-			if(puede_capturar_pokemones(entrenador)){
-				printf("el entrenador puede capturar mas pokemones\n");
-			} else {
-				printf("el entrenador no puede capturar mas pokemones\n");
-			}
-		}
-	}
-
-*/
 
 	return;
 }
@@ -160,106 +159,32 @@ void planificar_rr(){
 	pthread_mutex_lock(&mutex_cola_ready);
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	pthread_mutex_unlock(&mutex_cola_ready);
-	entrenador->estado = EXEC;
-	entrenador->ocupado = true;
+
+	printf("voy a planificar al entrenador %d\n", entrenador->id);
+
 	int cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
-	int movimientos = cantidad_a_moverse < algoritmo.quantum ? cantidad_a_moverse : algoritmo.quantum;
-	printf("necesito moverme: %d\n", cantidad_a_moverse);
-	printf("quantum: %d\n", algoritmo.quantum);
-
-	printf("%d\n", (-1) * algoritmo.quantum);
-	sem_init(&s_control_planificador_rr, 0, ((-1) * algoritmo.quantum));
-
-	for(int i = 0; i < movimientos; i++){
-		printf("movs: %d\n", movimientos - (i + 1));
-		sem_post(&s_posiciones_a_mover);
-	}
-
-	sem_post(entrenador->semaforo);
-	printf("SOY EL PLANIFICADOR Y BLOQUEO\n");
-	sem_wait(&s_control_planificador_rr); // se blockea hasta que el hilo entrenador le devuelva el control
-	printf("VOLVÍ EN FORMA DE FICHAS\n");
-
-	//mutex (lock) para que sea deterministico?
-	cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
-	//mutex (unlock) para que sea deterministico?
-
-
-	if(cantidad_a_moverse == 0){
-		printf("el hilo llegó a destino, nothing else to do\n");
-		return; // se encarga el hilo entrenador de hacer lo suyo
-	} else { // el hilo se bloqueó y se encarga el planificador
-		entrenador->estado = READY;
-		pthread_mutex_lock(&mutex_cola_ready);
-		t_entrenador* entrenador = list_add(cola_ready, entrenador);
-		pthread_mutex_unlock(&mutex_cola_ready);
-		sem_post(&s_cola_ready_con_items);
-	}
-
-
-	/*
-	entrenador->estado = EXEC;
-	printf("TRAINER %d IS MOVING TO CATCH A %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
-
-
-	printf("posicion inicial X: %d\n", entrenador->posicion.X);
-	printf("posicion inicial Y: %d\n", entrenador->posicion.Y);
-
-	printf("posicion final X: %d\n", entrenador->pokemon_destino->posicion.X);
-	printf("posicion final Y: %d\n", entrenador->pokemon_destino->posicion.Y);
-
-	for(int i = 0; i < algoritmo.quantum; i++){
-
-		int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
-		int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
-
-		if(posicion_final_X != 0){
-			if(posicion_final_X < 0){
-				entrenador->posicion = avanzar(entrenador->posicion, -1, 0);
-			} else {
-				entrenador->posicion = avanzar(entrenador->posicion, 1, 0);
-			}
-
-			printf("**Avanzo 1 paso en X**\n");
-		}
-
-
-		if(posicion_final_Y != 0){
-			if(posicion_final_Y < 0){
-				entrenador->posicion = avanzar(entrenador->posicion, 0, -1);
-			} else {
-				entrenador->posicion = avanzar(entrenador->posicion, 0, 1);
-			}
-			printf("**Avanzo 1 paso en Y**\n");
-		}
-
-		posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
-		posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
-
-
-		if(posicion_final_X == 0 && posicion_final_Y == 0){
-			printf("**Llegué a destino, hago el catch**\n");
-			entrenador->ocupado = true;
-			entrenador->estado = BLOCKED; //blocked hasta que reciba la respuesta
-			generar_y_enviar_catch(entrenador);
-
-			break;
-		} else {
-			printf("**me cansé, lo dejo a otro**\n");
-			entrenador->estado = READY;
-			list_add(cola_ready, entrenador);
-			sem_post(&s_cola_ready_con_items);
-			break;
-		}
-
-	}
-*/
+	printf("voy a ejecutar %d veces!\n", cantidad_a_moverse);
+	sem_post(entrenador->semaforo); // por cada paso que tiene que dar
 
 	return;
-
 }
 
 void planificar_sjfsd(){
+
+	pthread_mutex_lock(&mutex_cola_ready);
+
+	t_list* lista_ordenada = list_create();
+
+	for(int i = 0; i < cola_ready->elements_count; i++){
+		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+
+
+
+	}
+
+	t_entrenador* entrenador = list_remove(cola_ready, 0);
+	pthread_mutex_unlock(&mutex_cola_ready);
+
 	return;
 }
 
@@ -282,6 +207,130 @@ void planificar()
 		break;
 	case SJFCD:
 		planificar_sjfcd();
+		break;
+	default:
+		return;
+	}
+
+}
+
+void ejecutar_fifo(t_entrenador* entrenador){
+
+	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
+			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
+		ejecuta(entrenador);
+	}
+
+	printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
+	sem_post(&s_procesos_en_exec); // salgo de exec
+
+	if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
+		list_add(entrenador->pokemones, entrenador->pokemon_destino);
+		entrenador->pokemon_destino = NULL;
+		log_info(logger, "POKEMON CAPTURADO!\n");
+		entrenador->ocupado = false;
+
+		if(cumplio_objetivo(entrenador)){
+			log_info(logger, "el entrenador %d cumplio sus objetivos, pasandolo a EXIT\n", entrenador->id);
+			entrenador->estado = EXIT;
+
+		} else {
+			log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
+			entrenador->estado = BLOCKED;
+
+			if(puede_capturar_pokemones(entrenador)){
+				printf("el entrenador puede capturar mas pokemones, asignandole uno...\n");
+				replanificar_entrenador(entrenador);
+			} else {
+				printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
+			}
+		}
+
+	} else {
+		log_info(logger, "ESPERANDO A VER SI LO CAPTURÉ!\n");
+		entrenador->estado = BLOCKED;
+		entrenador->ocupado=true;
+	}
+
+}
+
+void ejecutar_rr(t_entrenador* entrenador){
+
+	int cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
+	int movimientos = cantidad_a_moverse < algoritmo.quantum ? cantidad_a_moverse : algoritmo.quantum;
+
+	for(int i = 0; i < movimientos; i++){
+		ejecuta(entrenador);
+	}
+
+	cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
+	if(cantidad_a_moverse > 0 ){
+		printf("se terminó el quantum y todavía falta que se mueva, lo mando a la cola de READY\n");
+		entrenador->estado = READY;
+		pthread_mutex_lock(&mutex_cola_ready);
+		list_add(cola_ready, entrenador);
+		pthread_mutex_unlock(&mutex_cola_ready);
+		sem_post(&s_cola_ready_con_items);
+		sem_post(&s_procesos_en_exec);
+	} else {
+		printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
+		sem_post(&s_procesos_en_exec); // salgo de exec
+
+		if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
+			list_add(entrenador->pokemones, entrenador->pokemon_destino);
+			entrenador->pokemon_destino = NULL;
+			log_info(logger, "POKEMON CAPTURADO!\n");
+			entrenador->ocupado = false;
+
+			if(cumplio_objetivo(entrenador)){
+				log_info(logger, "el entrenador %d cumplio sus objetivos, pasandolo a EXIT\n", entrenador->id);
+				entrenador->estado = EXIT;
+
+			} else {
+				log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
+				entrenador->estado = BLOCKED;
+
+				if(puede_capturar_pokemones(entrenador)){
+					printf("el entrenador puede capturar mas pokemones, asignandole uno...\n");
+					replanificar_entrenador(entrenador);
+				} else {
+					printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
+					show_entrenadores();
+				}
+			}
+
+		} else {
+			log_info(logger, "ESPERANDO A VER SI LO CAPTURÉ!\n");
+			entrenador->estado = BLOCKED;
+			entrenador->ocupado=true;
+		}
+	}
+}
+
+void ejecutar_sjfsd(t_entrenador* entrenador){
+	return;
+}
+
+void ejecutar_sjfcd(t_entrenador* entrenador){
+	return;
+}
+
+
+void ejecutar_algoritmo(t_entrenador* entrenador)
+{
+
+	switch(algoritmo.algoritmo_code){
+	case FIFO:
+		ejecutar_fifo(entrenador);
+		break;
+	case RR:
+		ejecutar_rr(entrenador);
+		break;
+	case SJFSD:
+		ejecutar_sjfsd(entrenador);
+		break;
+	case SJFCD:
+		ejecutar_sjfcd(entrenador);
 		break;
 	default:
 		return;
@@ -387,20 +436,6 @@ t_Localized* generar_localized(char* pokemon, int cant_posiciones){
 	return mensaje;
 }
 
-t_Appeared* generar_appeared(char* pokemon){
-	t_Appeared* mensaje = malloc(sizeof(t_Appeared)); // reemplazar por funcion get size appeared de broker
-
-	t_posicion posicion;
-	posicion.X = (rand() % (10)) + 1; // numero random entre 1 y 10
-	posicion.Y = (rand() % (10)) + 1;
-
-	mensaje-> posicion = posicion;
-	mensaje->pokemon.nombre = pokemon;
-	mensaje->pokemon.size_Nombre = string_length(pokemon); // creo que hay que sumar 1
-
-	return mensaje;
-}
-
 t_Caught* generar_caught(){
 	t_Caught* mensaje = malloc(sizeof(t_Caught)); // reemplazar por funcion get size caught de broker
 
@@ -447,21 +482,6 @@ t_Localized* simular_localized(int cantidad_posiciones){
 
 }
 
-t_Appeared* simular_appeared(){
-	/*
-	 * El objetivo de esta funcion es generar un mensaje appeared de forma aleatoria
-	 * */
-
-	srand(time(NULL));
-
-	t_list* nombre_pokemones = get_nombres_pokemon();
-	char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
-	t_Appeared* mensaje = generar_appeared(nombre_pokemon);
-
-	return mensaje;
-
-}
-
 void show_cola_ready(){
 	for(int i = 0; i < cola_ready->elements_count; i++){
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
@@ -480,8 +500,8 @@ void hilo_planificador(){
 
 		printf("llegó algo a la cola de READY\n");
 		sem_wait(&s_procesos_en_exec); //inicializado en 1, o sea que solo puede haber uno a la vez;
+
 		printf("nadie en EXEC, voy a planificar tranquilo..\n");
-		//printf("arrancó el planificador: %s (%d)\n", algoritmo.algoritmo_string, algoritmo.algoritmo_code);
 		planificar();
 	}
 }
@@ -548,6 +568,7 @@ void recibidor_mensajes_localized(void* args){
 
 					list_add(cola_ready, entrenador_mas_cercano);
 					sem_post(&s_cola_ready_con_items);
+					sem_post(entrenador_mas_cercano->semaforo);
 				} else {
 					ubicar_pokemones_localized(mensaje);
 				}
@@ -583,6 +604,7 @@ void recibidor_mensajes_appeared(void* args){
 
 			printf("el entrenador %d fue agregado a la cola READY\n", entrenador_mas_cercano->id);
 			sem_post(&s_cola_ready_con_items);
+			//sem_post(entrenador_mas_cercano->semaforo);
 
 
 		} else {
@@ -635,9 +657,7 @@ void hilo_recibidor_mensajes_gameboy(){
 	printf("Esperando que el Game Boy se conecte...\n");
 	while(1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
-		printf("Alguien se conectó...\n");
 		if(socket_cliente != -1){
-			//log_info(logger, "Se conecto el GAME BOY \n");
 
 			int32_t codigo_operacion = 0;
 			int32_t tamanio_estructura = 0;
@@ -647,8 +667,6 @@ void hilo_recibidor_mensajes_gameboy(){
 					codigo_operacion = -1;
 			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-			printf("llegó algo\n");
-			//log_info(logger, "Código de operación %d\n", codigo_operacion);
 
 			switch(codigo_operacion){
 				case APPEARED_POKEMON:
@@ -927,8 +945,10 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	sem_init(&s_posiciones_a_mover, 0, 0);
 	sem_init(&s_procesos_en_exec, 0, 1);
+	sem_init(&s_control_planificador_rr, 0, 0);
 
 	pthread_mutex_init(&mutex_cola_ready, NULL);
+
 	srand(time(NULL));
 	config = config_create(get_config_path(entrenador));
 	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
@@ -940,7 +960,7 @@ int inicializar_team(char* entrenador){
 	RETARDO_CICLO_CPU = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
 	algoritmo = get_algoritmo(config);
 
-	sem_init(&s_control_planificador_rr, 0, algoritmo.quantum);
+	//sem_init(&s_control_planificador_rr, 0, algoritmo.quantum);
 
 	return 1;
 }
@@ -952,6 +972,7 @@ bool esta_en_deadlock(t_entrenador* entrenador){
 			!puede_capturar_pokemones((t_entrenador*)entrenador);
 }
 
+
 void entrenador(void* index){
 
 	t_entrenador* entrenador = list_get(entrenadores, (int)index);
@@ -960,77 +981,16 @@ void entrenador(void* index){
 	printf("este hilo maneja al entrenador %d\n", entrenador->id);
 	while(!cumplio_objetivo(entrenador)){
 
-		sem_wait(entrenador->semaforo); //READY
-		//mientras no llegue a destino ejecuto
-		while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
-				entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
-			sem_wait(&s_posiciones_a_mover);//EXEC
-			sleep(2);
-			printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
-			printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-			printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
+		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
+		printf("voy a ejecutar\n");
+		// ya tengo pokemon, me muevo segun algoritmo:
 
-			int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
-			int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
+		ejecutar_algoritmo(entrenador);
 
-			if(posicion_final_X != 0){
-				if(posicion_final_X < 0){
-					entrenador->posicion = avanzar(entrenador->posicion, -1, 0);
-				} else {
-					entrenador->posicion = avanzar(entrenador->posicion, 1, 0);
-				}
-
-				printf("**Avanzo 1 paso en X**\n");
-				sem_post(&s_control_planificador_rr);
-				continue;
-			}
-
-			if(posicion_final_Y != 0){
-				if(posicion_final_Y < 0){
-					entrenador->posicion = avanzar(entrenador->posicion, 0, -1);
-				} else {
-					entrenador->posicion = avanzar(entrenador->posicion, 0, 1);
-				}
-				printf("**Avanzo 1 paso en Y**\n");
-				sem_post(&s_control_planificador_rr);
-				continue;
-			}
-
-		}
-
-		sem_post(&s_procesos_en_exec); // salgo de exec
-		printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
-
-		if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
-			list_add(entrenador->pokemones, entrenador->pokemon_destino);
-			entrenador->pokemon_destino = NULL;
-			log_info(logger, "POKEMON CAPTURADO!\n");
-			entrenador->estado = BLOCKED;
-			entrenador->ocupado=false;
-
-			if(cumplio_objetivo(entrenador)){
-				log_info(logger, "el entrenador %d cumplio sus objetivos, pasandolo a EXIT\n", entrenador->id);
-				entrenador->estado = EXIT;
-				entrenador->ocupado = false;
-			} else {
-				log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
-				entrenador->estado = BLOCKED;
-				entrenador->ocupado=false;
-
-				if(puede_capturar_pokemones(entrenador)){
-					printf("el entrenador puede capturar mas pokemones, asignandole uno...\n");
-					replanificar_entrenador(entrenador);
-				} else {
-					printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
-				}
-			}
-		} else {
-			log_info(logger, "ESPERANDO A VER SI LO CAPTURÉ!\n");
-			entrenador->estado = BLOCKED;
-			entrenador->ocupado=true;
-		}
 	}
 }
+
+
 
 
 void reconectar_broker(){
