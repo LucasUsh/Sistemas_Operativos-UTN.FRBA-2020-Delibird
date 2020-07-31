@@ -216,7 +216,9 @@ void recorrer_grafo_recursivo(){
 
 	for(int i = 0; i < filas; i++){
 		for(int j = 0; j < columnas; j++){
-			//**************** ya en la celda
+			printf("fila: %d\n", i);
+			printf("columna: %d\n", j);
+			printf("valor: %d\n", matriz[i][j]);
 			if(i==j) continue;
 			if(matriz[i][j]){
 				if(matriz[j][i]){
@@ -240,36 +242,64 @@ void recorrer_grafo_recursivo(){
 
 					int* p1 = malloc(sizeof(int));
 					*p1 = i;
-					list_add(deadlock->procesos_involucrados, p1);
+					printf("el primer proceso que puede participar es: %d\n", *p1);
+
+					int* p2 = malloc(sizeof(int));
+					*p2 = j;
+					printf("el segundo proceso que puede participar es: %d\n", *p2);
+
+					printf("nueva fila: %d\n", j);
 
 					for(int x = 0; x < columnas; x++){
-						if(matriz[j][x]) printf("encontré un 1 en la posicion %d %d\n",j, x);
-						int* p2 = malloc(sizeof(int));
-						*p2 = x;
-						list_add(deadlock->procesos_involucrados, p2);
+						printf("fila: %d\n", j);
+						printf("columna: %d\n", x);
+						printf("valor: %d\n", matriz[j][x]);
+						if(matriz[j][x]){
+							printf("encontré un 1 en la posicion (%d, %d)\n",j, x);
+							printf("nueva fila: %d\n", x);
+							//list_add(deadlock->procesos_involucrados, p2);
 
-						for(int y = 0; y < columnas; y++){
-							if(matriz[x][y] && y==i) printf("encontré un 1 en la posicion %d %d\n",x, y);
-							int* p3 = malloc(sizeof(int));
-							*p3 = y;
-							list_add(deadlock->procesos_involucrados, p3);
+							for(int y = 0; y < columnas; y++){
+								printf("fila: %d\n", x);
+								printf("columna: %d\n", y);
+								printf("valor: %d\n", matriz[x][y]);
+								if(matriz[x][y]){
+									printf("encontré un 1 en la posicion %d %d\n",x, y);
+									if(y==i){
+										int* p3 = malloc(sizeof(int));
+										*p3 = x;
+										printf("el tercer proceso que puede participar es: %d, se cumple el ciclo\n", *p3);
+										printf("agrego al proceso %d\n", *p1);
+										list_add(deadlock->procesos_involucrados, p1);
+										printf("agrego al proceso %d\n", *p2);
+										list_add(deadlock->procesos_involucrados, p2);
+										printf("agrego al proceso %d\n", *p3);
+										list_add(deadlock->procesos_involucrados, p3);
+										break;
+									}
+
+								}
+							}
+							break;
 						}
-
 					}
 
+					list_add(deadlocks_detectados, deadlock);
+					break;
 				}
 			}
 		}
 	}
 
 	//Limpiar y mostrar lista de deadlocks ya que hay repetidos
-
+	printf("deadlocks detectados: %d\n", deadlocks_detectados->elements_count);
 	for(int m = 0; m < deadlocks_detectados->elements_count; m++){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
-		printf("se detectó un deadlock entre: ");
+		printf("se detectó un deadlock entre el entrenador: ");
 		for(int n=0; n < dl->procesos_involucrados->elements_count ; n++){
 			int* proceso_involucrado = list_get(dl->procesos_involucrados, n);
-			printf("entrenador %d ", *proceso_involucrado);
+			t_entrenador* entrenador_involucrado = list_get(entrenadores_DL, *proceso_involucrado);
+			printf("%d ", entrenador_involucrado->id);
 		}
 		printf("\n");
 
