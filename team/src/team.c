@@ -35,9 +35,253 @@ t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
 
 
+bool esta_en_deadlock(void* entrenador){
+	t_entrenador* e = (t_entrenador*)entrenador;
+	return (e->estado == BLOCKED &&
+			!e->ocupado &&
+			!cumplio_objetivo(e) &&
+			!puede_capturar_pokemones(e));
+}
+
+
+t_list* pokemones_de_mas(t_entrenador* entrenador){
+	t_list* pokemons_de_mas = list_create();
+	for(int i = 0; i < entrenador->pokemones->elements_count ; i++){
+		t_pokemon_team* pokemon = list_get(entrenador->pokemones, i);
+		int cantidad_capturados = pokemon->cantidad;
+		int cantidad_en_objetivos = get_cantidad_by_nombre_pokemon(pokemon->nombre, entrenador->objetivo);
+
+		int de_mas = cantidad_capturados - cantidad_en_objetivos;
+
+		if(de_mas > 0) list_add(pokemons_de_mas, pokemon);
+	}
+
+	return pokemons_de_mas;
+}
+
+t_list* objetivos_pendientes(t_entrenador* entrenador){
+	t_list* objetivos_pendiente = list_create();
+	for(int i = 0; i < entrenador->objetivo->elements_count ; i++){
+		t_pokemon_team* objetivo = list_get(entrenador->objetivo, i);
+		int cantidad_en_objetivos = objetivo->cantidad;
+		int cantidad_capturados = get_cantidad_by_nombre_pokemon(objetivo->nombre, entrenador->pokemones);
+
+		int pendientes = cantidad_en_objetivos - cantidad_capturados;
+
+		if(pendientes > 0) list_add(objetivos_pendiente, objetivo);
+	}
+
+	return objetivos_pendiente;
+}
+
+t_list* entrenadores_en_deadlock(){
+	t_list* en_DL = list_filter(entrenadores, esta_en_deadlock);
+	t_list* entrenadores_en_DL = list_create();
+	for(int i = 0; i < en_DL->elements_count; i++){
+		t_entrenador* actual = list_get(en_DL, i);
+		t_entrenador* nuevo = malloc(sizeof(t_entrenador));
+		nuevo->id = actual->id;
+		nuevo->pokemones = pokemones_de_mas(actual);//pokemones que no estan en objetivo;
+		nuevo->objetivo = objetivos_pendientes(actual);//objetivo que no estan satisfechos;
+		list_add(entrenadores_en_DL, nuevo);
+	}
+
+	return entrenadores_en_DL;
+
+}
+
+bool estan_unidos(t_entrenador* nodo_actual, t_entrenador* nodo_siguiente){
+	//estan unidos si el nodo actual necesita algo que tiene el nodo_siguiente
+	//nodo_actual.objetivo tiene los objetivos pendientes de satisfacer
+	//nodo_siguiente.pokemones tiene los pokemones que tiene de mas
+	for(int i = 0; i < nodo_actual->objetivo->elements_count; i++){
+		t_pokemon_team* objetivo_actual = list_get(nodo_actual->objetivo, i);
+
+		int capturados_siguiente = get_cantidad_by_nombre_pokemon(objetivo_actual->nombre, nodo_siguiente->pokemones);
+		if (capturados_siguiente > 0) return true;
+
+	}
+
+	return false;
+
+}
+
+void recorrer_grafo(){
+	t_list* entrenadores_DL = entrenadores_en_deadlock();
+	printf("hay %d entrenadores en DL, buscando relaciones....\n", entrenadores_DL->elements_count);
+	for(int i = 0; i < entrenadores_DL->elements_count; i++){
+
+		t_entrenador* nodo_actual = list_get(entrenadores_DL, i);
+
+
+		for(int j = 0; j < entrenadores_DL->elements_count; j++){
+			t_entrenador* nodo_siguiente = list_get(entrenadores_DL, j);
+			if(nodo_siguiente->id == nodo_actual->id) continue;
+
+			if(estan_unidos(nodo_actual, nodo_siguiente)){
+				printf("el entrenador: %d tiene un pokemon que yo necesito\n", nodo_siguiente->id);
+				if(estan_unidos(nodo_siguiente, nodo_actual)){
+					printf("tengo un pokemon que el entrenador %d necesita\n", nodo_siguiente->id);
+
+					printf("espera circular, estan en deadlock: %d, %d\n", nodo_actual->id, nodo_siguiente->id);
+				} else {
+					printf("el entrenador tiene un pokemon que yo necesito pero yo no tengo ninguno que el necesita\n");
+					printf("no hay espera circular, sigo revisando los otros nodos...\n");
+				}
+			} else {
+				printf("el entrenador: %d no tiene un pokemon que yo necesito, no estoy en DL con él\n", nodo_siguiente->id);
+			}
+
+
+
+		}
+
+	}
+}
+
+bool DL_detectado(t_deadlock* dl, t_list* entrenadores_actuales){
+	if(dl->procesos_involucrados->elements_count != entrenadores_actuales->elements_count) return false;
+
+	bool _comparar_deadlocks(void* e1, void* e2){
+		return (*(int*)e1) <= (*(int*)e2);
+	}
+
+	list_sort(dl->procesos_involucrados, _comparar_deadlocks);
+	list_sort(entrenadores_actuales, _comparar_deadlocks);
+
+	for(int i = 0; i < entrenadores_actuales->elements_count; i++){
+		int* edl = list_get(dl->procesos_involucrados, i);
+		int* e = list_get(entrenadores_actuales, i);
+
+		if((*edl) != (*e)) return false;
+	}
+
+
+	printf("aber...\n");
+	return true;
+}
+
+void recorrer_grafo_recursivo(){
+
+	for(int i = 0; i< entrenadores->elements_count; i++){
+		t_entrenador* e = list_get(entrenadores, i);
+		if(e->estado==EXEC || e->ocupado)return;
+	}
+	show_entrenadores();
+
+	t_list* entrenadores_DL = entrenadores_en_deadlock();
+	int filas = entrenadores_DL->elements_count;
+	int columnas = filas;
+
+	/* matriz dependiendo la cantidad de entrenadores en DL: si hay 2, será de 2x2
+	 *
+	 * ej: grafo de deadlock triple
+	 *
+	 *     0	 1	   2
+	 * 0|	  | 	|	  |
+	 * 1|	  | 	|	  |
+	 * 2|	  | 	|	  |
+	 *
+	 *
+	 *
+	*/
+
+	int matriz[filas][columnas];
+
+	for(int i = 0; i < filas; i++){
+		t_entrenador* e1 = list_get(entrenadores_DL, i);
+
+		for(int j = 0; j < columnas; j++){
+			t_entrenador* e2 = list_get(entrenadores_DL, j);
+			if(i==j){
+				matriz[i][j] = 0;
+			} else {
+				matriz[i][j] = estan_unidos(e1, e2);
+			}
+		}
+	}
+
+
+	for(int i = 0; i < filas; i++){
+		for(int j = 0; j < columnas; j++){
+			printf("%d ", matriz[i][j]);
+		}
+		 printf("\n");
+	}
+
+
+
+
+	t_list* deadlocks_detectados = list_create();
+
+	for(int i = 0; i < filas; i++){
+		for(int j = 0; j < columnas; j++){
+			//**************** ya en la celda
+			if(i==j) continue;
+			if(matriz[i][j]){
+				if(matriz[j][i]){
+					printf("Hay deadlock entre el entrenador %d y el entrenador %d\n", i, j);
+					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
+					deadlock->procesos_involucrados = list_create();
+					int* p1 = malloc(sizeof(int));
+					int* p2 = malloc(sizeof(int));
+					*p1 = i;
+					*p2 = j;
+
+					list_add(deadlock->procesos_involucrados, p1);
+					list_add(deadlock->procesos_involucrados, p2);
+					printf("Agregado DL a la lista \n");
+					list_add(deadlocks_detectados, deadlock);
+
+				} else { // hay que armar el caminito
+					//recorro la fila 'j' en busca de otro 1
+					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
+					deadlock->procesos_involucrados = list_create();
+
+					int* p1 = malloc(sizeof(int));
+					*p1 = i;
+					list_add(deadlock->procesos_involucrados, p1);
+
+					for(int x = 0; x < columnas; x++){
+						if(matriz[j][x]) printf("encontré un 1 en la posicion %d %d\n",j, x);
+						int* p2 = malloc(sizeof(int));
+						*p2 = x;
+						list_add(deadlock->procesos_involucrados, p2);
+
+						for(int y = 0; y < columnas; y++){
+							if(matriz[x][y] && y==i) printf("encontré un 1 en la posicion %d %d\n",x, y);
+							int* p3 = malloc(sizeof(int));
+							*p3 = y;
+							list_add(deadlock->procesos_involucrados, p3);
+						}
+
+					}
+
+				}
+			}
+		}
+	}
+
+	//Limpiar y mostrar lista de deadlocks ya que hay repetidos
+
+	for(int m = 0; m < deadlocks_detectados->elements_count; m++){
+		t_deadlock* dl = list_get(deadlocks_detectados, m);
+		printf("se detectó un deadlock entre: ");
+		for(int n=0; n < dl->procesos_involucrados->elements_count ; n++){
+			int* proceso_involucrado = list_get(dl->procesos_involucrados, n);
+			printf("entrenador %d ", *proceso_involucrado);
+		}
+		printf("\n");
+
+	}
+
+
+}
+
+
 
 void ejecuta(t_entrenador* entrenador){
-	sleep(2);
+	sleep(RETARDO_CICLO_CPU);
 	entrenador->estado = EXEC;
 	entrenador->ocupado= true;
 	printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
@@ -248,13 +492,7 @@ void planificar()
 
 }
 
-void ejecutar_fifo(t_entrenador* entrenador){
-
-	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
-			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
-		ejecuta(entrenador);
-	}
-
+void capturar_pokemon(t_entrenador* entrenador){
 	printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
 	sem_post(&s_procesos_en_exec); // salgo de exec
 
@@ -267,7 +505,6 @@ void ejecutar_fifo(t_entrenador* entrenador){
 		if(cumplio_objetivo(entrenador)){
 			log_info(logger, "el entrenador %d cumplio sus objetivos, pasandolo a EXIT\n", entrenador->id);
 			entrenador->estado = EXIT;
-
 		} else {
 			log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
 			entrenador->estado = BLOCKED;
@@ -277,15 +514,26 @@ void ejecutar_fifo(t_entrenador* entrenador){
 				replanificar_entrenador(entrenador);
 			} else {
 				printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
-				show_entrenadores();
+				recorrer_grafo_recursivo();
 			}
 		}
-
 	} else {
 		log_info(logger, "ESPERANDO A VER SI LO CAPTURÉ!\n");
 		entrenador->estado = BLOCKED;
 		entrenador->ocupado=true;
+		//acá creo que iría otro sem_wait(entrenador->semaforo) hasta que lo desbloquee el recibidor de mensajes caught
+		// para ver si lo capturó o no y en base a eso repreguntar.
 	}
+}
+
+void ejecutar_fifo(t_entrenador* entrenador){
+
+	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
+			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
+		ejecuta(entrenador);
+	}
+
+	capturar_pokemon(entrenador);
 
 }
 
@@ -308,37 +556,7 @@ void ejecutar_rr(t_entrenador* entrenador){
 		sem_post(&s_cola_ready_con_items);
 		sem_post(&s_procesos_en_exec);
 	} else {
-		printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
-		sem_post(&s_procesos_en_exec); // salgo de exec
-
-		if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
-			list_add(entrenador->pokemones, entrenador->pokemon_destino);
-			entrenador->pokemon_destino = NULL;
-			log_info(logger, "POKEMON CAPTURADO!\n");
-			entrenador->ocupado = false;
-
-			if(cumplio_objetivo(entrenador)){
-				log_info(logger, "el entrenador %d cumplio sus objetivos, pasandolo a EXIT\n", entrenador->id);
-				entrenador->estado = EXIT;
-
-			} else {
-				log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
-				entrenador->estado = BLOCKED;
-
-				if(puede_capturar_pokemones(entrenador)){
-					printf("el entrenador puede capturar mas pokemones, asignandole uno...\n");
-					replanificar_entrenador(entrenador);
-				} else {
-					printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
-					show_entrenadores();
-				}
-			}
-
-		} else {
-			log_info(logger, "ESPERANDO A VER SI LO CAPTURÉ!\n");
-			entrenador->estado = BLOCKED;
-			entrenador->ocupado=true;
-		}
+		capturar_pokemon(entrenador);
 	}
 }
 
@@ -1000,12 +1218,6 @@ int inicializar_team(char* entrenador){
 	return 1;
 }
 
-bool esta_en_deadlock(t_entrenador* entrenador){
-	return ((t_entrenador*)entrenador)->estado == BLOCKED &&
-			!entrenador->ocupado &&
-			!cumplio_objetivo((t_entrenador*)entrenador) &&
-			!puede_capturar_pokemones((t_entrenador*)entrenador);
-}
 
 
 void entrenador(void* index){

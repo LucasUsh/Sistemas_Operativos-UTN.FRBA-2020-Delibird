@@ -81,6 +81,11 @@ typedef struct {
 	sem_t semaforo_entrenador;
 }t_args_entrenador;
 
+typedef struct {
+	t_list* procesos_involucrados;
+}t_deadlock;
+
+
 t_log* logger;
 t_config* config;
 
