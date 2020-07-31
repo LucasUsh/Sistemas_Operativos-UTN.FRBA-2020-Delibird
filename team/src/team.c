@@ -161,6 +161,41 @@ bool DL_detectado(t_deadlock* dl, t_list* entrenadores_actuales){
 	return true;
 }
 
+bool ordenar_DL(void* proceso1, void* proceso2){
+	return *((int*)proceso1) < *((int*)proceso2);
+}
+
+bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
+
+	for(int i = 0; i < deadlock_detectados->elements_count; i++){
+		t_deadlock* dl = list_get(deadlock_detectados, i);
+
+		if(dl->procesos_involucrados->elements_count != deadlock->procesos_involucrados->elements_count) continue;
+
+		for(int j=0; j < deadlock->procesos_involucrados->elements_count ; j++){
+			int* proceso_involucrado = list_get(deadlock->procesos_involucrados, j);
+			int* proceso_dl_involucrado = list_get(dl->procesos_involucrados, j);
+
+			if((*proceso_involucrado) == (*proceso_dl_involucrado)){
+				if(j == deadlock->procesos_involucrados->elements_count - 1){
+					return true;
+				}
+				continue;
+			} else {
+				break;
+			}
+
+
+
+		}
+
+	}
+
+	return false;
+
+}
+
+
 void recorrer_grafo_recursivo(){
 
 	for(int i = 0; i< entrenadores->elements_count; i++){
@@ -216,9 +251,6 @@ void recorrer_grafo_recursivo(){
 
 	for(int i = 0; i < filas; i++){
 		for(int j = 0; j < columnas; j++){
-			printf("fila: %d\n", i);
-			printf("columna: %d\n", j);
-			printf("valor: %d\n", matriz[i][j]);
 			if(i==j) continue;
 			if(matriz[i][j]){
 				if(matriz[j][i]){
@@ -232,8 +264,9 @@ void recorrer_grafo_recursivo(){
 
 					list_add(deadlock->procesos_involucrados, p1);
 					list_add(deadlock->procesos_involucrados, p2);
-					printf("Agregado DL a la lista \n");
-					list_add(deadlocks_detectados, deadlock);
+					list_sort(deadlock->procesos_involucrados, ordenar_DL);
+					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
+						list_add(deadlocks_detectados, deadlock);
 
 				} else { // hay que armar el caminito
 					//recorro la fila 'j' en busca de otro 1
@@ -242,39 +275,21 @@ void recorrer_grafo_recursivo(){
 
 					int* p1 = malloc(sizeof(int));
 					*p1 = i;
-					printf("el primer proceso que puede participar es: %d\n", *p1);
 
 					int* p2 = malloc(sizeof(int));
 					*p2 = j;
-					printf("el segundo proceso que puede participar es: %d\n", *p2);
-
-					printf("nueva fila: %d\n", j);
 
 					for(int x = 0; x < columnas; x++){
-						printf("fila: %d\n", j);
-						printf("columna: %d\n", x);
-						printf("valor: %d\n", matriz[j][x]);
 						if(matriz[j][x]){
-							printf("encontré un 1 en la posicion (%d, %d)\n",j, x);
-							printf("nueva fila: %d\n", x);
-							//list_add(deadlock->procesos_involucrados, p2);
-
 							for(int y = 0; y < columnas; y++){
-								printf("fila: %d\n", x);
-								printf("columna: %d\n", y);
-								printf("valor: %d\n", matriz[x][y]);
 								if(matriz[x][y]){
-									printf("encontré un 1 en la posicion %d %d\n",x, y);
 									if(y==i){
 										int* p3 = malloc(sizeof(int));
 										*p3 = x;
-										printf("el tercer proceso que puede participar es: %d, se cumple el ciclo\n", *p3);
-										printf("agrego al proceso %d\n", *p1);
 										list_add(deadlock->procesos_involucrados, p1);
-										printf("agrego al proceso %d\n", *p2);
 										list_add(deadlock->procesos_involucrados, p2);
-										printf("agrego al proceso %d\n", *p3);
 										list_add(deadlock->procesos_involucrados, p3);
+										list_sort(deadlock->procesos_involucrados, ordenar_DL);
 										break;
 									}
 
@@ -284,7 +299,8 @@ void recorrer_grafo_recursivo(){
 						}
 					}
 
-					list_add(deadlocks_detectados, deadlock);
+					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
+						list_add(deadlocks_detectados, deadlock);
 					break;
 				}
 			}
