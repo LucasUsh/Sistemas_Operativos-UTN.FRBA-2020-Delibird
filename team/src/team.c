@@ -254,7 +254,6 @@ void recorrer_grafo_recursivo(){
 			if(i==j) continue;
 			if(matriz[i][j]){
 				if(matriz[j][i]){
-					printf("Hay deadlock entre el entrenador %d y el entrenador %d\n", i, j);
 					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
 					deadlock->procesos_involucrados = list_create();
 					int* p1 = malloc(sizeof(int));
