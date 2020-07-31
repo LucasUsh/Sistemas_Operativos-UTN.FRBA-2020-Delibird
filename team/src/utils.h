@@ -42,5 +42,9 @@ bool cumplio_objetivo(t_entrenador* entrenador);
 t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY);
 t_pokemon_team* get_pokemon_necesario_mas_cercano(t_list* pokemones_ubicados, t_posicion posicion_entrenador);
 void show_semaforo(sem_t* semaforo);
+t_pokemon_team* get_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones);
+t_list* pokemones_de_mas(t_entrenador* entrenador);
+t_list* objetivos_pendientes(t_entrenador* entrenador);
+t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2);
 
 #endif /* UTILS_H_ */

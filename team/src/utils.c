@@ -387,6 +387,18 @@ int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* pokemones){
 	return 0;
 };
 
+t_pokemon_team* get_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones){
+	for(int j = 0; j < pokemones->elements_count; j++){
+		t_pokemon_team* pokemon = list_get(pokemones, j);
+
+		if(string_equals_ignore_case(nombre_pokemon, pokemon->nombre)){
+			return pokemon;
+		}
+	}
+
+	return NULL;
+};
+
 bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
 	for(int i = 0; i < objetivo_global->elements_count; i++){
 		t_pokemon_team* objetivo_actual = list_get(objetivo_global, i);
@@ -480,4 +492,52 @@ void show_semaforo(sem_t* semaforo){
 	sem_getvalue(semaforo, &i);
 	printf("El valor del semaforo es : %d\n", i);
 	return;
+}
+
+
+t_list* pokemones_de_mas(t_entrenador* entrenador){
+	t_list* pokemons_de_mas = list_create();
+	for(int i = 0; i < entrenador->pokemones->elements_count ; i++){
+		t_pokemon_team* pokemon = list_get(entrenador->pokemones, i);
+		int cantidad_capturados = pokemon->cantidad;
+		int cantidad_en_objetivos = get_cantidad_by_nombre_pokemon(pokemon->nombre, entrenador->objetivo);
+
+		int de_mas = cantidad_capturados - cantidad_en_objetivos;
+
+		if(de_mas > 0) list_add(pokemons_de_mas, pokemon);
+	}
+
+	return pokemons_de_mas;
+}
+
+t_list* objetivos_pendientes(t_entrenador* entrenador){
+	t_list* objetivos_pendiente = list_create();
+	for(int i = 0; i < entrenador->objetivo->elements_count ; i++){
+		t_pokemon_team* objetivo = list_get(entrenador->objetivo, i);
+		int cantidad_en_objetivos = objetivo->cantidad;
+		int cantidad_capturados = get_cantidad_by_nombre_pokemon(objetivo->nombre, entrenador->pokemones);
+
+		int pendientes = cantidad_en_objetivos - cantidad_capturados;
+
+		if(pendientes > 0) list_add(objetivos_pendiente, objetivo);
+	}
+
+	return objetivos_pendiente;
+}
+
+
+
+/*
+ * e2 tiene un pokemon que le sirve a e1
+ * */
+t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2){
+	for(int i = 0; i < e1->objetivo->elements_count; i++){
+		t_pokemon_team* objetivo_actual = list_get(e1->objetivo, i);
+
+		t_pokemon_team* pokemon_sirve = get_pokemon_by_nombre(objetivo_actual->nombre, e2->pokemones);
+		if (pokemon_sirve != NULL) return pokemon_sirve;
+
+	}
+
+	return NULL;
 }
