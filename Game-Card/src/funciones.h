@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/UniversoPokemon/universo.h"
+#include "/home/utnso/workspace/tp-2020-1c-5rona/OurLibraries/Sockets/mensajes.h"
 
 //Punteros globales:
 extern t_log* logger_GC;
@@ -36,6 +37,8 @@ extern int32_t tiempo_retardo_operacion;
 extern int32_t tamanio_bloque;
 extern int32_t cantidad_bloques;
 extern int32_t tam_punto_de_montaje;
+extern char* ip_broker;
+extern char* puerto_broker;
 
 
 // Funciones que no requieren liberar memoria:
@@ -73,5 +76,7 @@ char* metadata_copiar_linea_bloques(FILE* metadata, char* ruta_metadata);
 char* traer_bloques(char** bloques, int32_t cantidad);
 char* posicion_a_string (t_posicion posicion);
 char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamiento);
+
+void enviar_appeared(char* pokemon, char* x, char* y);
 
 #endif

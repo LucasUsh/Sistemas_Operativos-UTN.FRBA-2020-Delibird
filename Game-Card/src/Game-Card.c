@@ -14,18 +14,18 @@ int32_t main(void)
 	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_NEW) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
 
-	pthread_t hilo_catch;
+/*	pthread_t hilo_catch;
 	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_CATCH) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
 	pthread_t hilo_get;
 	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_GET) == 0)
 		log_debug (logger_GC, "Hilo cola get creado correctamente.");
-
+*/
 
 	pthread_join(hilo_new,NULL);
-	pthread_join(hilo_catch,NULL);
-	pthread_join(hilo_get,NULL);
+	//pthread_join(hilo_catch,NULL);
+	//pthread_join(hilo_get,NULL);
 	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();
@@ -190,7 +190,6 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
-			enviar_appeared(new->pokemon.nombre, new->posicion.X, new->posicion.Y);
 
 
 			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0) {
@@ -230,23 +229,6 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			break;
 	}
 }
-
-void enviar_appeared(char* pokemon, char* x, char* y){
-	int32_t operacion=0;
-	int32_t tamanio_estructura = 0;
-	int32_t id_mensaje=0;
-	int32_t broker = crear_conexion(ip_broker,puerto_broker);
-
-	enviar_handshake(1, broker);
-	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-		if(operacion == ACK){
-			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-			enviar_appeared_pokemon(pokemon, x, y, "0", socket);
-		}
-	}
-}
-
 
 void hilo_suscriptor(op_code code){
 	int32_t operacion=0;

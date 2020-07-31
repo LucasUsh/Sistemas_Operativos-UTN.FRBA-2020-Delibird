@@ -77,6 +77,7 @@ void funcion_new_pokemon(t_New* new) {
 	}
 
 	// TODO: Enviar appeared
+	//enviar_appeared(new->pokemon.nombre, new->posicion.X, new->posicion.Y);
 
 	free (ruta_metadata);
 	free(new->pokemon.nombre);
@@ -742,9 +743,31 @@ char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamien
 	return stream;
 }
 
+/****************************************************************************/
+/***************************ENVIO DE MENSAJES********************************/
+/****************************************************************************/
 
+void enviar_appeared(char* pokemon, char* x, char* y){
+	int32_t operacion=0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje=0;
+	int32_t broker = crear_conexion(ip_broker,puerto_broker);
+	if(broker == 0){
+		log_info(logger_GC, "Error al enviar appeared al Broker");
+	}else{
+		enviar_handshake(2, broker);
+		if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(operacion == ACK){
+				recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
+				log_info(logger_GC,"Enviar Appeared");
+				enviar_appeared_pokemon(pokemon, x, y, "0", broker);
+			}
+		}
+	}
 
+}
 
 
 
