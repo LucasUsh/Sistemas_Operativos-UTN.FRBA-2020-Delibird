@@ -344,8 +344,7 @@ void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
 	particion->ocupada = true;
 	particion->id_mensaje = mensaje->id_mensaje;
 	particion->id = get_id_particion();
-	int indice = obtenerPosicion(particion);
-	log_info(logger, "Se guardo un mensaje en la memoria. Indice: %d \n Posicion de inicio: %d \n", indice, particion->posicion_inicial);
+	log_info(logger, "Se guardo un mensaje en la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 }
 
 int32_t tamanioMinimo(int32_t sizeMsg){

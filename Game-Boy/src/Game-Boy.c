@@ -204,6 +204,7 @@ int32_t main(int32_t argc, char *argv[])
 		}
 	}
 
+	// MODO SUSCRIPTOR:
 	else if(string_contains(argv[1], "SUSCRIPTOR")){
 
 		sem_wait(envio_Broker);

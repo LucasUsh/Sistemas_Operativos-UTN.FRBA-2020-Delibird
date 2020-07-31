@@ -162,8 +162,7 @@ int32_t main(void) {
 			else printf("Fallo al recibir codigo de operacion = -1\n");
 		}else {
 			printf("Fallo al recibir/aceptar al cliente\n");
-			liberar_conexion(socket_cliente);
-			sleep(10);
+			sleep(5);
 		}
 	}
 	if(socketEscucha == -1){
@@ -431,30 +430,9 @@ bool esCorrelativo(int32_t id_mensaje){
 	return false;
 }
 
-void enviarMensajeNew(t_New * new, int32_t id_mensaje, int32_t socket_cliente){
-	t_paquete * paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = NEW_POKEMON;
-	paquete->buffer = malloc(sizeof(t_buffer));
-
-	paquete->buffer->size = getSizeMensajeNew(*new);
-	paquete->buffer->id_Mensaje = id_mensaje;
-	paquete->buffer->stream = new;
-
-	int32_t bytes_a_enviar;
-	void *paqueteSerializado = serializar_paquete_new (paquete, &bytes_a_enviar, new);
-
-	send(socket_cliente, paqueteSerializado, bytes_a_enviar, 0);
-
-	free(paqueteSerializado);
-	free(paquete->buffer);
-	free(paquete);
-
-}
-
 void iniciarBroker(){
 	logger = iniciar_logger();
 	config = leer_config();
-	dump = iniciar_dump();
 
 	log_info(logger, "Iniciando Broker \n");
 	unsigned int miPid= process_getpid();
@@ -479,9 +457,6 @@ void iniciarBroker(){
 	if(strcmp(value,"FF") == 0){
 		algParticionLibre=FF;
 	}else algParticionLibre=BF;
-	//algMemoria = atoi(config_get_string_value(config, "ALGORITMO_MEMORIA"));
-	//algReemplazo = atoi(config_get_string_value(config, "ALGORITMO_REEMPLAZO"));
-	//algParticionLibre = atoi(config_get_string_value(config, "ALGORITMO_PARTICION_LIBRE"));
 
 	IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
@@ -513,22 +488,12 @@ t_log* iniciar_logger(void){
 
 t_config * leer_config(void){
 	t_config * config;
-	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/config/Broker.config");
+	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/Broker.config");
 	if(config== NULL){
 		printf("No pude leer la config\n");
 		exit(2);
 	}
 	return config;
-}
-
-t_log* iniciar_dump(void){
-	t_log* dump;
-	dump = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/Broker-dump.log", "Broker", 1, LOG_LEVEL_INFO);
-	if(dump == NULL){
-		printf("No pude iniciar el dump\n");
-		exit(1);
-	}
-	return dump;
 }
 
 int getMemoriaOcupada(){
@@ -640,11 +605,23 @@ int32_t getSizeMensajeCaught(t_Caught msgCaught){
 }
 
 void rutina (int n){
+	dump = iniciar_dump();
 	if(n == SIGUSR1){
 		pthread_mutex_lock(&mutex_guardar_en_memoria);
 		hacerDump();
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	}else printf("Signal no reconocida. \n");
+}
+
+
+t_log* iniciar_dump(void){
+	t_log* dump;
+	dump = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/Broker-dump.log", "Broker", 1, LOG_LEVEL_INFO);
+	if(dump == NULL){
+		printf("No pude iniciar el dump\n");
+		exit(1);
+	}
+	return dump;
 }
 
 void hacerDump(){
@@ -658,9 +635,35 @@ void hacerDump(){
 	int i;
 	for(i=0; i<tabla_particiones->elements_count; i++){
 		particion = list_get(tabla_particiones, i);
-		log_info(dump, "Particion %d: %p - %p.	[%d]	Size: %db	LRU: %d		COLA: %d		ID_MENSAJE: %d \n",
-				i, particion->posicion_inicial, particion->posicion_final, particion->ocupada, particion->size, particion->id,
-				particion->codigo_operacion, particion->id_mensaje);
+		char estado[] = "L";
+		if(particion->ocupada == 1) estado[0] = 'X';
+		char cola[9];
+		switch(particion->codigo_operacion){
+		case NEW_POKEMON:
+			strcpy(cola, "NEW");
+			break;
+		case APPEARED_POKEMON:
+			strcpy(cola, "APPEARED");
+			break;
+		case GET_POKEMON:
+			strcpy(cola, "GET");
+			break;
+		case LOCALIZED_POKEMON:
+			strcpy(cola, "LOCALIZED");
+			break;
+		case CATCH_POKEMON:
+			strcpy(cola, "CATCH");
+			break;
+		case CAUGHT_POKEMON:
+			strcpy(cola, "CAUGHT");
+			break;
+		default:
+			strcpy(cola, "VACIA");
+			break;
+		}
+		log_info(dump, "Particion %d: %p - %p.	[%s]\n Size: %db	LRU: %d		COLA: %s		ID_MENSAJE: %d \n",
+				i, particion->posicion_inicial, particion->posicion_final, estado, particion->size, particion->id,
+				cola, particion->id_mensaje);
 		//%06p
 	}
 }
@@ -798,27 +801,6 @@ t_suscriptor * obtenerSuscriptor(int32_t id_proceso){
 		return suscriptor;
 	}
 }
-
-int obtenerPosicionSuscriptor(t_suscriptor * suscriptor){
-	int i;
-	for(i=0; i < list_suscriptores->elements_count; i++){
-		t_suscriptor * suscriptorAMirar = list_get(list_suscriptores, i);
-		if(suscriptor->id == suscriptorAMirar->id){
-			return i;
-		}
-	}
-	printf("No encontre el suscriptor");
-	return -1;
-}
-
-bool otraFuncionMagica(info_mensaje mensaje, int32_t id_proceso){
-
-	return true;
-}
-
-
-
-
 
 
 
