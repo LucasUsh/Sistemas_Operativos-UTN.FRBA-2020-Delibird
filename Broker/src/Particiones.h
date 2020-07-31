@@ -18,14 +18,13 @@
 #include "Broker.h"
 
 typedef struct {
-	op_code codigo_operacion; //de la cola a la que pertenece el mensaje
+	op_code codigo_operacion;
 	int32_t posicion_inicial;
 	int32_t posicion_final;
 	int32_t size;
 	bool ocupada;
 	int32_t id_mensaje;
-	int32_t id; //valor que asigna Broker a partir de una variable global
-	//int32_t ramaBuddy; // 0 si no es Buddy System, 1 si es la de la izquierda, 2 si es la de la derecha
+	int32_t id;
 } t_particion;
 
 t_list* tabla_particiones;
@@ -43,6 +42,7 @@ t_particion * algoritmoFIFO();
 t_particion * algoritmoLRU();
 
 int obtenerPosicion(t_particion * particion);
+void actualizarID(int32_t id_mensaje);
 t_particion * consolidarParticion(t_particion * particion, int posicion);
 t_particion * consolidarParticionBS(t_particion * particion, int posicion);
 

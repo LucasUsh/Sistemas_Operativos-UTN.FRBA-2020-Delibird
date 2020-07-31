@@ -392,31 +392,37 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		new = mensaje->mensaje;
 		enviar_new_pokemon(new->pokemon.nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje New a un suscriptor\n");
+		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_APPEARED:
 		app = mensaje->mensaje;
 		enviar_appeared_pokemon(app->pokemon.nombre, string_itoa(app->posicion.X), string_itoa(app->posicion.Y), string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje Appeared a un suscriptor\n");
+		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_GET:
 		get = mensaje->mensaje;
 		enviar_get_pokemon(get->pokemon.nombre,string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje Get a un suscriptor\n");
+		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		loc = mensaje->mensaje;
 		//enviar mensaje localized
 		//log_info(logger, "Se envio un mensaje Localized a un suscriptor\n");
+		//if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_CATCH:
 		catch = mensaje->mensaje;
 		enviar_catch_pokemon(catch->pokemon.nombre, string_itoa(catch->posicion.X), string_itoa(catch->posicion.Y), string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje Catch a un suscriptor\n");
+		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_CAUGHT:
 		caught = mensaje->mensaje;
 		enviar_caught_pokemon(string_itoa(id_mensaje), string_itoa(caught->fueAtrapado), socket_cliente);
 		log_info(logger, "Se envio un mensaje Caught a un suscriptor\n");
+		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	default:
 		break;

@@ -33,7 +33,7 @@ t_particion* crearParticion(int inicio, int size, bool ocupada){
 }
 
 bool particionCandidata(t_particion* particion, int32_t sizeMensaje){
-	return !particion->ocupada && sizeMensaje <= particion->size && ((particion->size-sizeMensaje) >= sizeMinParticion || (particion->size-sizeMensaje) == 0);
+	return !particion->ocupada && sizeMensaje <= particion->size; // && ((particion->size-sizeMensaje) >= sizeMinParticion || (particion->size-sizeMensaje) == 0);
 }
 
 bool hayParticionesCandidatas(int32_t sizeMsg){
@@ -124,7 +124,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		particion=consolidarParticion(particion, posicion);
 		break;
 	case LRU:
@@ -132,11 +132,11 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		posicion = obtenerPosicion(particion);
 		particion->ocupada= false;
 		particion->codigo_operacion =-1;
-		particion->id=0;
+		particion->id=get_id_particion();
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		particion=consolidarParticion(particion, posicion);
 		break;
 	default:
@@ -159,7 +159,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		particion=consolidarParticionBS(particion, posicion);
 		break;
 	case LRU:
@@ -167,11 +167,11 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		posicion = obtenerPosicion(particion);
 		particion->ocupada= false;
 		particion->codigo_operacion =-1;
-		particion->id=0;
+		particion->id=get_id_particion();
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Indice: %d \n Posicion de inicio: %d \n", posicion, particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d \n", particion->posicion_inicial);
 		particion=consolidarParticionBS(particion, posicion);
 		break;
 	default:
@@ -214,8 +214,8 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 					list_remove(tabla_particiones, posicion-1);
 					list_add_in_index(tabla_particiones,posicion-1, particion);
 
-					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n Indice: %d \n"
-							"Posicion de inicio particion 2: %d \n Indice: %d \n", particion->posicion_inicial, posicion, particionAMirar->posicion_inicial, posicion-1);
+					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n"
+							"Posicion de inicio particion 2: %d \n", particion->posicion_inicial, particionAMirar->posicion_inicial);
 				}
 			}
 		}
@@ -231,8 +231,8 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 					list_remove(tabla_particiones, posicion+1);
 					list_add_in_index(tabla_particiones,posicion+1, particion);
 
-					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n Indice: %d \n"
-							"Posicion de inicio particion 2: %d \n Indice: %d \n", particion->posicion_inicial, posicion, particionAMirar->posicion_inicial, posicion+1);
+					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n"
+							"Posicion de inicio particion 2: %d \n", particion->posicion_inicial, particionAMirar->posicion_inicial);
 				}
 			}
 		}
@@ -337,6 +337,16 @@ int obtenerPosicion(t_particion * particion){
 	}
 	printf("No encontre el elemento de id %d con posicion inicial %d \n", particion->id, particion->posicion_inicial);
 	return -1;
+}
+
+void actualizarID(int32_t id_mensaje){
+	int i;
+	for(i=0; i < tabla_particiones->elements_count; i++){
+		t_particion*particionAMirar = list_get(tabla_particiones, i);
+		if(particionAMirar->id_mensaje == id_mensaje){
+			particionAMirar = get_id_particion();
+		}
+	}
 }
 
 void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
