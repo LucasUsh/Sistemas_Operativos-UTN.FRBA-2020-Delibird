@@ -72,6 +72,8 @@ void* serializar_paquete_get (t_paquete* paquete, int32_t* bytes, t_Get* get);
 t_Get* deserializar_paquete_get (int32_t* socket_cliente);
 void* serializar_paquete_caught (t_paquete* paquete, int32_t* bytes, t_Caught* caught);
 t_Caught* deserializar_paquete_caught (int32_t* socket_cliente);
+void* serializar_paquete_localized (t_paquete* paquete, int32_t* bytes, t_Localized* localized);
+t_Localized* deserializar_paquete_localized (int32_t* socket_cliente);
 
 void enviar_handshake(int32_t id_proceso, int32_t socket_cliente);
 void * serializar_handshake(t_paquete* paquete, int32_t* bytes);

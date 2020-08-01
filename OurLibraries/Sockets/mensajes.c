@@ -154,3 +154,26 @@ void enviar_get_pokemon(char* pokemon, char* id_mensaje, int32_t socket_cliente)
 
 }
 
+void enviar_localized_pokemon (t_pokemon* pokemon, t_list* lista_de_posiciones, int32_t id_mensaje, int32_t socket_hacia) {
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = LOCALIZED_POKEMON;
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	t_Localized localized;
+	localized.pokemon = *pokemon;
+	localized.listaPosiciones = lista_de_posiciones;
+
+	paquete->buffer->size = tamanio_localized (&localized);
+	paquete->buffer->id_Mensaje = id_mensaje;
+	paquete->buffer->stream = &localized;
+
+	int32_t bytes_a_enviar;
+	void *paqueteSerializado = serializar_paquete_localized (paquete, &bytes_a_enviar, &localized);
+
+	send(socket_hacia, paqueteSerializado, bytes_a_enviar, 0);
+
+	free(paqueteSerializado);
+	free(paquete->buffer);
+	free(paquete);
+}
+

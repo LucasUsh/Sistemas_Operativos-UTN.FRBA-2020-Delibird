@@ -16,5 +16,7 @@ void enviar_catch_pokemon(char* pokemon, char* x, char* y, char* id_mensaje, int
 void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int32_t socket_cliente);
 void enviar_get_pokemon(char* pokemon, char* id_mensaje, int32_t socket_cliente);
 
+void enviar_localized_pokemon (t_pokemon* pokemon, t_list* lista_de_posiciones, int32_t id_mensaje, int32_t socket_hacia);
+
 
 #endif
