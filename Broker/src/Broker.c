@@ -14,7 +14,7 @@
 
 int32_t id_mensaje_global = 0;
 pthread_mutex_t mutex_id_mensaje;
-
+pthread_mutex_t mutex_list_mensaje;
 pthread_mutex_t mutex_guardar_en_memoria;
 
 int32_t main(void) {
@@ -39,7 +39,7 @@ int32_t main(void) {
 			info_mensaje * mensaje;
 
 			//HANDSHAKE
-			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == HANDSHAKE){
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
@@ -47,7 +47,7 @@ int32_t main(void) {
 					//ACK DEL HANDSHAKE
 					enviar_ACK(0, socket_cliente);
 					//ESPERA EL MENSAJE
-					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						switch(operacion){
 						case SUSCRIPCION_APPEARED:
 						case SUSCRIPCION_GET:
@@ -76,6 +76,7 @@ int32_t main(void) {
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
+							pthread_mutex_lock(&mutex_guardar_en_memoria);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
@@ -91,6 +92,7 @@ int32_t main(void) {
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
+							pthread_mutex_lock(&mutex_guardar_en_memoria);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje Appeared\n");
 							pthread_detach(hilo);
@@ -106,6 +108,7 @@ int32_t main(void) {
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
+							pthread_mutex_lock(&mutex_guardar_en_memoria);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje Get\n");
 							pthread_detach(hilo);
@@ -121,6 +124,7 @@ int32_t main(void) {
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
+							pthread_mutex_lock(&mutex_guardar_en_memoria);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje Localized\n");
 							pthread_detach(hilo);
@@ -136,6 +140,7 @@ int32_t main(void) {
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
+							pthread_mutex_lock(&mutex_guardar_en_memoria);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje Catch\n");
 							pthread_detach(hilo);
@@ -151,6 +156,7 @@ int32_t main(void) {
 							mensaje->process_id=id_proceso;
 							enviar_ACK(mensaje->id_mensaje, socket_cliente);
 							liberar_conexion(socket_cliente);
+							pthread_mutex_lock(&mutex_guardar_en_memoria);
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje Caught\n");
 							pthread_detach(hilo);
@@ -163,6 +169,7 @@ int32_t main(void) {
 		}else {
 			printf("Fallo al recibir/aceptar al cliente\n");
 			sleep(5);
+			socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 		}
 	}
 	if(socketEscucha == -1){
@@ -239,15 +246,19 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 					enviarMensaje(suscripcion, mensaje, socket_cliente);
 					log_info(logger, "Se envio un mensaje a un suscriptor\n");
 					mensaje = obtenerMensaje(mensaje->id_mensaje);
+					pthread_mutex_lock(&mutex_list_mensaje);
 					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+					pthread_mutex_unlock(&mutex_list_mensaje);
 					//esperar ACK:
-					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = obtenerMensaje(mensaje->id_mensaje);
 							log_info(logger, "Se recibio el ACK\n");
+							pthread_mutex_lock(&mutex_list_mensaje);
 							list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+							pthread_mutex_unlock(&mutex_list_mensaje);
 						} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 					} else {
 						liberar_conexion(socket_cliente);
@@ -257,12 +268,11 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						break;
 					}
 			}
-		}
+		}else list_destroy(mensajesAEnviar);
 	}
 }
 
 void manejoMensaje(info_mensaje* mensaje){
-	pthread_mutex_lock(&mutex_guardar_en_memoria);
 	switch(algMemoria){
 	case BS:
 		algoritmoBuddySystem(mensaje, algReemplazo);
@@ -290,7 +300,9 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	mensajeNew->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeNew->suscriptoresQueRecibieron = list_create();
 	mensajeNew->suscriptoresQueRecibieron->elements_count=0;
+	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeNew);
+	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeNew;
 }
 
@@ -311,7 +323,9 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	mensajeAppeared->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeAppeared->suscriptoresQueRecibieron = list_create();
 	mensajeAppeared->suscriptoresQueRecibieron->elements_count=0;
+	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeAppeared);
+	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeAppeared;
 }
 
@@ -330,7 +344,9 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	mensajeGet->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeGet->suscriptoresQueRecibieron = list_create();
 	mensajeGet->suscriptoresQueRecibieron->elements_count=0;
+	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeGet);
+	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeGet;
 }
 
@@ -355,7 +371,9 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	mensajeLocalized->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeLocalized->suscriptoresQueRecibieron = list_create();
 	mensajeLocalized->suscriptoresQueRecibieron->elements_count=0;
+	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeLocalized);
+	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeLocalized;
 }
 
@@ -375,7 +393,9 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	mensajeCatch->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeCatch->suscriptoresQueRecibieron = list_create();
 	mensajeCatch->suscriptoresQueRecibieron->elements_count=0;
+	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeCatch);
+	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeCatch;
 }
 
@@ -394,7 +414,9 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	mensajeCaught->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeCaught->suscriptoresQueRecibieron = list_create();
 	mensajeCaught->suscriptoresQueRecibieron->elements_count=0;
+	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeCaught);
+	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeCaught;
 }
 
@@ -726,6 +748,7 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	default:
 		break;
 	}
+	pthread_mutex_lock(&mutex_guardar_en_memoria);
 	t_list* mensajesCacheados = getMensajesCacheadosDeOperacion(tipoMensajeABuscar); // mensajesCacheadoes es una lista de t_particion
 
 	for(int i=0; i<mensajesCacheados->elements_count; i++){
@@ -735,6 +758,7 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 			list_add(mensajesAEnviar, mensaje);
 		}
 	}
+	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	list_destroy(mensajesCacheados);
 	return mensajesAEnviar;
 }
@@ -778,8 +802,10 @@ info_mensaje * obtenerMensaje(int32_t id_mensaje){
 	bool _esElMensaje(void* element){
 		return esElMensaje((info_mensaje*)element, id_mensaje);
 	}
-
+	pthread_mutex_lock(&mutex_list_mensaje);
 	t_list* mensajesConEseID = list_filter(list_mensajes, _esElMensaje);
+	pthread_mutex_unlock(&mutex_list_mensaje);
+
 	if(mensajesConEseID->elements_count == 1){
 		mensaje = list_get(mensajesConEseID, 0);
 		list_destroy(mensajesConEseID);

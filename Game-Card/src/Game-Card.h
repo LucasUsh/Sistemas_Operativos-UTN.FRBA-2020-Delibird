@@ -71,5 +71,6 @@ void suscribirse_broker();
 void salir (const char* mensaje);
 void inicializaciones_globales();
 void liberar_memoria ();
+int32_t reconectar(int32_t socket);
 
 #endif
