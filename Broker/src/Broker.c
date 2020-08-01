@@ -24,7 +24,7 @@ int32_t main(void) {
 	signal(SIGUSR1, rutina);
 
 	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
-	log_info(logger, "Creado socket de escucha \n");
+	log_info(logger, "Creado socket de escucha");
 
 	while(socketEscucha != -1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socketEscucha);
@@ -43,7 +43,7 @@ int32_t main(void) {
 				if(operacion == HANDSHAKE){
 					recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_cliente, &id_proceso, sizeof(int32_t), MSG_WAITALL);
-					log_info(logger, "Se conecto el proceso %d\n", id_proceso);
+					log_info(logger, "Se conecto el proceso %d", id_proceso);
 					//ACK DEL HANDSHAKE
 					enviar_ACK(0, socket_cliente);
 					//ESPERA EL MENSAJE
@@ -66,7 +66,7 @@ int32_t main(void) {
 							pthread_detach(hilo);
 						break;
 						case NEW_POKEMON:
-							log_info(logger, "Llego un mensaje NEW_POKEMON \n");
+							log_info(logger, "Llego un mensaje NEW_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							estructura_mensaje.socket_cliente = socket_cliente;
@@ -78,7 +78,7 @@ int32_t main(void) {
 							pthread_detach(hilo);
 							break;
 						case APPEARED_POKEMON:
-							log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
+							log_info(logger, "Llego un mensaje APPEARED_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							estructura_mensaje.socket_cliente = socket_cliente;
@@ -86,11 +86,11 @@ int32_t main(void) {
 							estructura_mensaje.id_proceso = id_proceso;
 							estructura_mensaje.operacion = operacion;
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
+							}else printf("Fallo al crear el hilo que maneja el mensaje Appeared\n");
 							pthread_detach(hilo);
 							break;
 						case GET_POKEMON:
-							log_info(logger, "Llego un mensaje GET_POKEMON \n");
+							log_info(logger, "Llego un mensaje GET_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							estructura_mensaje.socket_cliente = socket_cliente;
@@ -98,11 +98,11 @@ int32_t main(void) {
 							estructura_mensaje.id_proceso = id_proceso;
 							estructura_mensaje.operacion = operacion;
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
+							}else printf("Fallo al crear el hilo que maneja el mensaje Get\n");
 							pthread_detach(hilo);
 							break;
 						case LOCALIZED_POKEMON:
-							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
+							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							estructura_mensaje.socket_cliente = socket_cliente;
@@ -110,11 +110,11 @@ int32_t main(void) {
 							estructura_mensaje.id_proceso = id_proceso;
 							estructura_mensaje.operacion = operacion;
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
+							}else printf("Fallo al crear el hilo que maneja el mensaje Localized\n");
 							pthread_detach(hilo);
 							break;
 						case CATCH_POKEMON:
-							log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
+							log_info(logger, "Llego un mensaje CATCH_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							estructura_mensaje.socket_cliente = socket_cliente;
@@ -122,11 +122,11 @@ int32_t main(void) {
 							estructura_mensaje.id_proceso = id_proceso;
 							estructura_mensaje.operacion = operacion;
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
+							}else printf("Fallo al crear el hilo que maneja el mensaje Catch\n");
 							pthread_detach(hilo);
 							break;
 						case CAUGHT_POKEMON:
-							log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
+							log_info(logger, "Llego un mensaje CAUGHT_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							estructura_mensaje.socket_cliente = socket_cliente;
@@ -134,7 +134,7 @@ int32_t main(void) {
 							estructura_mensaje.id_proceso = id_proceso;
 							estructura_mensaje.operacion = operacion;
 							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
+							}else printf("Fallo al crear el hilo que maneja el mensaje Caught\n");
 							pthread_detach(hilo);
 							break;
 							}
@@ -145,6 +145,7 @@ int32_t main(void) {
 		}else {
 			printf("Fallo al recibir/aceptar al cliente\n");
 			sleep(5);
+			close(socketEscucha);
 			socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 		}
 	sleep(1);
@@ -177,6 +178,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	int32_t id_mensaje;
 	int32_t operacion;
 	bool fin = false;
+	int32_t id_msg_log;
 
 	if(procesoSuscriptoACola(suscripcion, id_proceso)){
 		suscriptor = obtenerSuscriptor(id_proceso);
@@ -211,7 +213,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		strcpy(cola, "VACIA");
 		break;
 	}
-	log_info(logger, "Proceso suscripto a cola %s\n", cola);
+	log_info(logger, "Proceso suscripto a cola %s", cola);
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
@@ -220,8 +222,10 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		if(mensajesAEnviar->elements_count > 0){
 			for(int i=0; i<mensajesAEnviar->elements_count; i++){
 					mensaje = list_get(mensajesAEnviar, i);
-					enviarMensaje(suscripcion, mensaje, socket_cliente);
-					log_info(logger, "Se envio un mensaje a un suscriptor\n");
+					enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+					if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+						id_msg_log = mensaje->id_mensaje_correlativo;
+					}else id_msg_log = mensaje->id_mensaje;
 					mensaje = obtenerMensaje(mensaje->id_mensaje);
 					pthread_mutex_lock(&mutex_list_mensaje);
 					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
@@ -232,7 +236,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							mensaje = obtenerMensaje(mensaje->id_mensaje);
-							log_info(logger, "Se recibio el ACK\n");
+							log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
 							pthread_mutex_lock(&mutex_list_mensaje);
 							list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
 							pthread_mutex_unlock(&mutex_list_mensaje);
@@ -245,6 +249,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						break;
 					}
 			}
+			list_destroy(mensajesAEnviar);
 		}else list_destroy(mensajesAEnviar);
 	}
 }
@@ -374,11 +379,11 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	localized = deserializar_paquete_localized(&socket_cliente);
 	/*printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
 			localized->pokemon.nombre);*/
-	int i;
+	/*int i;
 	for(i=0; i<localized->listaPosiciones->elements_count; i++){
 		t_posicion * posicion = list_get(localized->listaPosiciones, i);
 		printf("%d  %d \n", posicion->X, posicion->Y);
-	}
+	}*/
 	info_mensaje * mensajeLocalized = malloc(sizeof(info_mensaje));
 	mensajeLocalized->op_code = LOCALIZED_POKEMON;
 	mensajeLocalized->id_mensaje = get_id();
@@ -439,7 +444,7 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	return mensajeCaught;
 }
 
-void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente){
+void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cliente, int32_t id_proceso){
 	int32_t id_mensaje;
 	t_New * new;
 	t_Appeared * app;
@@ -456,37 +461,38 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	case SUSCRIPCION_NEW:
 		new = mensaje->mensaje;
 		enviar_new_pokemon(new->pokemon.nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
-		log_info(logger, "Se envio un mensaje New a un suscriptor\n");
+		log_info(logger, "Se envio un mensaje NEW_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		free(new);
 		break;
 	case SUSCRIPCION_APPEARED:
 		app = mensaje->mensaje;
 		enviar_appeared_pokemon(app->pokemon.nombre, string_itoa(app->posicion.X), string_itoa(app->posicion.Y), string_itoa(id_mensaje), socket_cliente);
-		log_info(logger, "Se envio un mensaje Appeared a un suscriptor\n");
+		log_info(logger, "Se envio un mensaje APPEARED_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_GET:
 		get = mensaje->mensaje;
 		enviar_get_pokemon(get->pokemon.nombre,string_itoa(id_mensaje), socket_cliente);
-		log_info(logger, "Se envio un mensaje Get a un suscriptor\n");
+		log_info(logger, "Se envio un mensaje GET_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		loc = mensaje->mensaje;
 		//enviar mensaje localized
-		//log_info(logger, "Se envio un mensaje Localized a un suscriptor\n");
+		//log_info(logger, "Se envio un mensaje LOCALIZED con id: %d al proceso %d", id_mensaje, id_proceso);
 		//if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_CATCH:
 		catch = mensaje->mensaje;
 		enviar_catch_pokemon(catch->pokemon.nombre, string_itoa(catch->posicion.X), string_itoa(catch->posicion.Y), string_itoa(id_mensaje), socket_cliente);
-		log_info(logger, "Se envio un mensaje Catch a un suscriptor\n");
+		log_info(logger, "Se envio un mensaje CATCH_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_CAUGHT:
 		caught = mensaje->mensaje;
 		enviar_caught_pokemon(string_itoa(id_mensaje), string_itoa(caught->fueAtrapado), socket_cliente);
-		log_info(logger, "Se envio un mensaje Caught a un suscriptor\n");
+		log_info(logger, "Se envio un mensaje CAUGHT_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	default:
@@ -505,9 +511,9 @@ void iniciarBroker(){
 	logger = iniciar_logger();
 	config = leer_config();
 
-	log_info(logger, "Iniciando Broker \n");
+	log_info(logger, "Iniciando Broker");
 	unsigned int miPid= process_getpid();
-	log_info(logger, "El PID de Broker es %d \n", miPid);
+	log_info(logger, "El PID de Broker es %d", miPid);
 
 	//Lectura de archivo de configuracion
 	sizeMemoria = atoi(config_get_string_value(config, "TAMANO_MEMORIA"));
@@ -702,7 +708,7 @@ void hacerDump(){
     char fecha[128];
     strftime(fecha,128,"%d/%m/%y %H:%M:%S",tlocal);
 
-	log_info(dump, "Dump: %s \n", fecha);
+	log_info(dump, "Dump: %s", fecha);
 	int i;
 	for(i=0; i<tabla_particiones->elements_count; i++){
 		particion = list_get(tabla_particiones, i);
@@ -732,7 +738,7 @@ void hacerDump(){
 			strcpy(cola, "VACIA");
 			break;
 		}
-		log_info(dump, "Particion %d: %p - %p.	[%s]\n Size: %db	LRU: %d		COLA: %s		ID_MENSAJE: %d \n",
+		log_info(dump, "Particion %d: %p - %p.	[%s]\n Size: %db	LRU: %d		COLA: %s		ID_MENSAJE: %d",
 				i, particion->posicion_inicial, particion->posicion_final, estado, particion->size, particion->id,
 				cola, particion->id_mensaje);
 		//%06p
