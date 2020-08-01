@@ -85,7 +85,7 @@ void funcion_new_pokemon(t_New* new) {
 }
 
 void funcion_catch_pokemon(t_Catch* catch) {
-	log_info(logger_GC, "Iniciando operacion CATCH para %s...\n", catch->pokemon.nombre);
+	log_info(logger_GC, "Iniciando operacion CATCH para %s...", catch->pokemon.nombre);
 
 	char* ruta_metadata = ruta_metadata_pokemon_teorica (catch->pokemon);
 
@@ -630,7 +630,7 @@ char* copiar_stream(FILE* archivo_lectura, char* ruta) {
 
 	fread(stream, estado_archivo.st_size, 1, archivo_lectura);
 
-	if (stream[estado_archivo.st_size-1] == '#') stream = realloc(stream, estado_archivo.st_size-1);
+	if (stream[estado_archivo.st_size - 1] == '#') stream = realloc(stream, estado_archivo.st_size - 1);
 
 	return stream;
 }
@@ -676,7 +676,7 @@ char* traer_bloques(char** bloques, int32_t cantidad) {
 	char* datos_copiados = NULL;
 	char* auxiliar = NULL;
 	FILE* binario = NULL;
-	int32_t tamanio_total = 0, tamanio_previo = 0;
+	int32_t tamanio_total = 0, tamanio_previo = 0, tamanio_auxiliar = 0;
 
 	while (i < cantidad) {
 		carpeta_dinamica = malloc(strlen (carpeta_Blocks) + strlen("/.bin") + strlen(bloques[i]) + 1);
@@ -684,15 +684,16 @@ char* traer_bloques(char** bloques, int32_t cantidad) {
 		stat(carpeta_dinamica, &estado_binario);
 
 		tamanio_previo = tamanio_total;
-		tamanio_total += estado_binario.st_size - 1;
 
 		binario = abrir_para (carpeta_dinamica, "r");
-		auxiliar = copiar_stream(binario, carpeta_dinamica);
+		auxiliar = copiar_stream_con_tamanio(binario, carpeta_dinamica, &tamanio_auxiliar);
 		fclose(binario);
+
+		tamanio_total += tamanio_auxiliar;
 
 		datos_copiados = realloc (datos_copiados, tamanio_total);
 
-		memcpy(datos_copiados+tamanio_previo, auxiliar, estado_binario.st_size - 1);
+		memcpy(datos_copiados+tamanio_previo, auxiliar, tamanio_auxiliar);
 
 		free(carpeta_dinamica);
 		free(auxiliar);
@@ -739,6 +740,23 @@ char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamien
 	stream[estado_archivo.st_size] = '\0';
 
 	sem_post (dictionary_get(semaforos, pokemon));
+
+	return stream;
+}
+
+char* copiar_stream_con_tamanio(FILE* archivo_lectura, char* ruta, int32_t* tamanio_copiado) {
+	struct stat estado_archivo;
+	stat(ruta, &estado_archivo);
+
+	char* stream = malloc(estado_archivo.st_size);
+
+	fread(stream, estado_archivo.st_size, 1, archivo_lectura);
+
+	if (stream[estado_archivo.st_size - 1] == '#') {
+		*tamanio_copiado = estado_archivo.st_size - 1;
+		stream = realloc(stream, *tamanio_copiado);
+	}
+	else *tamanio_copiado = estado_archivo.st_size;
 
 	return stream;
 }

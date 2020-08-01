@@ -14,18 +14,17 @@ int32_t main(void)
 	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_NEW) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
 
-/*	pthread_t hilo_catch;
+	pthread_t hilo_catch;
 	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_CATCH) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
 	pthread_t hilo_get;
 	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_GET) == 0)
 		log_debug (logger_GC, "Hilo cola get creado correctamente.");
-*/
 
 	pthread_join(hilo_new,NULL);
-	//pthread_join(hilo_catch,NULL);
-	//pthread_join(hilo_get,NULL);
+	pthread_join(hilo_catch,NULL);
+	pthread_join(hilo_get,NULL);
 	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();
@@ -208,7 +207,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			log_debug(logger_GC, "Nombre: %s, Posicion: (%d, %d)", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
 
 			if (pthread_create(&hilo, NULL, (void*)funcion_catch_pokemon, catch) == 0) {
-				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
+				log_info (logger_GC, "Hilo para responder CATCH_POKEMON creado correctamente.");
 			}
 			pthread_detach(hilo);
 

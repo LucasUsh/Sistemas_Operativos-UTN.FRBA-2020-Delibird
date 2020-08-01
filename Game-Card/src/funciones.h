@@ -76,6 +76,7 @@ char* metadata_copiar_linea_bloques(FILE* metadata, char* ruta_metadata);
 char* traer_bloques(char** bloques, int32_t cantidad);
 char* posicion_a_string (t_posicion posicion);
 char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamiento);
+char* copiar_stream_con_tamanio(FILE* archivo_lectura, char* ruta, int32_t* tamanio_copiado);
 
 void enviar_appeared(char* pokemon, char* x, char* y);
 
