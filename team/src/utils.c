@@ -250,6 +250,15 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 
 bool alguien_yendo(t_pokemon_team* pokemon){
 
+	/*
+	 *
+	 * if !pokemon.planificable return true
+	 *
+	 *
+	 * */
+
+
+
 	for(int i = 0; i < entrenadores->elements_count; i++){
 		t_entrenador* e = list_get(entrenadores, i);
 
@@ -399,6 +408,25 @@ t_pokemon_team* get_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones){
 	return NULL;
 };
 
+t_pokemon_team* remove_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones){
+	for(int j = 0; j < pokemones->elements_count; j++){
+		t_pokemon_team* pokemon = list_get(pokemones, j);
+
+		if(string_equals_ignore_case(nombre_pokemon, pokemon->nombre)){
+
+			if(pokemon->cantidad > 1){
+				pokemon->cantidad--;
+			} else {
+				list_remove(pokemones, j);
+			}
+
+			return pokemon;
+		}
+	}
+
+	return NULL;
+};
+
 bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
 	for(int i = 0; i < objetivo_global->elements_count; i++){
 		t_pokemon_team* objetivo_actual = list_get(objetivo_global, i);
@@ -541,3 +569,91 @@ t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2){
 
 	return NULL;
 }
+
+
+
+/*
+ * e2 tiene un pokemon que le sirve a e1
+ * */
+t_pokemon_team* pokemon_para_intercambio(t_entrenador* entrenador, t_pokemon_team* pokemon){
+
+	//al entrenador se le saca una unidad del pokemon
+	t_pokemon_team* pokemon_sirve = remove_pokemon_by_nombre(entrenador, pokemon->nombre);
+
+	if(pokemon_sirve !=NULL) return pokemon_sirve;
+
+	return NULL;
+}
+
+
+
+
+
+/*
+
+
+
+
+
+
+t_Localized* generar_localized(char* pokemon, int cant_posiciones){
+	t_list* listaPosiciones = list_create();
+	t_Localized* mensaje = malloc(sizeof(t_Localized)); // reemplazar por funcion get size Localized de broker
+
+	for(int i = 0; i < cant_posiciones; i++){
+		t_posicion* posicion = malloc(sizeof(t_posicion));
+		posicion->X = (rand() % (10)) + 1; // numero random entre 1 y 10
+		posicion->Y = (rand() % (10)) + 1;
+
+		list_add(listaPosiciones, posicion);
+	}
+
+	mensaje->listaPosiciones = listaPosiciones;
+	mensaje->pokemon.nombre = pokemon;
+	mensaje->pokemon.size_Nombre = string_length(pokemon); // creo que hay que sumar 1
+
+	return mensaje;
+}
+
+t_Caught* generar_caught(){
+	t_Caught* mensaje = malloc(sizeof(t_Caught)); // reemplazar por funcion get size caught de broker
+
+	mensaje->fueAtrapado = (rand() % (1)) + 1; // numero random entre 1 y 0
+
+	return mensaje;
+}
+
+t_list* simular_list_localized(int cant_mensajes){
+
+	srand(time(NULL));
+	t_list* mensajes_localized = list_create();
+	t_list* nombre_pokemones = get_nombres_pokemon();
+
+
+	for(int i = 0; i < cant_mensajes; i++){
+		//el nombre lo obtengo de forma aleatoria
+		char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
+		printf("%s\n", nombre_pokemon);
+		//con el nombre, genero tambien X cantidad de posiciones aleatorias
+		t_Localized* mensaje_localized = generar_localized(nombre_pokemon, 1);
+
+		list_add(mensajes_localized, mensaje_localized);
+	}
+
+	return mensajes_localized;
+
+}
+
+t_Localized* simular_localized(int cantidad_posiciones){
+
+	srand(time(NULL));
+
+	t_list* nombre_pokemones = get_nombres_pokemon();
+	char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
+	t_Localized* mensaje = generar_localized(nombre_pokemon, cantidad_posiciones);
+
+	return mensaje;
+
+}
+
+*/

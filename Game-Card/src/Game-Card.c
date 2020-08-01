@@ -6,25 +6,31 @@ int32_t main(void)
 
 	instalar_filesystem ();
 
+	op_code codigo = SUSCRIPCION_NEW;
+
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_info (logger_GC, "Hilo servidor creado correctamente.");
 
 	pthread_t hilo_new;
-	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_NEW) == 0)
+	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, &codigo) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
 
-	/*pthread_t hilo_catch;
-	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_CATCH) == 0)
+	codigo = SUSCRIPCION_CATCH;
+
+	pthread_t hilo_catch;
+	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, &codigo) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
+	codigo = SUSCRIPCION_GET;
+
 	pthread_t hilo_get;
-	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, SUSCRIPCION_GET) == 0)
-		log_debug (logger_GC, "Hilo cola get creado correctamente.");*/
+	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo) == 0)
+		log_debug (logger_GC, "Hilo cola get creado correctamente.");
 
 	pthread_join(hilo_new,NULL);
-	//pthread_join(hilo_catch,NULL);
-	//pthread_join(hilo_get,NULL);
+	pthread_join(hilo_catch,NULL);
+	pthread_join(hilo_get,NULL);
 	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();
@@ -229,7 +235,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 	}
 }
 
-void hilo_suscriptor(op_code code){
+void hilo_suscriptor(op_code* code){
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
@@ -245,7 +251,7 @@ void hilo_suscriptor(op_code code){
 					recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
-					enviar_suscripcion(code, socket_broker_new);
+					enviar_suscripcion(*code, socket_broker_new);
 					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 						if(operacion == ACK){
 							recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
