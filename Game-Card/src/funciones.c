@@ -175,7 +175,9 @@ void funcion_get_pokemon(t_Get* get) {
 
 		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
 
-		char** lineas_archivo = string_split(archivo_cargado, "\0");
+		/***************************************************************************************/
+
+		char** lineas_archivo = string_split(archivo_cargado, "\n");
 
 		free(archivo_cargado);
 
@@ -211,11 +213,27 @@ void funcion_get_pokemon(t_Get* get) {
 
 		posiciones[c] = '\0';
 
-		char* cantidad_de_posiciones = string_itoa(i);
+		char** posiciones_separadas = string_split(posiciones, " ");
 
-		char* envio = malloc (get->pokemon.size_Nombre + strlen(cantidad_de_posiciones) + strlen(posiciones));
+		free(posiciones);
 
-		//strcat (strcpy(envio, get->pokemon.nombre), );
+		t_list* posiciones_a_enviar = list_create();
+		i = 0;
+		t_posicion auxiliar;
+
+		while(posiciones_separadas[i] != NULL) {
+			auxiliar.X = atoi (posiciones_separadas[i]);
+			i++;
+			auxiliar.Y = atoi (posiciones_separadas[i]);
+			i++;
+			list_add(posiciones_a_enviar, &auxiliar);
+		}
+
+
+
+		// TODO: Enviar LOCALIZED_POKEMON con el 't_list* posiciones_a_enviar' y el 't_pokemon get->pokemon'
+		// hacer esto en la funcion que envia el localized:
+		// list_destroy_and_destroy_elements(posiciones_a_enviar, free);
 
 		sleep(tiempo_retardo_operacion);
 
@@ -226,10 +244,11 @@ void funcion_get_pokemon(t_Get* get) {
 
 		liberar_strings(lineas_archivo);
 		liberar_strings(linea_dividida);
+		liberar_strings(posiciones_separadas);
+
 		string_iterate_lines(strings_bloques, (void*) free);
 		free(strings_bloques);
 		free(linea_con_bloques);
-		free(posiciones);
 	}
 
 	else {
@@ -841,10 +860,10 @@ char* copiar_stream_con_tamanio(FILE* archivo_lectura, char* ruta, int32_t* tama
 /***************************ENVIO DE MENSAJES********************************/
 /****************************************************************************/
 
-void enviar_appeared(char* pokemon, char* x, char* y){
-	int32_t operacion=0;
+void enviar_appeared (char* pokemon, char* x, char* y){
+	int32_t operacion = 0;
 	int32_t tamanio_estructura = 0;
-	int32_t id_mensaje=0;
+	int32_t id_mensaje = 0;
 	int32_t broker = crear_conexion(ip_broker,puerto_broker);
 	if(broker == 0){
 		log_info(logger_GC, "Error al enviar appeared al Broker");
@@ -862,7 +881,13 @@ void enviar_appeared(char* pokemon, char* x, char* y){
 	}
 }
 
+void enviar_caught () {
 
+}
+
+void enviar_localized () {
+
+}
 
 
 
