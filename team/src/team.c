@@ -16,6 +16,11 @@ int32_t cantidad_entrenadores = 0;
 int32_t socket_escucha_team;
 int RETARDO_CICLO_CPU = 0;
 
+int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por moverse
+int deadlocks_totales = 0; //deadlocks totales sin repetir
+int deadlocks_resueltos_totales = 0; // deadlocks resueltos
+int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
+
 //colas de planificacion
 t_list* cola_ready;
 t_list* entrenadores_DL;
@@ -31,6 +36,9 @@ sem_t s_replanificar;
 sem_t s_entrenador_exit;
 sem_t s_resuelve_deadlock;
 pthread_mutex_t mutex_cola_ready;
+pthread_mutex_t mutex_ciclos_totales;
+pthread_mutex_t mutex_deadlocks_totales;
+pthread_mutex_t mutex_deadlocks_resueltos_totales;
 
 
 //colas de mensajes
@@ -39,8 +47,54 @@ t_list* pokemones_ubicados; // estos son los pokemones capturables. Esta lista v
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
 
+char* generar_estado(){
+	char* estado = string_new();
+	string_from_vformat(estado, "PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
+
+	return estado;
+}
+
+void show_estado(){
+
+	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
+	    printf("********************\n");
 
 
+	    void _mostrar_pokemon(void* elemento){
+	    	return mostrar_pokemon((t_pokemon_team*)elemento, objetivo_global);
+	    }
+
+
+	    for(int32_t i = 0; i < entrenadores->elements_count; i++){
+	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
+	    	printf("|ENTRENADOR: %d\n|----------------\n|POSICION: (%d,%d)\n",
+	    			i,
+					entrenador_actual->posicion.X,
+					entrenador_actual->posicion.Y);
+	    	printf("|ESTADO: %d\n", entrenador_actual->estado);
+	    	if(entrenador_actual->ocupado) printf("|ESTA OCUPADO\n");
+
+	    	printf("|POKEMONES:\n");
+	    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
+
+	    	printf("|OBJETIVOS:\n");
+	    	list_iterate(entrenador_actual->objetivo, _mostrar_pokemon);
+
+	    	printf("|CICLOS UTILIZADOS:%d\n", entrenador_actual->ciclos);
+			printf("********************\n");
+
+		}
+
+		printf("|OBJETIVO GLOBAL:\n");
+		list_iterate(objetivo_global, _mostrar_pokemon);
+
+
+		printf("|CICLOS TOTALES UTILIZADOS: %d\n", ciclos_totales);
+		printf("|CAMBIOS DE CONTEXTO: %d\n", cambios_contexto);
+		printf("********************\n");
+
+		return;
+}
 
 
 void hilo_exit(){
@@ -49,7 +103,13 @@ void hilo_exit(){
 	}
 
 	printf("Todos los entrenadores cumplieron sus objetivos\n");
-	show_entrenadores();
+
+	for(int i =0; i<entrenadores->elements_count;i++){
+		t_entrenador* e = list_get(entrenadores, i);
+		ciclos_totales += e->ciclos;
+	}
+
+	show_estado();
 	printf("Terminando el programa...\n");
 
 	return;
@@ -325,13 +385,14 @@ void ejecuta(t_entrenador* entrenador){
 
 	entrenador->estado = EXEC;
 	entrenador->ocupado= true;
-	printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
-	printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-	printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
+//	printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
+//	printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+//	printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
 
 	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
 	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
+	entrenador->ciclos++;
 	sleep(RETARDO_CICLO_CPU);
 	if(posicion_final_X != 0){
 		if(posicion_final_X < 0){
@@ -341,7 +402,6 @@ void ejecuta(t_entrenador* entrenador){
 		}
 
 		printf("**Avanzo 1 paso en X**\n");
-		printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 		return;
 
@@ -355,10 +415,11 @@ void ejecuta(t_entrenador* entrenador){
 		}
 		printf("**Avanzo 1 paso en Y**\n");
 
-
 		return;
 
 	}
+
+
 }
 
 
@@ -564,13 +625,13 @@ void hilo_replanificar(){
 
 void hilo_detectar_deadlock(){
 	while(1){
-		printf("soy el hilo que detecta deadlocks! esperando...*************************************************\n");
+		printf("soy el hilo que detecta deadlocks! esperando...\n");
 		for(int i = 0; i < entrenadores->elements_count; i++){
 			sem_wait(&s_detectar_deadlock);
 		}
 
 		printf("puede que haya deadlock..\n");
-		show_entrenadores();
+		show_estado();
 		detectar_deadlocks();
 	}
 }
@@ -593,10 +654,7 @@ void capturar(t_entrenador* entrenador){
 		entrenador->ocupado = false;
 
 		/*Esta logica tendría que estar dentro del while ? SI*/
-		if(cumplio_objetivo(entrenador)){
-			log_info(logger, "el entrenador %d cumplio sus objetivos, pasandolo a EXIT\n", entrenador->id);
-			entrenador->estado = EXIT;
-		} else {
+		if(!cumplio_objetivo(entrenador)){
 			log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
 
 			if(puede_capturar_pokemones(entrenador)){
@@ -633,7 +691,7 @@ t_entrenador* get_entrenador_by_posicion(t_posicion posicion, int id){
 void intercambio(t_entrenador* entrenador){
 	printf("Soy el entrenador %d y voy a intercambiar con el que esté en esta posicion\n", entrenador->id);
 	//puedo tener mas de uno dependiendo cuantos participan en el deadlock.
-	show_entrenadores();
+	show_estado();
 	t_entrenador* entrenador_en_posicion = get_entrenador_by_posicion(entrenador->posicion, entrenador->id);
 	t_pokemon_team* pokemon_queme_sirve = entrenador->pokemon_destino; // es el entrenador->pokemon_destino
 	t_pokemon_team* pokemon_quele_sirve = pokemon_que_sirve_intercambio(entrenador_en_posicion, entrenador);
@@ -641,14 +699,20 @@ void intercambio(t_entrenador* entrenador){
 	if(pokemon_quele_sirve != NULL){
 		printf("el pokemon que le sirve al otro es %s\n", pokemon_quele_sirve->nombre);
 	} else {
-		printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+
 		printf("Tiene algo que me sirve pero yo no tengo nada que le sirva\n");
 		printf("Le doy un pokemon random que me sobre\n");
 
-		pokemon_quele_sirve = list_get(pokemones_de_mas(entrenador), 0);
+		t_list* pokemons_de_mas = pokemones_de_mas(entrenador);
 
-		printf("le voy a dar el pokemon %s\n", pokemon_quele_sirve->nombre);
-		printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+		if(pokemons_de_mas->elements_count == 0){
+			printf("no le puedo dar nada porque no me sobra nada\n");
+		} else {
+			pokemon_quele_sirve = list_get(pokemons_de_mas, 0);
+			printf("le voy a dar el pokemon %s\n", pokemon_quele_sirve->nombre);
+
+		}
+
 	}
 
 	entrenador_en_posicion->pokemon_destino = pokemon_quele_sirve;
@@ -665,27 +729,21 @@ void intercambio(t_entrenador* entrenador){
 
 			for(int i =0; i < 5; i++){
 				printf("%d ciclo de cpu\n", i + 1);
+				pthread_mutex_lock(&mutex_ciclos_totales);
+				ciclos_totales++;
+				pthread_mutex_unlock(&mutex_ciclos_totales);
 				sleep(RETARDO_CICLO_CPU);
 			}
 
 			list_add(entrenador->pokemones, pokemon_queme_sirve);
 			remove_pokemon_by_nombre(pokemon_queme_sirve->nombre, entrenador_en_posicion->pokemones);//remuevo de la lista de pokemones el que le di al entrenador
 			entrenador->pokemon_destino=NULL;
-
-			printf("intercambiando segundo pokemon:\n");
-
-			for(int i =0; i < 5; i++){
-				printf("%d ciclo de cpu\n", i + 1);
-				sleep(RETARDO_CICLO_CPU);
-			}
-
-
 			list_add(entrenador_en_posicion->pokemones, entrenador_en_posicion->pokemon_destino);
 			remove_pokemon_by_nombre(pokemon_quele_sirve->nombre, entrenador->pokemones);
 			entrenador_en_posicion->pokemon_destino=NULL;
 
 
-			printf("INTERCAMBIO FINALIZADO!!!!1UNO\n");
+			printf("INTERCAMBIO FINALIZADO!\n");
 
 			entrenador->estado = BLOCKED;
 			entrenador->ocupado = false;
@@ -705,7 +763,8 @@ void intercambio(t_entrenador* entrenador){
 
 
 void capturar_pokemon(t_entrenador* entrenador){
-	printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
+
+	log_debug(logger, "LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
 	entrenador->estado=BLOCKED;
 	entrenador->ocupado=true;
 	sem_post(&s_procesos_en_exec); // salgo de exec
@@ -724,6 +783,8 @@ void ejecutar_fifo(t_entrenador* entrenador){
 		ejecuta(entrenador);
 	}
 
+	printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+
 	capturar_pokemon(entrenador);
 
 }
@@ -736,6 +797,8 @@ void ejecutar_rr(t_entrenador* entrenador){
 	for(int i = 0; i < movimientos; i++){
 		ejecuta(entrenador);
 	}
+
+	printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
 
 	cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
 	if(cantidad_a_moverse > 0 ){
@@ -782,44 +845,6 @@ void ejecutar_algoritmo(t_entrenador* entrenador)
 
 }
 
-void show_entrenadores(){
-
-	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
-	    printf("********************\n");
-
-
-	    void _mostrar_pokemon(void* elemento){
-	    	return mostrar_pokemon((t_pokemon_team*)elemento, objetivo_global);
-	    }
-
-
-	    for(int32_t i = 0; i < entrenadores->elements_count; i++){
-	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
-	    	printf("|ENTRENADOR %d\n|----------------\n|POSICION: (%d,%d)\n",
-	    			i,
-					entrenador_actual->posicion.X,
-					entrenador_actual->posicion.Y);
-	    	printf("|ESTADO %d\n", entrenador_actual->estado);
-	    	if(entrenador_actual->ocupado) printf("|ESTA OCUPADO\n");
-
-	    	printf("|POKEMONES:\n");
-	    	list_iterate(entrenador_actual->pokemones, _mostrar_pokemon);
-
-	    	printf("|OBJETIVOS:\n");
-	    	list_iterate(entrenador_actual->objetivo, _mostrar_pokemon);
-
-
-			printf("********************\n");
-
-		}
-
-		printf("|OBJETIVO GLOBAL:\n");
-		list_iterate(objetivo_global, _mostrar_pokemon);
-
-		printf("********************\n");
-
-		return;
-}
 
 void generar_y_enviar_get(){
 	for(int i = 0; i < objetivo_global->elements_count; i++){
@@ -874,13 +899,13 @@ void show_cola_ready(){
 void hilo_planificador(){
 
 	while(1){ // while no haya otro en EXEC (semaforo?)
-		printf("esperando que llegue algo a la cola de ready....\n");
+		//printf("esperando que llegue algo a la cola de ready....\n");
 		sem_wait(&s_cola_ready_con_items);//inicializado en 0
 
 		printf("llegó algo a la cola de READY\n");
 		sem_wait(&s_procesos_en_exec); //inicializado en 1, o sea que solo puede haber uno a la vez;
 
-		printf("nadie en EXEC, voy a planificar tranquilo..\n");
+		//printf("nadie en EXEC, voy a planificar tranquilo..\n");
 		planificar();
 	}
 }
@@ -1049,10 +1074,10 @@ void hilo_recibidor_mensajes_gameboy(){
 
 			switch(codigo_operacion){
 				case APPEARED_POKEMON:
-					log_debug(logger, "Llego un mensaje APPEARED desde el GAME BOY\n");
+					log_info(logger, "Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
 
-					log_debug(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+					log_info(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
 							mensaje_appeared->pokemon.size_Nombre,
 							mensaje_appeared->pokemon.nombre,
 							mensaje_appeared->posicion.X,
@@ -1330,15 +1355,16 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_replanificar, 0, 0);
 	sem_init(&s_entrenador_exit, 0, 0);
 	sem_init(&s_resuelve_deadlock, 0, 0);
-
-
+	pthread_mutex_init(&mutex_ciclos_totales, NULL);
+	pthread_mutex_init(&mutex_deadlocks_totales, NULL);
+	pthread_mutex_init(&mutex_deadlocks_resueltos_totales, NULL);
 	pthread_mutex_init(&mutex_cola_ready, NULL);
 
 	srand(time(NULL));
 	config = config_create(get_config_path(entrenador));
 	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
 	char* log_path = config_get_string_value(config, "LOG_FILE");
-	logger = log_create(log_path, "Team", 1, LOG_LEVEL_INFO);
+	logger = log_create(log_path, "Team", 1, LOG_LEVEL_DEBUG);
 	IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
 	PROCESS_ID = atoi(config_get_string_value(config, "PROCESS_ID"));
@@ -1361,7 +1387,9 @@ void entrenador(void* index){
 	while(!cumplio_objetivo(entrenador)){
 
 		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
+		log_info(logger, "soy el entrenador %d y estoy ejecutando\n", entrenador->id);
 		printf("----------------------------\n");
+		cambios_contexto++;
 		if(entrenador->pokemon_destino != NULL){ // agora sim
 			ejecutar_algoritmo(entrenador);
 		}

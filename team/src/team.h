@@ -73,7 +73,7 @@ typedef struct {
 	bool ocupado;
 	sem_t* semaforo;
 	int estimacion_anterior;
-
+	int ciclos;
 } t_entrenador;
 
 typedef struct {
