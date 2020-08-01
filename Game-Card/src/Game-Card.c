@@ -250,38 +250,48 @@ void hilo_suscriptor(op_code* code){
 	while(1){
 		if(socket_broker_new != 0){
 			enviar_handshake(2, socket_broker_new);
-			if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
 					recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
 					enviar_suscripcion(*code, socket_broker_new);
-					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 						if(operacion == ACK){
 							recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 							while(fin == false){
-								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 									recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-									log_debug(logger_GC, "ID de Mensaje: %d", id_mensaje);
+									log_info(logger_GC, "ID de Mensaje: %d", id_mensaje);
 									responder_mensaje(socket_broker_new, operacion);
 
 									} else {
-										log_debug(logger_GC, "Se cayo la conexion");
+										log_info(logger_GC, "Se cayo la conexion");
 										fin = true;
 										}
 							}
-					}else printf("Fallo la suscripcion, respondieron algo que no era un ACK\n");
-				}else printf("Se cayo la conexion\n");
-			}else printf("Fallo el ACK del handshake\n");
-		}else{
-			sleep(tiempo_reintento_conexion);
-			socket_broker_new = crear_conexion(ip_broker,puerto_broker);
+						}else {
+							printf("Fallo la suscripcion, respondieron algo que no era un ACK\n");
+							socket_broker_new = reconectar(socket_broker_new);
+						}
+					}else {
+						printf("Se cayo la conexion\n");
+						socket_broker_new = reconectar(socket_broker_new);
+					}
+				}else {
+					printf("Fallo el ACK del handshake\n");
+					socket_broker_new = reconectar(socket_broker_new);
+				}
+			}else {
+				socket_broker_new = reconectar(socket_broker_new);
 			}
-		}
+		}else{
+			socket_broker_new = reconectar(socket_broker_new);
+			}
 	}
 }
 
@@ -317,3 +327,9 @@ void liberar_memoria() {
     dictionary_destroy_and_destroy_elements(semaforos, (void*) sem_destroy);
 }
 
+int32_t reconectar(int32_t socket){
+	log_info(logger_GC, "Reintentando conexion...");
+	sleep(tiempo_reintento_conexion);
+	socket = crear_conexion(ip_broker,puerto_broker);
+	return socket;
+}

@@ -76,8 +76,7 @@ void funcion_new_pokemon(t_New* new) {
 		free(cantidad_nueva);
 	}
 
-	// TODO: Enviar appeared
-	//enviar_appeared(new->pokemon.nombre, new->posicion.X, new->posicion.Y);
+	enviar_appeared(new->pokemon.nombre, string_itoa(new->posicion.X), string_itoa(new->posicion.Y));
 
 	free (ruta_metadata);
 	free(new->pokemon.nombre);
