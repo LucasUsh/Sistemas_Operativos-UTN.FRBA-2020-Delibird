@@ -13,6 +13,7 @@
 #include<string.h>
 #include<pthread.h>
 #include <sys/time.h>
+#include <semaphore.h>
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
@@ -73,6 +74,7 @@ t_list* list_suscriptores;
 char *IP_BROKER;
 char *PUERTO_BROKER;
 char * LOG_FILE;
+sem_t* recibir_mensaje;
 
 
 int32_t get_id();

@@ -203,7 +203,31 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		list_add(list_suscriptores, suscriptor);
 
 	}
-	log_info(logger, "Proceso suscripto a cola %s\n", suscripcion);
+	char cola[9];
+	switch(suscripcion){
+	case SUSCRIPCION_NEW:
+		strcpy(cola, "NEW");
+		break;
+	case SUSCRIPCION_APPEARED:
+		strcpy(cola, "APPEARED");
+		break;
+	case SUSCRIPCION_GET:
+		strcpy(cola, "GET");
+		break;
+	case SUSCRIPCION_LOCALIZED:
+		strcpy(cola, "LOCALIZED");
+		break;
+	case SUSCRIPCION_CATCH:
+		strcpy(cola, "CATCH");
+		break;
+	case SUSCRIPCION_CAUGHT:
+		strcpy(cola, "CAUGHT");
+		break;
+	default:
+		strcpy(cola, "VACIA");
+		break;
+	}
+	log_info(logger, "Proceso suscripto a cola %s\n", cola);
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
