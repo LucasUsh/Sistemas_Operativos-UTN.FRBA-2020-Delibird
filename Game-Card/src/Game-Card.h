@@ -66,7 +66,7 @@ void recuperar_datos();
 void crear_servidor_GC();
 void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion);
 void conexionBroker(int32_t *socket);
-void hilo_suscriptor(op_code code);
+void hilo_suscriptor(op_code* code);
 void suscribirse_broker();
 void salir (const char* mensaje);
 void inicializaciones_globales();

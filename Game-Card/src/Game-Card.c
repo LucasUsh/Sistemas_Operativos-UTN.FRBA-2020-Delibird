@@ -235,7 +235,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 	}
 }
 
-void hilo_suscriptor(op_code code){
+void hilo_suscriptor(op_code* code){
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
@@ -251,7 +251,7 @@ void hilo_suscriptor(op_code code){
 					recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
-					enviar_suscripcion(code, socket_broker_new);
+					enviar_suscripcion(*code, socket_broker_new);
 					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 						if(operacion == ACK){
 							recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
