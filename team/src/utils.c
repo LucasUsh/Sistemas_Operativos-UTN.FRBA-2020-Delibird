@@ -570,24 +570,21 @@ t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2){
 	return NULL;
 }
 
-
-
 /*
  * e2 tiene un pokemon que le sirve a e1
  * */
-t_pokemon_team* pokemon_para_intercambio(t_entrenador* entrenador, t_pokemon_team* pokemon){
+t_pokemon_team* pokemon_que_sirve_intercambio(t_entrenador* e1, t_entrenador* e2){
+	for(int i = 0; i < e1->objetivo->elements_count; i++){
+		t_pokemon_team* objetivo_actual = list_get(e1->objetivo, i);
 
-	//al entrenador se le saca una unidad del pokemon
-	t_pokemon_team* pokemon_sirve = remove_pokemon_by_nombre(entrenador, pokemon->nombre);
+		//si mi objetivo está en los pokemones que le sobran al otro entrenador
+		t_pokemon_team* pokemon_sirve = get_pokemon_by_nombre(objetivo_actual->nombre, pokemones_de_mas(e2));
+		if (pokemon_sirve != NULL) return pokemon_sirve;
 
-	if(pokemon_sirve !=NULL) return pokemon_sirve;
+	}
 
 	return NULL;
 }
-
-
-
-
 
 /*
 
