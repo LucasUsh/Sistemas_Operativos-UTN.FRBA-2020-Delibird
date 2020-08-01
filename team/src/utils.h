@@ -46,5 +46,7 @@ t_pokemon_team* get_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones);
 t_list* pokemones_de_mas(t_entrenador* entrenador);
 t_list* objetivos_pendientes(t_entrenador* entrenador);
 t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2);
+t_pokemon_team* remove_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones);
+t_pokemon_team* pokemon_para_intercambio(t_entrenador* entrenador, t_pokemon_team* pokemon);
 
 #endif /* UTILS_H_ */
