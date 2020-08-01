@@ -136,16 +136,16 @@ void funcion_catch_pokemon(t_Catch* catch) {
 		free(strings_bloques);
 
 		if (apuntador == NULL) {
-			// TODO: Enviar catch fallido
+			// TODO: Enviar CAUGHT fallido
 		}
 		else {
-			// TODO: Enviar catch ok
+			// TODO: Enviar CAUGHT ok
 		}
 
 	}
 	else {
 		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", catch->pokemon.nombre);
-		// TODO: Enviar catch fallido
+		// TODO: Enviar CAUGHT fallido
 	}
 
 	free (ruta_metadata);
@@ -154,15 +154,98 @@ void funcion_catch_pokemon(t_Catch* catch) {
 }
 
 void funcion_get_pokemon(t_Get* get) {
-	log_info(logger_GC, "Iniciando operacion Get para%s...\n", get->pokemon.nombre);
+	log_info(logger_GC, "Iniciando operacion Get para %s...", get->pokemon.nombre);
+
+	char* ruta_metadata = ruta_metadata_pokemon_teorica (get->pokemon);
+
+	if (existe (ruta_metadata)) {
+
+		sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
+		while (get_open (ruta_metadata) == 'Y') {
+			sem_post (dictionary_get(semaforos, get->pokemon.nombre));
+			sleep (tiempo_reintento_operacion);
+			sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
+		}
+		set_open (ruta_metadata, 'Y');
+		FILE* metadata = abrir_para (ruta_metadata, "r");
+		char* linea_con_bloques = metadata_copiar_linea_bloques(metadata, ruta_metadata);
+		fclose(metadata);
+		sem_post (dictionary_get(semaforos, get->pokemon.nombre));
+
+		char** linea_dividida = string_split(linea_con_bloques, "=");
+
+		int32_t cantidad = cantidad_de_bloques (linea_dividida[1]);
+
+		char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
+
+		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
+
+		char** lineas_archivo = string_split(archivo_cargado, "\0");
+
+		free(archivo_cargado);
+
+		char* posiciones = NULL;
+
+		int32_t i = 0, j = 0, c = 0;
+		char aux;
+
+		while (lineas_archivo[i] != NULL) {
+			if (lineas_archivo[i][j] == '=') {
+				aux = ' ';
+				posiciones = realloc(posiciones, c + 1);
+				posiciones[c] = aux;
+				j = 0;
+				i++, c++;
+				continue;
+			}
+
+			if (lineas_archivo[i][j] == '-') {
+				aux = ' ';
+				posiciones = realloc(posiciones, c + 1);
+				posiciones[c] = aux;
+				j++; c++;
+			}
+
+			else {
+				aux = lineas_archivo[i][j];
+				posiciones = realloc(posiciones, c + 1);
+				posiciones[c] = aux;
+				j++; c++;
+			}
+		}
+
+		posiciones[c] = '\0';
+
+		char* cantidad_de_posiciones = string_itoa(i);
+
+		char* envio = malloc (get->pokemon.size_Nombre + strlen(cantidad_de_posiciones) + strlen(posiciones));
+
+		strcat (strcpy(envio, get->pokemon.nombre), );
+
+		sleep(tiempo_retardo_operacion);
+
+		sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
+		set_open (ruta_metadata, 'N');
+		sem_post (dictionary_get(semaforos, get->pokemon.nombre));
 
 
+		liberar_strings(lineas_archivo);
+		liberar_strings(linea_dividida);
+		string_iterate_lines(strings_bloques, (void*) free);
+		free(strings_bloques);
+		free(linea_con_bloques);
+		free(posiciones);
+	}
 
+	else {
+		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", get->pokemon.nombre);
+		// TODO: Enviar LOCALIZED_POKEMON sin posiciones ni cantidades
+	}
 
-
-
+	free(ruta_metadata);
 	free(get->pokemon.nombre);
 	free(get);
+	free(cantidad_de_posiciones);
 }
 
 /****************************************************************************/
@@ -785,7 +868,6 @@ void enviar_appeared(char* pokemon, char* x, char* y){
 			}
 		}
 	}
-
 }
 
 

@@ -194,8 +194,8 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			t_New* new = NULL;
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
-			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
+			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
 			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0) {
 				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
@@ -225,7 +225,12 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			get = deserializar_paquete_get (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			log_debug(logger_GC, "Nombre: %s", get->pokemon.nombre);
+			log_debug(logger_GC, "Get %s", get->pokemon.nombre);
+
+			if (pthread_create(&hilo, NULL, (void*)funcion_get_pokemon, get) == 0) {
+				log_info (logger_GC, "Hilo para responder GET_POKEMON creado correctamente.");
+			}
+			pthread_detach(hilo);
 
 			break;
 
