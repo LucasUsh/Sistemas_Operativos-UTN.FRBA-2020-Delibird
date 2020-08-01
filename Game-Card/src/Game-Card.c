@@ -183,7 +183,6 @@ void crear_servidor_GC() {
     }
 }
 
-
 void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 	pthread_t hilo;
 
@@ -200,7 +199,10 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0) {
 				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
 			}
-			pthread_detach(hilo);
+			pthread_join(hilo, NULL);
+
+			free(new->pokemon.nombre);
+			free(new);
 
 			break;
 
@@ -215,7 +217,10 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			if (pthread_create(&hilo, NULL, (void*)funcion_catch_pokemon, catch) == 0) {
 				log_info (logger_GC, "Hilo para responder CATCH_POKEMON creado correctamente.");
 			}
-			pthread_detach(hilo);
+			pthread_join(hilo, NULL);
+
+			free(catch->pokemon.nombre);
+			free(catch);
 
 			break;
 
@@ -230,12 +235,15 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion) {
 			if (pthread_create(&hilo, NULL, (void*)funcion_get_pokemon, get) == 0) {
 				log_info (logger_GC, "Hilo para responder GET_POKEMON creado correctamente.");
 			}
-			pthread_detach(hilo);
+			pthread_join(hilo, NULL);
+
+			free(get->pokemon.nombre);
+			free(get);
 
 			break;
 
 		default:
-
+			log_error (logger_GC, "Codigo de operacion recibido incorrecto.");
 			break;
 	}
 }

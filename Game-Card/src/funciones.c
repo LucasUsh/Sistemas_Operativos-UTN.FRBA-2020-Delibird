@@ -78,9 +78,7 @@ void funcion_new_pokemon(t_New* new) {
 
 	enviar_appeared(new->pokemon.nombre, string_itoa(new->posicion.X), string_itoa(new->posicion.Y));
 
-	free (ruta_metadata);
-	free(new->pokemon.nombre);
-	free(new);
+	free(ruta_metadata);
 }
 
 void funcion_catch_pokemon(t_Catch* catch) {
@@ -147,13 +145,11 @@ void funcion_catch_pokemon(t_Catch* catch) {
 		// TODO: Enviar CAUGHT fallido
 	}
 
-	free (ruta_metadata);
-	free(catch->pokemon.nombre);
-	free(catch);
+	free(ruta_metadata);
 }
 
 void funcion_get_pokemon(t_Get* get) {
-	log_info(logger_GC, "Iniciando operacion Get para %s...", get->pokemon.nombre);
+	log_info(logger_GC, "Iniciando operacion GET para %s...", get->pokemon.nombre);
 
 	char* ruta_metadata = ruta_metadata_pokemon_teorica (get->pokemon);
 
@@ -242,9 +238,6 @@ void funcion_get_pokemon(t_Get* get) {
 	}
 
 	free(ruta_metadata);
-	free(get->pokemon.nombre);
-	free(get);
-	free(cantidad_de_posiciones);
 }
 
 /****************************************************************************/

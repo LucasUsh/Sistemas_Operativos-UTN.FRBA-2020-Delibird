@@ -67,6 +67,8 @@ char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicio
 
 extern void salir (const char* mensaje);
 
+void enviar_appeared(char* pokemon, char* x, char* y);
+
 // Funciones que requieren liberar memoria:
 char* ruta_metadata_pokemon_teorica (t_pokemon pokemon);
 char* ruta_carpeta_pokemon_teorica (t_pokemon pokemon);
@@ -77,7 +79,5 @@ char* traer_bloques(char** bloques, int32_t cantidad);
 char* posicion_a_string (t_posicion posicion);
 char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamiento);
 char* copiar_stream_con_tamanio(FILE* archivo_lectura, char* ruta, int32_t* tamanio_copiado);
-
-void enviar_appeared(char* pokemon, char* x, char* y);
 
 #endif
