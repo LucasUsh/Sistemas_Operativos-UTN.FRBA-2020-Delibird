@@ -215,7 +215,7 @@ void funcion_get_pokemon(t_Get* get) {
 
 		char* envio = malloc (get->pokemon.size_Nombre + strlen(cantidad_de_posiciones) + strlen(posiciones));
 
-		strcat (strcpy(envio, get->pokemon.nombre), );
+		//strcat (strcpy(envio, get->pokemon.nombre), );
 
 		sleep(tiempo_retardo_operacion);
 

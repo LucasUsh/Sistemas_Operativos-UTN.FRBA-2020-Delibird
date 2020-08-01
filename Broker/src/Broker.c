@@ -36,7 +36,7 @@ int32_t main(void) {
 			int32_t operacion=0;
 			pthread_t hilo;
 			int32_t id_proceso =0;
-			info_mensaje * mensaje;
+			t_estructura_hilo_mensaje estructura_mensaje;
 
 			//HANDSHAKE
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
@@ -69,15 +69,11 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje NEW_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = recibirMensajeNew(socket_cliente);
-							if(esCorrelativo(id_mensaje)){
-								mensaje->id_mensaje_correlativo = id_mensaje;
-							}
-							mensaje->process_id=id_proceso;
-							enviar_ACK(mensaje->id_mensaje, socket_cliente);
-							liberar_conexion(socket_cliente);
-							pthread_mutex_lock(&mutex_guardar_en_memoria);
-							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
+							estructura_mensaje.socket_cliente = socket_cliente;
+							estructura_mensaje.id_mensaje = id_mensaje;
+							estructura_mensaje.id_proceso = id_proceso;
+							estructura_mensaje.operacion = operacion;
+							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
 							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
 							break;
@@ -85,80 +81,60 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje APPEARED_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = recibirMensajeAppeared(socket_cliente);
-							if(esCorrelativo(id_mensaje)){
-								mensaje->id_mensaje_correlativo = id_mensaje;
-							}
-							mensaje->process_id=id_proceso;
-							enviar_ACK(mensaje->id_mensaje, socket_cliente);
-							liberar_conexion(socket_cliente);
-							pthread_mutex_lock(&mutex_guardar_en_memoria);
-							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje Appeared\n");
+							estructura_mensaje.socket_cliente = socket_cliente;
+							estructura_mensaje.id_mensaje = id_mensaje;
+							estructura_mensaje.id_proceso = id_proceso;
+							estructura_mensaje.operacion = operacion;
+							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
+							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
 							break;
 						case GET_POKEMON:
 							log_info(logger, "Llego un mensaje GET_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = recibirMensajeGet(socket_cliente);
-							if(esCorrelativo(id_mensaje)){
-								mensaje->id_mensaje_correlativo = id_mensaje;
-							}
-							mensaje->process_id=id_proceso;
-							enviar_ACK(mensaje->id_mensaje, socket_cliente);
-							liberar_conexion(socket_cliente);
-							pthread_mutex_lock(&mutex_guardar_en_memoria);
-							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje Get\n");
+							estructura_mensaje.socket_cliente = socket_cliente;
+							estructura_mensaje.id_mensaje = id_mensaje;
+							estructura_mensaje.id_proceso = id_proceso;
+							estructura_mensaje.operacion = operacion;
+							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
+							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
 							break;
 						case LOCALIZED_POKEMON:
 							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = recibirMensajeLocalized(socket_cliente);
-							if(esCorrelativo(id_mensaje)){
-								mensaje->id_mensaje_correlativo = id_mensaje;
-							}
-							mensaje->process_id=id_proceso;
-							enviar_ACK(mensaje->id_mensaje, socket_cliente);
-							liberar_conexion(socket_cliente);
-							pthread_mutex_lock(&mutex_guardar_en_memoria);
-							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje Localized\n");
+							estructura_mensaje.socket_cliente = socket_cliente;
+							estructura_mensaje.id_mensaje = id_mensaje;
+							estructura_mensaje.id_proceso = id_proceso;
+							estructura_mensaje.operacion = operacion;
+							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
+							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
 							break;
 						case CATCH_POKEMON:
 							log_info(logger, "Llego un mensaje CATCH_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = recibirMensajeCatch(socket_cliente);
-							if(esCorrelativo(id_mensaje)){
-								mensaje->id_mensaje_correlativo = id_mensaje;
-							}
-							mensaje->process_id=id_proceso;
-							enviar_ACK(mensaje->id_mensaje, socket_cliente);
-							liberar_conexion(socket_cliente);
-							pthread_mutex_lock(&mutex_guardar_en_memoria);
-							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje Catch\n");
+							estructura_mensaje.socket_cliente = socket_cliente;
+							estructura_mensaje.id_mensaje = id_mensaje;
+							estructura_mensaje.id_proceso = id_proceso;
+							estructura_mensaje.operacion = operacion;
+							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
+							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
 							break;
 						case CAUGHT_POKEMON:
 							log_info(logger, "Llego un mensaje CAUGHT_POKEMON \n");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = recibirMensajeCaught(socket_cliente);
-							if(esCorrelativo(id_mensaje)){
-								mensaje->id_mensaje_correlativo = id_mensaje;
-							}
-							mensaje->process_id=id_proceso;
-							enviar_ACK(mensaje->id_mensaje, socket_cliente);
-							liberar_conexion(socket_cliente);
-							pthread_mutex_lock(&mutex_guardar_en_memoria);
-							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, mensaje) == 0){
-							}else printf("Fallo al crear el hilo que maneja el mensaje Caught\n");
+							estructura_mensaje.socket_cliente = socket_cliente;
+							estructura_mensaje.id_mensaje = id_mensaje;
+							estructura_mensaje.id_proceso = id_proceso;
+							estructura_mensaje.operacion = operacion;
+							if (pthread_create(&hilo, NULL, (void*)manejoMensaje, &estructura_mensaje) == 0){
+							}else printf("Fallo al crear el hilo que maneja el mensaje New\n");
 							pthread_detach(hilo);
 							break;
 							}
@@ -171,6 +147,7 @@ int32_t main(void) {
 			sleep(5);
 			socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 		}
+	sleep(1);
 	}
 	if(socketEscucha == -1){
 		printf("Fallo al crear socket de escucha = -1\n");
@@ -272,7 +249,50 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	}
 }
 
-void manejoMensaje(info_mensaje* mensaje){
+void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
+	int32_t socket_cliente = estructura_mensaje->socket_cliente;
+	int32_t id_proceso = estructura_mensaje->id_proceso;
+	int32_t id_mensaje = estructura_mensaje->id_mensaje;
+	int32_t operacion = estructura_mensaje->operacion;
+	info_mensaje * mensaje;
+
+	switch(operacion){
+	case NEW_POKEMON:
+		mensaje = recibirMensajeNew(socket_cliente);
+		break;
+	case APPEARED_POKEMON:
+		mensaje = recibirMensajeAppeared(socket_cliente);
+		break;
+	case GET_POKEMON:
+		mensaje = recibirMensajeGet(socket_cliente);
+		break;
+	case LOCALIZED_POKEMON:
+		mensaje = recibirMensajeLocalized(socket_cliente);
+		break;
+	case CATCH_POKEMON:
+		mensaje = recibirMensajeCatch(socket_cliente);
+		break;
+	case CAUGHT_POKEMON:
+		mensaje = recibirMensajeCaught(socket_cliente);
+		break;
+	default:
+		break;
+	}
+
+	if(esCorrelativo(id_mensaje)){
+		mensaje->id_mensaje_correlativo = id_mensaje;
+	}
+
+	pthread_mutex_lock(&mutex_guardar_en_memoria);
+	guardarMensajeEnCache(mensaje);
+	pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+	mensaje->process_id=id_proceso;
+	enviar_ACK(mensaje->id_mensaje, socket_cliente);
+	liberar_conexion(socket_cliente);
+}
+
+void guardarMensajeEnCache(info_mensaje* mensaje){
 	switch(algMemoria){
 	case BS:
 		algoritmoBuddySystem(mensaje, algReemplazo);
@@ -281,7 +301,6 @@ void manejoMensaje(info_mensaje* mensaje){
 		algoritmoParticionDinamica(mensaje, frecuenciaCompactacion, algReemplazo, algParticionLibre);
 		break;
 		}
-	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 }
 
 info_mensaje * recibirMensajeNew(int32_t socket_cliente){
