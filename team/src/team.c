@@ -28,6 +28,7 @@ sem_t s_posiciones_a_mover;
 sem_t s_control_planificador_rr;
 sem_t s_detectar_deadlock;
 sem_t s_replanificar;
+sem_t s_entrenador_exit;
 pthread_mutex_t mutex_cola_ready;
 
 
@@ -36,6 +37,20 @@ t_list* pokemones_recibidos; // registro para saber si rechazar appeareds y loca
 t_list* pokemones_ubicados; // estos son los pokemones capturables. Esta lista varía con el tiempo.
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
+
+
+
+void hilo_exit(){
+	for(int i =0; i < entrenadores->elements_count;i++){
+		sem_wait(&s_entrenador_exit);
+	}
+
+	printf("Todos los entrenadores cumplieron sus objetivos\n");
+	show_entrenadores();
+	printf("Terminando el programa...\n");
+
+	return;
+}
 
 
 void resolver_deadlock(t_deadlock* deadlock){
@@ -174,7 +189,7 @@ void detectar_deadlocks(){
 		}
 	}
 
-	show_entrenadores();
+	//show_entrenadores();
 
 	entrenadores_DL = entrenadores_en_deadlock();
 	int filas = entrenadores_DL->elements_count;
@@ -1268,6 +1283,7 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_control_planificador_rr, 0, 0);
 	sem_init(&s_detectar_deadlock, 0, 0);
 	sem_init(&s_replanificar, 0, 0);
+	sem_init(&s_entrenador_exit, 0, 0);
 
 	pthread_mutex_init(&mutex_cola_ready, NULL);
 
@@ -1306,7 +1322,9 @@ void entrenador(void* index){
 	printf("El entrenador %d cumplió todos sus objetivos :D \n", entrenador->id);
 	entrenador->estado=EXIT;
 
-	show_entrenadores();
+	sem_post(&s_entrenador_exit);
+	//show_entrenadores();
+
 }
 
 
@@ -1399,12 +1417,12 @@ int32_t main(int32_t argc, char** argv){
 	    pthread_create(&p_escuchador, NULL, (void*)hilo_recibidor_mensajes_gameboy, (void*)entrenadores);
 	}
 
-	pthread_detach(p_escuchador, NULL);
+	pthread_detach(p_escuchador);
 
 	 /* HILO DE EXITS */
-	pthread_t p_replanificar;
-	pthread_create(&p_replanificar, NULL, (void*)hilo_replanificar, NULL);
-	pthread_detach(p_replanificar);
+	pthread_t p_exit;
+	pthread_create(&p_exit, NULL, (void*)hilo_exit, NULL);
+	pthread_join(p_exit, NULL);
 
 
 
