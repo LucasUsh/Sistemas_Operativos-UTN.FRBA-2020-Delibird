@@ -571,10 +571,11 @@ char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicio
 	if (tam_nuevo != tam && cantidad_total != 0) {
 
 		memmove(apuntador + i - 1, apuntador + i, strlen(apuntador + i) + 1);
+		strncpy(pos_cantidad_actual, str_cantidad_total, tam_nuevo);
 		archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
 	}
 
-	else {
+	if (cantidad_total == 0) {
 		if(*(apuntador-1) == '\n') {
 			memmove(apuntador - 1, apuntador + i, strlen(apuntador + i) + 1);
 			archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
