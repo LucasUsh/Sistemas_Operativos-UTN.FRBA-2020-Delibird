@@ -239,12 +239,13 @@ void funcion_get_pokemon(void* get_y_id) {
 
 		t_list* posiciones_a_enviar = list_create(); //debe liberarla enviar_localized
 		i = 0;
-		t_posicion auxiliar;
+		t_posicion* auxiliar = NULL;
 
 		while(posiciones_separadas[i] != NULL) {
-			auxiliar.X = atoi (posiciones_separadas[i]);
+			auxiliar = malloc (sizeof(t_posicion));
+			auxiliar->X = atoi (posiciones_separadas[i]);
 			i++;
-			auxiliar.Y = atoi (posiciones_separadas[i]);
+			auxiliar->Y = atoi (posiciones_separadas[i]);
 			i++;
 			list_add(posiciones_a_enviar, &auxiliar);
 		}
