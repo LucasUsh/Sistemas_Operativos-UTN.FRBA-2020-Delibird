@@ -109,8 +109,8 @@ void enviar_caught_pokemon(char* id_mensaje_correlativo, char * fueAtrapado, int
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	t_Caught caught;
-	if (strcmp(fueAtrapado, "OK") == 0) caught.fueAtrapado = 1;
-	else if (strcmp(fueAtrapado, "FAIL") == 0) caught.fueAtrapado = 0;
+	if (strcmp(fueAtrapado, "OK") == 0 || strcmp(fueAtrapado, "1") == 0) caught.fueAtrapado = 1;
+	else if (strcmp(fueAtrapado, "FAIL") == 0 || strcmp(fueAtrapado, "0") == 0) caught.fueAtrapado = 0;
 
 	paquete->buffer->size = tamanio_caught(&caught);
 	paquete->buffer->id_Mensaje = (int32_t) atoi (id_mensaje_correlativo);
