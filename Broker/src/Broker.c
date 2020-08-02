@@ -148,7 +148,7 @@ int32_t main(void) {
 			close(socketEscucha);
 			socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 		}
-	sleep(1);
+	sleep(0.25);
 	}
 	if(socketEscucha == -1){
 		printf("Fallo al crear socket de escucha = -1\n");
