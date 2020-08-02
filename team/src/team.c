@@ -47,13 +47,6 @@ t_list* pokemones_ubicados; // estos son los pokemones capturables. Esta lista v
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
 
-char* generar_estado(){
-	char* estado = string_new();
-	string_from_vformat(estado, "PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
-
-	return estado;
-}
-
 void show_estado(){
 
 	printf("PLANIFICACION: \n	ALGORITMO: %s, QUANTUM: %d\n", algoritmo.algoritmo_string, algoritmo.quantum);
@@ -97,6 +90,24 @@ void show_estado(){
 }
 
 
+char* get_metricas_string(){
+	char* metricas = string_new();
+	string_append(&metricas, "\n\nMETRICAS FINALES\n---------------------\n");
+	string_append(&metricas, "CANTIDAD DE CICLOS DE CPU POR ENTRENADOR:\n");
+
+	for(int i =0; i < entrenadores->elements_count; i++){
+		t_entrenador* entrenador = list_get(entrenadores, i);
+		string_append_with_format(&metricas, " * ENTRENADOR %d: %d\n",entrenador->id, entrenador->ciclos);
+	}
+
+	string_append_with_format(&metricas, "CANTIDAD DE CICLOS DE CPU TOTALES: %d\n", ciclos_totales);
+	string_append_with_format(&metricas, "CANTIDAD DE CAMBIOS DE CONTEXTO: %d\n", cambios_contexto);
+	string_append_with_format(&metricas, "CANTIDAD DE DEADLOCKS PRODUCIDOS: %d\n", deadlocks_totales);
+	string_append_with_format(&metricas, "CANTIDAD DE DEADLOCKS RESUELTOS: %d\n", deadlocks_resueltos_totales);
+
+	return metricas;
+}
+
 void hilo_exit(){
 	for(int i =0; i < entrenadores->elements_count;i++){
 		sem_wait(&s_entrenador_exit);
@@ -110,6 +121,8 @@ void hilo_exit(){
 	}
 
 	show_estado();
+	char* metricas = get_metricas_string();
+	log_info(logger, metricas);
 	printf("Terminando el programa...\n");
 
 	return;
@@ -650,12 +663,12 @@ void capturar(t_entrenador* entrenador){
 	if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
 		list_add(entrenador->pokemones, entrenador->pokemon_destino);
 		entrenador->pokemon_destino = NULL;
-		log_info(logger, "POKEMON CAPTURADO!\n");
+		printf("POKEMON CAPTURADO!\n");
 		entrenador->ocupado = false;
 
 		/*Esta logica tendría que estar dentro del while ? SI*/
 		if(!cumplio_objetivo(entrenador)){
-			log_info(logger, "el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
+			printf("el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
 
 			if(puede_capturar_pokemones(entrenador)){
 				printf("el entrenador puede capturar mas pokemones, llamando al replanificador...\n");
@@ -666,7 +679,7 @@ void capturar(t_entrenador* entrenador){
 			}
 		}
 	} else {
-		log_info(logger, "ESPERANDO A VER SI LO CAPTURÉ!\n");
+		printf("ESPERANDO A VER SI LO CAPTURÉ!\n");
 		//acá creo que iría otro sem_wait(entrenador->semaforo) hasta que lo desbloquee el recibidor de mensajes caught
 		// para ver si lo capturó o no y en base a eso repreguntar.
 	}
@@ -764,7 +777,7 @@ void intercambio(t_entrenador* entrenador){
 
 void capturar_pokemon(t_entrenador* entrenador){
 
-	log_debug(logger, "LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
+	printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
 	entrenador->estado=BLOCKED;
 	entrenador->ocupado=true;
 	sem_post(&s_procesos_en_exec); // salgo de exec
@@ -1044,7 +1057,7 @@ void recibidor_mensajes_caught(void* args){
 			entrenador->ocupado = false;
 		}
 	} else {
-		log_info(logger, "OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
+		printf("OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
 		entrenador->estado = READY;
 		entrenador->ocupado = false;
 		//cuando falla, tengo que ir a capturar otro pokemon de esa especie.
@@ -1074,10 +1087,10 @@ void hilo_recibidor_mensajes_gameboy(){
 
 			switch(codigo_operacion){
 				case APPEARED_POKEMON:
-					log_info(logger, "Llego un mensaje APPEARED desde el GAME BOY\n");
+					printf("Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
 
-					log_info(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
 							mensaje_appeared->pokemon.size_Nombre,
 							mensaje_appeared->pokemon.nombre,
 							mensaje_appeared->posicion.X,
@@ -1094,15 +1107,15 @@ void hilo_recibidor_mensajes_gameboy(){
 					break;
 
 				case LOCALIZED_POKEMON:
-					log_debug(logger, "Recibí un mensaje LOCALIZED desde el GAME BOY\n");
+					printf("Recibí un mensaje LOCALIZED desde el GAME BOY\n");
 					t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_cliente);
 
-					log_debug(logger, "Llego un mensaje Localized Pokemon con los siguientes datos: %d\n",
+					printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
 							mensaje_localized->pokemon.nombre);
 
 					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
 						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-						log_info(logger, "Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
 					}
 
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
@@ -1121,10 +1134,10 @@ void hilo_recibidor_mensajes_gameboy(){
 					break;
 
 				case CAUGHT_POKEMON:
-					log_info(logger, "Recibí un mensaje CAUGHT desde el GAME BOY\n");
+					printf("Recibí un mensaje CAUGHT desde el GAME BOY\n");
 					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_cliente);
 
-					log_info(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
+					printf("Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
 												mensaje_caught->fueAtrapado);
 
 					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
@@ -1183,7 +1196,7 @@ void hilo_suscribirse_appeared(void* l_entrenadores){
 			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			//voy a ir recibiendo mensajes APPEARED
-			log_info(logger, "Esperando que llegue algún APPEARED de la cola de suscripcion...\n");
+			printf("Esperando que llegue algún APPEARED de la cola de suscripcion...\n");
 			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -1191,10 +1204,10 @@ void hilo_suscribirse_appeared(void* l_entrenadores){
 				enviar_handshake(PROCESS_ID, socket_suscripcion);
 
 				if(operacion == APPEARED_POKEMON){
-					log_debug(logger, "Llego un mensaje APPEARED desde el GAME BOY\n");
+					printf("Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_suscripcion);
 
-					log_debug(logger, "Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
 							mensaje_appeared->pokemon.size_Nombre,
 							mensaje_appeared->pokemon.nombre,
 							mensaje_appeared->posicion.X,
@@ -1241,7 +1254,7 @@ void hilo_suscribirse_caught(void* l_entrenadores){
 			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			//voy a ir recibiendo mensajes CAUGHT
-			log_info(logger, "Esperando que llegue algún CAUGHT de la cola de suscripcion...\n");
+			printf("Esperando que llegue algún CAUGHT de la cola de suscripcion...\n");
 			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -1249,10 +1262,10 @@ void hilo_suscribirse_caught(void* l_entrenadores){
 				enviar_handshake(PROCESS_ID, socket_suscripcion);
 
 				if(operacion == CAUGHT_POKEMON){
-					log_debug(logger, "Recibí un mensaje CAUGHT\n");
+					printf("Recibí un mensaje CAUGHT\n");
 					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_suscripcion);
 
-					log_debug(logger, "Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
+					printf("Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
 												mensaje_caught->fueAtrapado);
 
 					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
@@ -1305,17 +1318,17 @@ void hilo_suscribirse_localized(void* l_entrenadores){
 				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 				//voy a ir recibiendo mensajes LOCALIZED
-				log_info(logger, "Esperando que llegue algún LOCALIZED de la cola de suscripcion...");
+				printf("Esperando que llegue algún LOCALIZED de la cola de suscripcion...");
 				while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-					log_debug(logger, "Recibí un mensaje LOCALIZED\n");
+					printf("Recibí un mensaje LOCALIZED\n");
 					t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_suscripcion);
 
-					log_debug(logger, "Llego un mensaje LOCALIZED Pokemon con los siguientes datos: %d\n",
+					printf("Llego un mensaje LOCALIZED Pokemon con los siguientes datos: %s\n",
 							mensaje_localized->pokemon.nombre);
 
 					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
 						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-						log_info(logger, "Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
 					}
 
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
@@ -1387,16 +1400,20 @@ void entrenador(void* index){
 	while(!cumplio_objetivo(entrenador)){
 
 		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
-		log_info(logger, "soy el entrenador %d y estoy ejecutando\n", entrenador->id);
+		printf("soy el entrenador %d y estoy ejecutando\n", entrenador->id);
 		printf("----------------------------\n");
 		cambios_contexto++;
 		if(entrenador->pokemon_destino != NULL){ // agora sim
+		log_info(logger, "El entrenador %d se mueve a atrapar a %s en posición %d-%d.\n",
+				entrenador->id, entrenador->pokemon_destino->nombre,
+				entrenador->pokemon_destino->posicion.X,
+				entrenador->pokemon_destino->posicion.Y);
 			ejecutar_algoritmo(entrenador);
 		}
 		printf("----------------------------\n");
 	}
 
-	log_debug(logger, "El entrenador %d cumplió todos sus objetivos :D \n", entrenador->id);
+	printf("El entrenador %d cumplió todos sus objetivos :D \n", entrenador->id);
 	entrenador->estado=EXIT;
 	//show_entrenadores();
 	sem_post(&s_detectar_deadlock);
@@ -1430,11 +1447,9 @@ int32_t main(int32_t argc, char** argv){
 
 	inicializar_team(argv[1]);
     cantidad_entrenadores = array_length(config_get_array_value(config, "POSICIONES_ENTRENADORES"));
-	log_debug(logger, "Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s", cantidad_entrenadores, algoritmo.algoritmo_string);
+	printf("Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s", cantidad_entrenadores, algoritmo.algoritmo_string);
 
     entrenadores = get_entrenadores(config, cantidad_entrenadores);
-
-    printf("En este team hay %d entrenadores\n", cantidad_entrenadores);
 
     objetivo_global = get_objetivo_global(entrenadores);
 
@@ -1487,7 +1502,7 @@ int32_t main(int32_t argc, char** argv){
 
 	socket_escucha_team = crear_socket_escucha(ip, puerto);
 
-	log_info(logger, "Creado socket de escucha \n");
+	printf("Creado socket de escucha \n");
 
 	if(socket_escucha_team == -1){
 		log_error(logger, "Fallo al crear socket de escucha = -1\n");
