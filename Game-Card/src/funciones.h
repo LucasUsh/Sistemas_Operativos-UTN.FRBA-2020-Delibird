@@ -42,7 +42,7 @@ extern char* puerto_broker;
 
 
 // Funciones que no requieren liberar memoria:
-void funcion_new_pokemon(t_New* new);
+void funcion_new_pokemon(void* new_id); //stream con el new e id
 void funcion_catch_pokemon(t_Catch* catch);
 void funcion_get_pokemon(t_Get* get);
 
@@ -67,7 +67,7 @@ char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicio
 
 extern void salir (const char* mensaje);
 
-void enviar_appeared (char* pokemon, char* x, char* y);
+void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id);
 void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado);
 void enviar_localized ();
 

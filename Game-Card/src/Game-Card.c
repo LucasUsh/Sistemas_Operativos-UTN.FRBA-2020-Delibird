@@ -194,21 +194,20 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			//podria enviarse a funcion_new_pokemon un stream con el new y el id_mensaje
-			//void* stream = malloc(sizeof(id_mensaje) + sizeof(new));
-			//memcpy(stream, &id_mensaje, sizeof(id_mensaje));
-			//memcpy(stream + sizeof(id_mensaje), new, sizeof(new));
-			// el hilo quedaria pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, stream)
+			void* stream = malloc(sizeof(t_New*) + sizeof(id_mensaje));
+			memcpy(stream, &new, sizeof(t_New*));
+			memcpy(stream + sizeof(id_mensaje), &id_mensaje, sizeof(id_mensaje));
 
 			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, new) == 0) {
+			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, stream) == 0) {
 				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
 			}
 			pthread_join(hilo, NULL);
 
 			free(new->pokemon.nombre);
 			free(new);
+			free(stream);
 
 			break;
 

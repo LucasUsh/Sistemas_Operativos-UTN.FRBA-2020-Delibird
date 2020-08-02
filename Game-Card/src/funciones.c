@@ -1,6 +1,9 @@
 #include "funciones.h"
 
-void funcion_new_pokemon(t_New* new) {
+void funcion_new_pokemon(void* new_id) {
+
+	t_New* new = NULL;
+	memcpy(&new, new_id, sizeof(t_New*));
 
 	log_info(logger_GC, "Iniciando operacion NEW_POKEMON para %s...", new->pokemon.nombre);
 
@@ -76,7 +79,12 @@ void funcion_new_pokemon(t_New* new) {
 		free(cantidad_nueva);
 	}
 
-	enviar_appeared(new->pokemon.nombre, string_itoa(new->posicion.X), string_itoa(new->posicion.Y));
+	int32_t id_mensaje = 0;
+	memcpy(&id_mensaje, new_id + sizeof(new), sizeof(id_mensaje));
+
+	char* id_msj = string_itoa(id_mensaje); // esta memoria se libera en la funcion enviar_appeared
+
+	enviar_appeared(new->pokemon.nombre, string_itoa(new->posicion.X), string_itoa(new->posicion.Y), id_msj);
 
 	free(ruta_metadata);
 }
@@ -863,7 +871,7 @@ char* copiar_stream_con_tamanio(FILE* archivo_lectura, char* ruta, int32_t* tama
 /***************************ENVIO DE MENSAJES********************************/
 /****************************************************************************/
 
-void enviar_appeared (char* pokemon, char* x, char* y){
+void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id){
 	int32_t operacion = 0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje = 0;
@@ -877,8 +885,10 @@ void enviar_appeared (char* pokemon, char* x, char* y){
 				recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-				log_info(logger_GC,"Enviar Appeared");
-				enviar_appeared_pokemon(pokemon, x, y, "0", broker);
+				enviar_appeared_pokemon(pokemon, x, y, mensaje_id, broker);
+				log_info(logger_GC,"Se ha enviado un APPEARED %s a Broker", pokemon);
+
+				free(mensaje_id);
 			}
 		}
 	}
