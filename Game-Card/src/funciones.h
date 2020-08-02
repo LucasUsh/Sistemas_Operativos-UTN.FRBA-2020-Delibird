@@ -68,6 +68,7 @@ char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicio
 extern void salir (const char* mensaje);
 
 void enviar_appeared (char* pokemon, char* x, char* y);
+void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado);
 void enviar_localized ();
 
 // Funciones que requieren liberar memoria:

@@ -6,26 +6,26 @@ int32_t main(void)
 
 	instalar_filesystem ();
 
-	op_code codigo = SUSCRIPCION_NEW;
-
 	pthread_t hilo_servidor_GC;
 	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
 		log_info (logger_GC, "Hilo servidor creado correctamente.");
 
+	op_code codigo_new = SUSCRIPCION_NEW;
+
 	pthread_t hilo_new;
-	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, &codigo) == 0)
+	if (pthread_create (&hilo_new, NULL, (void*) &hilo_suscriptor, &codigo_new) == 0)
 		log_debug (logger_GC, "Hilo cola new creado correctamente.");
 
-	codigo = SUSCRIPCION_CATCH;
+	op_code codigo_catch = SUSCRIPCION_CATCH;
 
 	pthread_t hilo_catch;
-	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, &codigo) == 0)
+	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, &codigo_catch) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
-	codigo = SUSCRIPCION_GET;
+	op_code codigo_get = SUSCRIPCION_GET;
 
 	pthread_t hilo_get;
-	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo) == 0)
+	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo_get) == 0)
 		log_debug (logger_GC, "Hilo cola get creado correctamente.");
 
 	pthread_join(hilo_new,NULL);

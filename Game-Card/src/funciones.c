@@ -134,15 +134,18 @@ void funcion_catch_pokemon(t_Catch* catch) {
 
 		if (apuntador == NULL) {
 			// TODO: Enviar CAUGHT fallido
+			enviar_caught ("0", "FAIL");
 		}
 		else {
 			// TODO: Enviar CAUGHT ok
+			enviar_caught ("0", "OK");
 		}
 
 	}
 	else {
 		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", catch->pokemon.nombre);
 		// TODO: Enviar CAUGHT fallido
+		enviar_caught ("0", "FAIL");
 	}
 
 	free(ruta_metadata);
@@ -879,10 +882,29 @@ void enviar_appeared (char* pokemon, char* x, char* y){
 			}
 		}
 	}
+	liberar_conexion(broker);
 }
 
-void enviar_caught () {
+void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
+	int32_t operacion = 0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje = 0;
+	int32_t broker = crear_conexion(ip_broker,puerto_broker);
+	if(broker == 0){
+		log_info(logger_GC, "Error al enviar caught al Broker");
+	}else{
+		enviar_handshake(2, broker);
+		if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(operacion == ACK){
+				recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
+				log_info(logger_GC,"Enviar Caught");
+				enviar_caught_pokemon(id_mensaje_correlativo, fueAtrapado, broker);
+			}
+		}
+	}
+	liberar_conexion(broker);
 }
 
 void enviar_localized () {
