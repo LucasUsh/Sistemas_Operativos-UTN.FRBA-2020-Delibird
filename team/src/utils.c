@@ -126,7 +126,7 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 	entrenador->id = index;
 	entrenador->ocupado = false;
 	entrenador->semaforo = (sem_t*)malloc(sizeof(sem_t));
-	entrenador->estimacion_anterior= atoi(config_get_string_value(config, "ESTIMACION_INICIAL"));
+	entrenador->estimacion_anterior= 0;
 	entrenador->ciclos = 0;
 
 	sem_init(entrenador->semaforo, 0, 0);

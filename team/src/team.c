@@ -92,7 +92,8 @@ void show_estado(){
 
 char* get_metricas_string(){
 	char* metricas = string_new();
-	string_append(&metricas, "\n\nMETRICAS FINALES\n---------------------\n");
+	string_append_with_format(&metricas, "\n\nMETRICAS FINALES ALGORITMO %s\n---------------------\n",algoritmo.algoritmo_string);
+
 	string_append(&metricas, "CANTIDAD DE CICLOS DE CPU POR ENTRENADOR:\n");
 
 	for(int i =0; i < entrenadores->elements_count; i++){
@@ -470,7 +471,7 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
 	int32_t tamanio_estructura = 0;
 
-	log_debug(logger,"Conectado al Broker para enviar CATCH");
+	printf("Conectado al Broker para enviar CATCH");
 	enviar_handshake(PROCESS_ID, socket);
 	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
@@ -547,6 +548,9 @@ int get_index_entrenador_estimacion_mas_corta(){
 	t_entrenador* entrenador_mas_rapido=NULL;
 	int indice = 0;
 
+	// por archivo de cfg se obtiene el EST_siguiente inicial ya CALCULADO.
+	// => si el est_anterior es 0, vamos a decir que es la primera vez que va a ejecutar y no hay que hacer el calculo.
+
 	for(int i = 0; i < cola_ready->elements_count; i++){
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
 		int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
@@ -554,7 +558,16 @@ int get_index_entrenador_estimacion_mas_corta(){
 		printf("estimacion entrenador: %d\n", entrenador_actual->id);
 		printf("| Rafaga real: %d\n", TE);
 		printf("| Estimada: %f\n", EST);
-		double EST_siguiente = algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
+
+
+		double EST_siguiente = 0;
+
+		if(entrenador_actual->estimacion_anterior == 0){
+			EST_siguiente = atoi(config_get_string_value(config, "ESTIMACION_INICIAL"));
+		} else {
+			EST_siguiente =  algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
+		}
+
 		printf("| estimacion: %f\n", EST_siguiente);
 		printf("_______________\n");
 
@@ -566,21 +579,19 @@ int get_index_entrenador_estimacion_mas_corta(){
 			entrenador_mas_rapido= entrenador_actual;
 			indice = i;
 		}
-
-
 	}
 
 	printf("el próximo va a ser el entrenador %d\n", entrenador_mas_rapido->id);
-	entrenador_mas_rapido->estimacion_anterior = estimacion_mas_corta;
+
+	t_entrenador* entrenador_actual = list_get(entrenadores, entrenador_mas_rapido->id);
+	entrenador_actual->estimacion_anterior = estimacion_mas_corta;
 	return indice;
-
-
-
 }
 
 void planificar_sjfsd(){
 
 	pthread_mutex_lock(&mutex_cola_ready);
+	printf("procesos en redyyyyyyyyyyyyy: %d\n", cola_ready->elements_count);
 	int i = get_index_entrenador_estimacion_mas_corta();
 	t_entrenador* entrenador = list_remove(cola_ready, i);
 	pthread_mutex_unlock(&mutex_cola_ready);
@@ -1447,7 +1458,7 @@ int32_t main(int32_t argc, char** argv){
 
 	inicializar_team(argv[1]);
     cantidad_entrenadores = array_length(config_get_array_value(config, "POSICIONES_ENTRENADORES"));
-	printf("Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s", cantidad_entrenadores, algoritmo.algoritmo_string);
+	printf("Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s\n", cantidad_entrenadores, algoritmo.algoritmo_string);
 
     entrenadores = get_entrenadores(config, cantidad_entrenadores);
 
