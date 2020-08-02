@@ -1,9 +1,9 @@
 #include "funciones.h"
 
-void funcion_new_pokemon(void* new_id) {
+void funcion_new_pokemon(void* new_y_id) {
 
 	t_New* new = NULL;
-	memcpy(&new, new_id, sizeof(t_New*));
+	memcpy(&new, new_y_id, sizeof(t_New*));
 
 	log_info(logger_GC, "Iniciando operacion NEW_POKEMON para %s...", new->pokemon.nombre);
 
@@ -80,7 +80,7 @@ void funcion_new_pokemon(void* new_id) {
 	}
 
 	int32_t id_mensaje = 0;
-	memcpy(&id_mensaje, new_id + sizeof(new), sizeof(id_mensaje));
+	memcpy(&id_mensaje, new_y_id + sizeof(t_New*), sizeof(id_mensaje));
 
 	char* id_msj = string_itoa(id_mensaje); // esta memoria se libera en la funcion enviar_appeared
 
@@ -89,7 +89,15 @@ void funcion_new_pokemon(void* new_id) {
 	free(ruta_metadata);
 }
 
-void funcion_catch_pokemon(t_Catch* catch) {
+void funcion_catch_pokemon(void* catch_y_id) {
+	t_Catch* catch = NULL;
+	memcpy(&catch, catch_y_id, sizeof(t_Catch*));
+
+	int32_t id_mensaje = 0;
+	memcpy(&id_mensaje, catch_y_id + sizeof(t_Catch*), sizeof(id_mensaje));
+
+	char* id_msj = string_itoa(id_mensaje); // esta memoria se libera en la funcion enviar_caught
+
 	log_info(logger_GC, "Iniciando operacion CATCH para %s...", catch->pokemon.nombre);
 
 	char* ruta_metadata = ruta_metadata_pokemon_teorica (catch->pokemon);
@@ -140,20 +148,15 @@ void funcion_catch_pokemon(t_Catch* catch) {
 		string_iterate_lines(strings_bloques, (void*) free);
 		free(strings_bloques);
 
-		if (apuntador == NULL) {
-			// TODO: Enviar CAUGHT fallido
-			enviar_caught ("0", "FAIL");
-		}
-		else {
-			// TODO: Enviar CAUGHT ok
-			enviar_caught ("0", "OK");
-		}
+
+		if (apuntador == NULL) enviar_caught (id_msj, "FAIL");
+
+		else enviar_caught (id_msj, "OK");
 
 	}
 	else {
 		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", catch->pokemon.nombre);
-		// TODO: Enviar CAUGHT fallido
-		enviar_caught ("0", "FAIL");
+		enviar_caught (id_msj, "FAIL");
 	}
 
 	free(ruta_metadata);
@@ -909,8 +912,10 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 				recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-				log_info(logger_GC,"Enviar Caught");
 				enviar_caught_pokemon(id_mensaje_correlativo, fueAtrapado, broker);
+				log_info(logger_GC,"Se ha enviado un CATCH %s a Broker", fueAtrapado);
+
+				free(id_mensaje_correlativo);
 			}
 		}
 	}

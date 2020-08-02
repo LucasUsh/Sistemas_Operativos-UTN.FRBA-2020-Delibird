@@ -42,9 +42,9 @@ extern char* puerto_broker;
 
 
 // Funciones que no requieren liberar memoria:
-void funcion_new_pokemon(void* new_id); //stream con el new e id
-void funcion_catch_pokemon(t_Catch* catch);
-void funcion_get_pokemon(t_Get* get);
+void funcion_new_pokemon(void* new_y_id); //stream con el new e id
+void funcion_catch_pokemon(void* catch_y_id);
+void funcion_get_pokemon(void* get_y_id);
 
 int32_t existe (char* nombre_pokemon);
 void crear_metadata_new (t_New* new, char* ruta);
