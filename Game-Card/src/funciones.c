@@ -162,7 +162,13 @@ void funcion_catch_pokemon(void* catch_y_id) {
 	free(ruta_metadata);
 }
 
-void funcion_get_pokemon(t_Get* get) {
+void funcion_get_pokemon(void* get_y_id) {
+	t_Get* get = NULL;
+	memcpy(&get, get_y_id, sizeof(t_Get*));
+
+	int32_t id_mensaje = 0;
+	memcpy(&id_mensaje, get_y_id + sizeof(t_Get*), sizeof(id_mensaje));
+
 	log_info(logger_GC, "Iniciando operacion GET para %s...", get->pokemon.nombre);
 
 	char* ruta_metadata = ruta_metadata_pokemon_teorica (get->pokemon);
@@ -231,7 +237,7 @@ void funcion_get_pokemon(t_Get* get) {
 
 		free(posiciones);
 
-		t_list* posiciones_a_enviar = list_create();
+		t_list* posiciones_a_enviar = list_create(); //debe liberarla enviar_localized
 		i = 0;
 		t_posicion auxiliar;
 
@@ -244,10 +250,8 @@ void funcion_get_pokemon(t_Get* get) {
 		}
 
 
+		enviar_localized(posiciones_a_enviar, get->pokemon, id_mensaje);
 
-		// TODO: Enviar LOCALIZED_POKEMON con el 't_list* posiciones_a_enviar' y el 't_pokemon get->pokemon'
-		// hacer esto en la funcion que envia el localized:
-		// list_destroy_and_destroy_elements(posiciones_a_enviar, free);
 
 		sleep(tiempo_retardo_operacion);
 
@@ -267,7 +271,7 @@ void funcion_get_pokemon(t_Get* get) {
 
 	else {
 		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", get->pokemon.nombre);
-		// TODO: Enviar LOCALIZED_POKEMON sin posiciones ni cantidades
+		enviar_localized(NULL, get->pokemon, id_mensaje);
 	}
 
 	free(ruta_metadata);
@@ -913,7 +917,7 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_caught_pokemon(id_mensaje_correlativo, fueAtrapado, broker);
-				log_info(logger_GC,"Se ha enviado un CATCH %s a Broker", fueAtrapado);
+				log_info(logger_GC,"Se ha enviado un CAUGHT %s a Broker", fueAtrapado);
 
 				free(id_mensaje_correlativo);
 			}
@@ -922,8 +926,28 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 	liberar_conexion(broker);
 }
 
-void enviar_localized () {
+void enviar_localized (t_list* posiciones, t_pokemon pokemon, int32_t id_mensaje_correlativo) {
+	int32_t operacion = 0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje = 0;
+	int32_t broker = crear_conexion(ip_broker,puerto_broker);
+	if(broker == 0){
+		log_info(logger_GC, "Error al enviar caught al Broker");
+	}else{
+		enviar_handshake(2, broker);
+		if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(operacion == ACK){
+				recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
+				enviar_localized_pokemon (&pokemon, posiciones, id_mensaje_correlativo, broker);
+				log_info(logger_GC,"Se ha enviado un LOCALIZED de %s a Broker", pokemon.nombre);
+
+				list_destroy_and_destroy_elements(posiciones, free);
+			}
+		}
+	}
+	liberar_conexion(broker);
 }
 
 

@@ -194,20 +194,20 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			void* stream = malloc(sizeof(t_New*) + sizeof(id_mensaje));
-			memcpy(stream, &new, sizeof(t_New*));
-			memcpy(stream + sizeof(t_New*), &id_mensaje, sizeof(id_mensaje));
+			void* stream_new = malloc(sizeof(t_New*) + sizeof(id_mensaje));
+			memcpy(stream_new, &new, sizeof(t_New*));
+			memcpy(stream_new + sizeof(t_New*), &id_mensaje, sizeof(id_mensaje));
 
 			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, stream) == 0)
+			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, stream_new) == 0)
 				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
 
 			pthread_join(hilo, NULL);
 
 			free(new->pokemon.nombre);
 			free(new);
-			free(stream);
+			free(stream_new);
 
 			break;
 
@@ -217,20 +217,20 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			catch = deserializar_paquete_catch (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			void* stream = malloc(sizeof(t_Catch*) + sizeof(id_mensaje));
-			memcpy(stream, &catch, sizeof(t_Catch*));
-			memcpy(stream + sizeof(t_Catch*), &id_mensaje, sizeof(id_mensaje));
+			void* stream_catch = malloc(sizeof(t_Catch*) + sizeof(id_mensaje));
+			memcpy(stream_catch, &catch, sizeof(t_Catch*));
+			memcpy(stream_catch + sizeof(t_Catch*), &id_mensaje, sizeof(id_mensaje));
 
 			log_debug(logger_GC, "Nombre: %s, Posicion: (%d, %d)", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_catch_pokemon, stream) == 0)
+			if (pthread_create(&hilo, NULL, (void*)funcion_catch_pokemon, stream_catch) == 0)
 				log_info (logger_GC, "Hilo para responder CATCH_POKEMON creado correctamente.");
 
 			pthread_join(hilo, NULL);
 
 			free(catch->pokemon.nombre);
 			free(catch);
-			free(stream);
+			free(stream_catch);
 
 			break;
 
@@ -240,20 +240,20 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			get = deserializar_paquete_get (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
 
-			void* stream = malloc(sizeof(t_Get*) + sizeof(id_mensaje));
-			memcpy(stream, &get, sizeof(t_Get*));
-			memcpy(stream + sizeof(t_Get*), &id_mensaje, sizeof(id_mensaje));
+			void* stream_get = malloc(sizeof(t_Get*) + sizeof(id_mensaje));
+			memcpy(stream_get, &get, sizeof(t_Get*));
+			memcpy(stream_get + sizeof(t_Get*), &id_mensaje, sizeof(id_mensaje));
 
 			log_debug(logger_GC, "Get %s", get->pokemon.nombre);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_get_pokemon, stream) == 0)
+			if (pthread_create(&hilo, NULL, (void*)funcion_get_pokemon, stream_get) == 0)
 				log_info (logger_GC, "Hilo para responder GET_POKEMON creado correctamente.");
 
 			pthread_join(hilo, NULL);
 
 			free(get->pokemon.nombre);
 			free(get);
-			free(stream);
+			free(stream_get);
 
 			break;
 

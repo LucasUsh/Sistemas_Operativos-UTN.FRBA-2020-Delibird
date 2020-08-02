@@ -296,18 +296,23 @@ void* serializar_paquete_localized (t_paquete* paquete, int32_t* bytes, t_Locali
 	memcpy(stream + desplazamiento, localized->pokemon.nombre, localized->pokemon.size_Nombre);
 	desplazamiento+= localized->pokemon.size_Nombre;
 
-	memcpy(stream + desplazamiento, &(localized->listaPosiciones->elements_count), sizeof(localized->listaPosiciones->elements_count));
-	desplazamiento+= sizeof(localized->listaPosiciones->elements_count);
+	if (localized->listaPosiciones != NULL) {
+		memcpy(stream + desplazamiento, &(localized->listaPosiciones->elements_count), sizeof(localized->listaPosiciones->elements_count));
+		desplazamiento+= sizeof(localized->listaPosiciones->elements_count);
 
-	int i;
-	t_posicion * posicion;
-	for(i=0; i < localized->listaPosiciones->elements_count; i++){
-		posicion = list_get(localized->listaPosiciones, i);
+		int i;
+		t_posicion * posicion;
+		for(i=0; i < localized->listaPosiciones->elements_count; i++){
+			posicion = list_get(localized->listaPosiciones, i);
 
-		memcpy(stream + desplazamiento, &(posicion->X), sizeof(posicion->X));
-		desplazamiento+= sizeof(posicion->X);
-		memcpy(stream + desplazamiento, &(posicion->Y), sizeof(posicion->Y));
-		desplazamiento+= sizeof(posicion->Y);
+			memcpy(stream + desplazamiento, &(posicion->X), sizeof(posicion->X));
+			desplazamiento+= sizeof(posicion->X);
+			memcpy(stream + desplazamiento, &(posicion->Y), sizeof(posicion->Y));
+			desplazamiento+= sizeof(posicion->Y);
+		}
+	}
+	else {
+		memcpy(stream + desplazamiento, &(localized->listaPosiciones), sizeof(localized->listaPosiciones));
 	}
 
 	return stream;

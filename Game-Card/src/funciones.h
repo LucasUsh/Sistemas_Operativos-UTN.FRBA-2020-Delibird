@@ -69,7 +69,7 @@ extern void salir (const char* mensaje);
 
 void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id);
 void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado);
-void enviar_localized ();
+void enviar_localized (t_list* posiciones, t_pokemon pokemon, int32_t id_mensaje_correlativo);
 
 // Funciones que requieren liberar memoria:
 char* ruta_metadata_pokemon_teorica (t_pokemon pokemon);
