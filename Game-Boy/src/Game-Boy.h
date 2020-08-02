@@ -15,9 +15,14 @@
 #include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/src/conexion.h"
 //#include "/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/src/mensajes.h"
 
+typedef struct {
+	int32_t tiempo;
+	int32_t socket;
+} t_estructura_cronometro;
+
 void validar_Argc(t_log* logger, int32_t arg);
 void finalizar(t_log* logger, t_config* config, int32_t socket);
-void cronometrar (int32_t*);
+void cronometrar (t_estructura_cronometro * estructura_cronometro);
 void recibir_mensaje(int32_t socket, op_code operacion);
 
 int32_t existe (char* nombre_pokemon);

@@ -222,10 +222,6 @@ int32_t main(int32_t argc, char *argv[])
 
 		sem_init(cronometro, 0, 1);
 
-		int32_t tiempo = (int32_t) atoi(argv[3]);
-
-		pthread_t hilo_temporizador;
-
 		enviar_handshake(1, socket);
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 			if(operacion == ACK){
@@ -235,22 +231,22 @@ int32_t main(int32_t argc, char *argv[])
 
 				if(string_contains(argv[2], "NEW_POKEMON")){
 					log_info(logger,"Suscribo a NEW POKEMON");
-					operacion = NEW_POKEMON;
+					operacion = SUSCRIPCION_NEW;
 				}if(string_contains(argv[2], "APPEARED_POKEMON")){
 					log_info(logger,"Suscribo a APPEARED POKEMON");
-					operacion = APPEARED_POKEMON;
+					operacion = SUSCRIPCION_APPEARED;
 				}if (string_contains(argv[2], "GET_POKEMON")){
 					log_info(logger,"Suscribo a GET POKEMON");
-					operacion = GET_POKEMON;
+					operacion = SUSCRIPCION_GET;
 				}if (string_contains(argv[2], "LOCALIZED_POKEMON")){
 					log_info(logger,"Suscribo a LOCALIZED POKEMON");
-					operacion = LOCALIZED_POKEMON;
+					operacion = SUSCRIPCION_LOCALIZED;
 				}if (string_contains(argv[2], "CATCH_POKEMON")){
 					log_info(logger,"Suscribo a CATCH POKEMON");
-					operacion = CATCH_POKEMON;
+					operacion = SUSCRIPCION_CATCH;
 				}if (string_contains(argv[2], "CAUGHT_POKEMON")){
 					log_info(logger,"Suscribo a CAUGHT POKEMON");
-					operacion = CAUGHT_POKEMON;
+					operacion = SUSCRIPCION_CAUGHT;
 				}
 
 				sem_wait(envio_Broker);
@@ -262,7 +258,11 @@ int32_t main(int32_t argc, char *argv[])
 						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-						pthread_create(&hilo_temporizador, NULL, (void*)cronometrar, (void*) &tiempo);
+						pthread_t hilo_temporizador;
+						t_estructura_cronometro estructura_cronometro;
+						estructura_cronometro.tiempo = (int32_t) atoi(argv[3]);
+						estructura_cronometro.socket = socket;
+						pthread_create(&hilo_temporizador, NULL, (void*)cronometrar, (void*) &estructura_cronometro);
 
 						while(1){
 							if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
@@ -311,11 +311,15 @@ int32_t existe (char* ruta) {
 	return (stat (ruta, &estado_archivo) == 0);
 }
 
-void cronometrar(int32_t* tiempo) {
-	sleep(*tiempo);
+void cronometrar(t_estructura_cronometro * estructura_cronometro){
+	int32_t tiempo = estructura_cronometro->tiempo;
+	int32_t socket = estructura_cronometro->socket;
+
+	sleep(tiempo);
 	sem_wait(cronometro);
 	sigue_corriendo = 0;
 	sem_post(cronometro);
+	shutdown(socket, SHUT_RDWR);
 }
 
 void recibir_mensaje(int32_t socket, op_code operacion){
