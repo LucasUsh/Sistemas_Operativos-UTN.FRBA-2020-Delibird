@@ -320,7 +320,7 @@ t_particion * algoritmoLRU(){ //debemos tomar la de id mas grande
 	particionAEliminar = list_get(particionesCandidatas, 0); //agarro la primera
 	for(i = 1; i < particionesCandidatas->elements_count; i++){ //comparo con la que sigue
 		t_particion* particionActual = list_get(particionesCandidatas, i);
-		if(particionAEliminar->id < particionActual->id){
+		if(particionAEliminar->id > particionActual->id){
 			particionAEliminar = particionActual;
 		}
 	}
@@ -344,7 +344,7 @@ void actualizarID(int32_t id_mensaje){
 	for(i=0; i < tabla_particiones->elements_count; i++){
 		t_particion*particionAMirar = list_get(tabla_particiones, i);
 		if(particionAMirar->id_mensaje == id_mensaje){
-			particionAMirar = get_id_particion();
+			particionAMirar->id = get_id_particion();
 		}
 	}
 }
