@@ -53,7 +53,7 @@ int32_t main(int32_t argc, char *argv[])
 		enviar_handshake(1, socket);
 		sem_post(envio_Broker);
 
-		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 			if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
 				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aunque a Game Boy no le interesa ningun dato
@@ -63,7 +63,7 @@ int32_t main(int32_t argc, char *argv[])
 					log_info(logger,"Envio NEW POKEMON");
 					enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], "0", socket);
 					sem_post(envio_Broker);
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -75,7 +75,7 @@ int32_t main(int32_t argc, char *argv[])
 					log_info(logger,"Envio APPEARED POKEMON");
 					enviar_appeared_pokemon(argv[3], argv[4], argv[5], "0", socket);
 					sem_post(envio_Broker);
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -87,7 +87,7 @@ int32_t main(int32_t argc, char *argv[])
 					log_info(logger,"Envio CATCH POKEMON");
 					enviar_catch_pokemon(argv[3], argv[4], argv[5], "0", socket);
 					sem_post(envio_Broker);
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -99,7 +99,7 @@ int32_t main(int32_t argc, char *argv[])
 					log_info(logger,"Envio CAUGHT POKEMON");
 					enviar_caught_pokemon(argv[3], argv[4], socket);
 					sem_post(envio_Broker);
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -111,7 +111,7 @@ int32_t main(int32_t argc, char *argv[])
 					log_info(logger,"Envio GET POKEMON");
 					enviar_get_pokemon(argv[3], "0", socket);
 					sem_post(envio_Broker);
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -144,7 +144,7 @@ int32_t main(int32_t argc, char *argv[])
 			log_info(logger,"Envio new_pokemon");
 			enviar_new_pokemon(argv[3], argv[4], argv[5], argv[6], argv[7], socket);
 			sem_post(envio_GC);
-			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -158,7 +158,7 @@ int32_t main(int32_t argc, char *argv[])
 			log_info(logger,"Envio Catch Pokemon");
 			enviar_catch_pokemon(argv[3], argv[4], argv[5], argv[6], socket);
 			sem_post(envio_GC);
-			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -172,7 +172,7 @@ int32_t main(int32_t argc, char *argv[])
 			log_info(logger,"Envio Get Pokemon");
 			enviar_get_pokemon(argv[3], argv[4], socket);
 			sem_post(envio_GC);
-			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -224,7 +224,7 @@ int32_t main(int32_t argc, char *argv[])
 		pthread_t hilo_temporizador;
 
 		enviar_handshake(1, socket);
-		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 			if(operacion == ACK){
 				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -237,7 +237,7 @@ int32_t main(int32_t argc, char *argv[])
 					enviar_suscripcion(SUSCRIPCION_NEW, socket);
 					sem_post(envio_Broker);
 
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						if(operacion == ACK){
 							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
@@ -245,7 +245,7 @@ int32_t main(int32_t argc, char *argv[])
 							pthread_create(&hilo_temporizador, NULL, (void*)cronometrar, (void*) &tiempo);
 
 							while(1){
-								if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+								if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 									recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
