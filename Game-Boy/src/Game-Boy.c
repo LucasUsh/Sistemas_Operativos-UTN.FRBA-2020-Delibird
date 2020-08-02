@@ -16,9 +16,7 @@ int32_t main(int32_t argc, char *argv[])
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
 
-	sem_t* envio_GC;
-	sem_t* envio_Broker;
-	sem_t* envio_Team;
+
 
 	char ruta_envio_GC[] = "/dev/shm/sem.envio_GC";
 	char ruta_envio_Broker[] = "/dev/shm/sem.envio_Broker";
@@ -217,6 +215,11 @@ int32_t main(int32_t argc, char *argv[])
 			return 0;
 		}
 
+		char ruta_cronometro[] = "/dev/shm/sem.cronometro";
+
+		if (!existe(ruta_cronometro)) cronometro = sem_open("/cronometro", O_CREAT | O_EXCL, 0644, 1);
+			else cronometro = sem_open ("/cronometro", 0);
+
 		sem_init(cronometro, 0, 1);
 
 		int32_t tiempo = (int32_t) atoi(argv[3]);
@@ -229,43 +232,50 @@ int32_t main(int32_t argc, char *argv[])
 				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
+
 				if(string_contains(argv[2], "NEW_POKEMON")){
-					t_New* new = NULL;
 					log_info(logger,"Suscribo a NEW POKEMON");
+					operacion = NEW_POKEMON;
+				}if(string_contains(argv[2], "APPEARED_POKEMON")){
+					log_info(logger,"Suscribo a APPEARED POKEMON");
+					operacion = APPEARED_POKEMON;
+				}if (string_contains(argv[2], "GET_POKEMON")){
+					log_info(logger,"Suscribo a GET POKEMON");
+					operacion = GET_POKEMON;
+				}if (string_contains(argv[2], "LOCALIZED_POKEMON")){
+					log_info(logger,"Suscribo a LOCALIZED POKEMON");
+					operacion = LOCALIZED_POKEMON;
+				}if (string_contains(argv[2], "CATCH_POKEMON")){
+					log_info(logger,"Suscribo a CATCH POKEMON");
+					operacion = CATCH_POKEMON;
+				}if (string_contains(argv[2], "CAUGHT_POKEMON")){
+					log_info(logger,"Suscribo a CAUGHT POKEMON");
+					operacion = CAUGHT_POKEMON;
+				}
 
-					sem_wait(envio_Broker);
-					enviar_suscripcion(SUSCRIPCION_NEW, socket);
-					sem_post(envio_Broker);
+				sem_wait(envio_Broker);
+				enviar_suscripcion(operacion, socket);
+				sem_post(envio_Broker);
 
-					if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
-						if(operacion == ACK){
-							recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-							pthread_create(&hilo_temporizador, NULL, (void*)cronometrar, (void*) &tiempo);
+						pthread_create(&hilo_temporizador, NULL, (void*)cronometrar, (void*) &tiempo);
 
-							while(1){
-								if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
-									recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-									recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
-									new = deserializar_paquete_new (&socket);
-									sem_wait(envio_Broker);
-									enviar_ACK(0, socket);
-									sem_post(envio_Broker);
-
-									log_info (logger, "Paquete deserializado con los siguientes datos:");
-									log_info (logger, "Pokemon: %s, tamanio cadena: %d", new->pokemon.nombre, new->pokemon.size_Nombre);
-									log_info (logger, "Posicion: (%d, %d)", new->posicion.X, new->posicion.Y);
-									log_info (logger, "Cantidad: %d", new->cant);
-								}
-								sem_wait(cronometro);
-								if (!sigue_corriendo) break;
-								sem_post(cronometro);
+						while(1){
+							if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+								recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+								recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+								recibir_mensaje(socket, operacion);
 							}
-
-							sem_destroy(cronometro);
+							sem_wait(cronometro);
+							if (!sigue_corriendo) break;
+							sem_post(cronometro);
 						}
+
+						sem_destroy(cronometro);
 					}
 				}
 			}
@@ -306,6 +316,53 @@ void cronometrar(int32_t* tiempo) {
 	sem_wait(cronometro);
 	sigue_corriendo = 0;
 	sem_post(cronometro);
+}
+
+void recibir_mensaje(int32_t socket, op_code operacion){
+	t_New* new = NULL;
+	t_Appeared* app = NULL;
+	t_Get* get = NULL;
+	t_Localized* loc= NULL;
+	t_Catch* catch = NULL;
+	t_Caught* caught = NULL;
+
+	switch(operacion){
+	case NEW_POKEMON:
+		new = deserializar_paquete_new(&socket);
+		log_info(logger, "Recibi un NEW_POKEMON. Pokemon: %s, posicion: (%d, %d), cantidad: %d",new->pokemon.nombre,
+				new->posicion.X, new->posicion.Y, new->cant);
+		break;
+	case APPEARED_POKEMON:
+		app = deserializar_paquete_appeared(&socket);
+		log_info(logger, "Recibi un APPEARED_POKEMON. Pokemon: %s, posicion: (%d, %d)",app->pokemon.nombre,
+				app->posicion.X, app->posicion.Y);
+		break;
+	case GET_POKEMON:
+		get = deserializar_paquete_get(&socket);
+		log_info(logger, "Recibi un GET_POKEMON. Pokemon: %s",get->pokemon.nombre);
+		break;
+	case LOCALIZED_POKEMON:
+		//loc = deserializar_paquete_localized(&socket);
+		log_info(logger, "Recibi un LOCALIZED_POKEMON");
+		break;
+	case CATCH_POKEMON:
+		catch = deserializar_paquete_catch(&socket);
+		log_info(logger, "Recibi un CATCH_POKEMON. Pokemon: %s, posicion: (%d, %d)",catch->pokemon.nombre,
+				catch->posicion.X, catch->posicion.Y);
+		break;
+	case CAUGHT_POKEMON:
+		caught = deserializar_paquete_caught(&socket);
+		char fueAtrapado[] = "N";
+		if(caught->fueAtrapado == 1) fueAtrapado[0] = 'S';
+		log_info(logger, "Recibi un CAUGHT_POKEMON. FueAtrapado: %s", fueAtrapado);
+		break;
+	default:
+		break;
+	}
+
+	sem_wait(envio_Broker);
+	enviar_ACK(0, socket);
+	sem_post(envio_Broker);
 }
 
 

@@ -18,11 +18,15 @@
 void validar_Argc(t_log* logger, int32_t arg);
 void finalizar(t_log* logger, t_config* config, int32_t socket);
 void cronometrar (int32_t*);
+void recibir_mensaje(int32_t socket, op_code operacion);
 
 int32_t existe (char* nombre_pokemon);
 
 int32_t sigue_corriendo = 1;
 
+sem_t* envio_GC;
+sem_t* envio_Broker;
+sem_t* envio_Team;
 sem_t* cronometro;
 
 #endif
