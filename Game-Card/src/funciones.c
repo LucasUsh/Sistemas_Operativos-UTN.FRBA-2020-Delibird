@@ -702,7 +702,7 @@ char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicio
 			archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
 		}
 		else {
-			if (apuntador + i == '\0') {
+			if (*(apuntador + i) == '\0') {
 				free (archivo_cargado);
 				archivo_cargado = NULL;
 			}
