@@ -29,17 +29,35 @@ void funcion_new_pokemon(void* new_y_id) {
 
 		int32_t cantidad = cantidad_de_bloques (linea_dividida[1]);
 
-		char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
+		if (cantidad != 0) {
 
-		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
+			char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
 
-		liberar_bloques (strings_bloques, cantidad, ruta_metadata, new->pokemon.nombre);
+			char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
 
-		char* apuntador = apuntar_a_posicion(archivo_cargado, new->posicion);
-		if (apuntador != NULL) archivo_cargado = agregar_cantidad(archivo_cargado, apuntador, new->cant, new->posicion);
-		else archivo_cargado = agregar_nueva_posicion(archivo_cargado, new->posicion, new->cant);
+			liberar_bloques (strings_bloques, cantidad, ruta_metadata, new->pokemon.nombre);
 
-		volcar_archivo_cargado(archivo_cargado, ruta_metadata, new->pokemon.nombre);
+			char* apuntador = apuntar_a_posicion(archivo_cargado, new->posicion);
+			if (apuntador != NULL) archivo_cargado = agregar_cantidad(archivo_cargado, apuntador, new->cant, new->posicion);
+			else archivo_cargado = agregar_nueva_posicion(archivo_cargado, new->posicion, new->cant);
+
+			volcar_archivo_cargado(archivo_cargado, ruta_metadata, new->pokemon.nombre);
+
+			string_iterate_lines(strings_bloques, (void*) free);
+			free(strings_bloques);
+		}
+		else {
+			log_info (logger_GC, "Creando al pokemon %s...", new->pokemon.nombre);
+
+			char* pos_nueva = posicion_a_string(new->posicion);
+			char* cant_nueva = string_itoa(new->cant);
+			char* archivo_nuevo = malloc (strlen(pos_nueva) + strlen(cant_nueva) + 2); //Más 3 por el '=' y el '\0'
+			strcat (strcat (strcpy(archivo_nuevo, pos_nueva), "="), cant_nueva);
+			volcar_archivo_cargado(archivo_nuevo, ruta_metadata, new->pokemon.nombre);
+
+			free(pos_nueva);
+			free(cant_nueva);
+		}
 
 		sleep(tiempo_retardo_operacion);
 
@@ -49,8 +67,7 @@ void funcion_new_pokemon(void* new_y_id) {
 
 		free(linea_con_bloques);
 		liberar_strings(linea_dividida);
-		string_iterate_lines(strings_bloques, (void*) free);
-		free(strings_bloques);
+
 	}
 	else {
 		sem_t* nuevo_semaforo = malloc(sizeof(sem_t));
@@ -125,39 +142,47 @@ void funcion_catch_pokemon(void* catch_y_id) {
 
 		int32_t cantidad = cantidad_de_bloques (linea_dividida[1]);
 
-		char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
+		if (cantidad == 0) {
+			log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", catch->pokemon.nombre);
+			enviar_caught (id_msj, "FAIL");
 
-		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
-
-		liberar_bloques (strings_bloques, cantidad, ruta_metadata, catch->pokemon.nombre);
-
-		char* apuntador = apuntar_a_posicion(archivo_cargado, catch->posicion);
-
-		if (apuntador == NULL)
-			log_info (logger_GC, "No hay ningun %s en la posicion (%d, %d).", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
-
-		else {
-			archivo_cargado = quitar_pokemon(archivo_cargado, apuntador, catch->posicion);
+			sem_wait (dictionary_get(semaforos, catch->pokemon.nombre));
+			set_open (ruta_metadata, 'N');
+			sem_post (dictionary_get(semaforos, catch->pokemon.nombre));
 		}
 
-		volcar_archivo_cargado(archivo_cargado, ruta_metadata, catch->pokemon.nombre);
+		else {
+			char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
 
-		sleep(tiempo_retardo_operacion);
+			char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
 
-		sem_wait (dictionary_get(semaforos, catch->pokemon.nombre));
-		set_open (ruta_metadata, 'N');
-		sem_post (dictionary_get(semaforos, catch->pokemon.nombre));
+			liberar_bloques (strings_bloques, cantidad, ruta_metadata, catch->pokemon.nombre);
+
+			char* apuntador = apuntar_a_posicion(archivo_cargado, catch->posicion);
+
+			if (apuntador == NULL)
+				log_info (logger_GC, "No hay ningun %s en la posicion (%d, %d).", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
+
+			else archivo_cargado = quitar_pokemon(archivo_cargado, apuntador, catch->posicion);
+
+			volcar_archivo_cargado(archivo_cargado, ruta_metadata, catch->pokemon.nombre);
+
+			sleep(tiempo_retardo_operacion);
+
+			sem_wait (dictionary_get(semaforos, catch->pokemon.nombre));
+			set_open (ruta_metadata, 'N');
+			sem_post (dictionary_get(semaforos, catch->pokemon.nombre));
+
+			if (apuntador == NULL) enviar_caught (id_msj, "FAIL");
+
+			else enviar_caught (id_msj, "OK");
+
+			string_iterate_lines(strings_bloques, (void*) free);
+			free(strings_bloques);
+		}
 
 		free(linea_con_bloques);
 		liberar_strings(linea_dividida);
-		string_iterate_lines(strings_bloques, (void*) free);
-		free(strings_bloques);
-
-
-		if (apuntador == NULL) enviar_caught (id_msj, "FAIL");
-
-		else enviar_caught (id_msj, "OK");
-
 	}
 	else {
 		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", catch->pokemon.nombre);
@@ -179,6 +204,7 @@ void funcion_get_pokemon(void* get_y_id) {
 
 	char* ruta_metadata = ruta_metadata_pokemon_teorica (get->pokemon);
 
+
 	if (existe (ruta_metadata)) {
 
 		sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
@@ -197,84 +223,92 @@ void funcion_get_pokemon(void* get_y_id) {
 
 		int32_t cantidad = cantidad_de_bloques (linea_dividida[1]);
 
-		char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
+		if (cantidad == 0) {
+			log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", get->pokemon.nombre);
+			enviar_localized(NULL, get->pokemon, id_mensaje);
 
-		char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
-
-		/***************************************************************************************/
-
-		char** lineas_archivo = string_split(archivo_cargado, "\n");
-
-		free(archivo_cargado);
-
-		char* posiciones = NULL;
-
-		int32_t i = 0, j = 0, c = 0;
-		char aux;
-
-		while (lineas_archivo[i] != NULL) {
-			if (lineas_archivo[i][j] == '=') {
-				aux = ' ';
-				posiciones = realloc(posiciones, c + 1);
-				posiciones[c] = aux;
-				j = 0;
-				i++, c++;
-				continue;
-			}
-
-			if (lineas_archivo[i][j] == '-') {
-				aux = ' ';
-				posiciones = realloc(posiciones, c + 1);
-				posiciones[c] = aux;
-				j++; c++;
-			}
-
-			else {
-				aux = lineas_archivo[i][j];
-				posiciones = realloc(posiciones, c + 1);
-				posiciones[c] = aux;
-				j++; c++;
-			}
+			sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
+			set_open (ruta_metadata, 'N');
+			sem_post (dictionary_get(semaforos, get->pokemon.nombre));
 		}
 
-		posiciones[c-1] = '\0';
+		else {
+			char** strings_bloques = string_get_string_as_array(linea_dividida[1]);
 
-		char** posiciones_separadas = string_split(posiciones, " ");
+			char* archivo_cargado = traer_bloques(strings_bloques, cantidad);
 
-		free(posiciones);
+			char** lineas_archivo = string_split(archivo_cargado, "\n");
 
-		t_list* posiciones_a_enviar = list_create();
-		i = 0;
-		t_posicion* auxiliar = NULL;
+			free(archivo_cargado);
 
-		while(posiciones_separadas[i] != NULL) {
-			auxiliar = malloc (sizeof(t_posicion));
-			auxiliar->X = atoi (posiciones_separadas[i]);
-			i++;
-			auxiliar->Y = atoi (posiciones_separadas[i]);
-			i++;
-			list_add(posiciones_a_enviar, auxiliar);
+			char* posiciones = NULL;
+
+			int32_t i = 0, j = 0, c = 0;
+			char aux;
+
+			while (lineas_archivo[i] != NULL) {
+				if (lineas_archivo[i][j] == '=') {
+					aux = ' ';
+					posiciones = realloc(posiciones, c + 1);
+					posiciones[c] = aux;
+					j = 0;
+					i++, c++;
+					continue;
+				}
+
+				if (lineas_archivo[i][j] == '-') {
+					aux = ' ';
+					posiciones = realloc(posiciones, c + 1);
+					posiciones[c] = aux;
+					j++; c++;
+				}
+
+				else {
+					aux = lineas_archivo[i][j];
+					posiciones = realloc(posiciones, c + 1);
+					posiciones[c] = aux;
+					j++; c++;
+				}
+			}
+
+			posiciones[c-1] = '\0';
+
+			char** posiciones_separadas = string_split(posiciones, " ");
+
+			free(posiciones);
+
+			t_list* posiciones_a_enviar = list_create();
+			i = 0;
+			t_posicion* auxiliar = NULL;
+
+			while(posiciones_separadas[i] != NULL) {
+				auxiliar = malloc (sizeof(t_posicion));
+				auxiliar->X = atoi (posiciones_separadas[i]);
+				i++;
+				auxiliar->Y = atoi (posiciones_separadas[i]);
+				i++;
+				list_add(posiciones_a_enviar, auxiliar);
+			}
+
+			sleep(tiempo_retardo_operacion);
+
+			sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
+			set_open (ruta_metadata, 'N');
+			sem_post (dictionary_get(semaforos, get->pokemon.nombre));
+
+
+			enviar_localized(posiciones_a_enviar, get->pokemon, id_mensaje);
+
+			liberar_strings(lineas_archivo);
+			liberar_strings(posiciones_separadas);
+			string_iterate_lines(strings_bloques, (void*) free);
+			free(strings_bloques);
+
+			list_destroy_and_destroy_elements(posiciones_a_enviar, free);
 		}
 
-		sleep(tiempo_retardo_operacion);
-
-		sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
-		set_open (ruta_metadata, 'N');
-		sem_post (dictionary_get(semaforos, get->pokemon.nombre));
-
-
-		enviar_localized(posiciones_a_enviar, get->pokemon, id_mensaje);
-
-
-		liberar_strings(lineas_archivo);
 		liberar_strings(linea_dividida);
-		liberar_strings(posiciones_separadas);
-
-		string_iterate_lines(strings_bloques, (void*) free);
-		free(strings_bloques);
 		free(linea_con_bloques);
-
-		list_destroy_and_destroy_elements(posiciones_a_enviar, free);
 	}
 
 	else {
