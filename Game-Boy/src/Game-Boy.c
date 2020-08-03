@@ -8,8 +8,6 @@ int32_t main(int32_t argc, char *argv[])
 	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.log", "Game-Boy", 1, LOG_LEVEL_INFO);
 	config = config_create("/home/utnso/workspace/tp-2020-1c-5rona/Game-Boy/Game-Boy.config");
 
-	log_info(logger,"Game Boy iniciando...");
-
 	validar_Argc(logger,argc);
 	int32_t socket;
 	int32_t operacion=0;
