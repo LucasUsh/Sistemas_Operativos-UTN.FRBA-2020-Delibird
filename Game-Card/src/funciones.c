@@ -82,11 +82,16 @@ void funcion_new_pokemon(void* new_y_id) {
 	int32_t id_mensaje = 0;
 	memcpy(&id_mensaje, new_y_id + sizeof(t_New*), sizeof(id_mensaje));
 
-	char* id_msj = string_itoa(id_mensaje); // esta memoria se libera en la funcion enviar_appeared
+	char* id_msj = string_itoa(id_mensaje);
+	char* posX = string_itoa(new->posicion.X);
+	char* posY = string_itoa(new->posicion.Y);
 
-	enviar_appeared(new->pokemon.nombre, string_itoa(new->posicion.X), string_itoa(new->posicion.Y), id_msj);
+	enviar_appeared(new->pokemon.nombre, posX, posY, id_msj);
 
 	free(ruta_metadata);
+	free(id_msj);
+	free(posX);
+	free(posY);
 }
 
 void funcion_catch_pokemon(void* catch_y_id) {
@@ -96,7 +101,7 @@ void funcion_catch_pokemon(void* catch_y_id) {
 	int32_t id_mensaje = 0;
 	memcpy(&id_mensaje, catch_y_id + sizeof(t_Catch*), sizeof(id_mensaje));
 
-	char* id_msj = string_itoa(id_mensaje); // esta memoria se libera en la funcion enviar_caught
+	char* id_msj = string_itoa(id_mensaje);
 
 	log_info(logger_GC, "Iniciando operacion CATCH para %s...", catch->pokemon.nombre);
 
@@ -160,7 +165,9 @@ void funcion_catch_pokemon(void* catch_y_id) {
 	}
 
 	free(ruta_metadata);
+	free(id_msj);
 }
+
 
 void funcion_get_pokemon(void* get_y_id) {
 	t_Get* get = NULL;
@@ -231,13 +238,13 @@ void funcion_get_pokemon(void* get_y_id) {
 			}
 		}
 
-		posiciones[c] = '\0';
+		posiciones[c-1] = '\0';
 
 		char** posiciones_separadas = string_split(posiciones, " ");
 
 		free(posiciones);
 
-		t_list* posiciones_a_enviar = list_create(); //debe liberarla enviar_localized
+		t_list* posiciones_a_enviar = list_create();
 		i = 0;
 		t_posicion* auxiliar = NULL;
 
@@ -247,11 +254,11 @@ void funcion_get_pokemon(void* get_y_id) {
 			i++;
 			auxiliar->Y = atoi (posiciones_separadas[i]);
 			i++;
-			list_add(posiciones_a_enviar, &auxiliar);
+			list_add(posiciones_a_enviar, auxiliar);
+			log_debug(logger_GC, "(%d, %d)", auxiliar->X, auxiliar->Y);
 		}
 
-
-		enviar_localized(posiciones_a_enviar, get->pokemon, id_mensaje);
+		log_debug(logger_GC, "Cantidad de posiciones: %d", posiciones_a_enviar->elements_count);
 
 
 		sleep(tiempo_retardo_operacion);
@@ -261,6 +268,9 @@ void funcion_get_pokemon(void* get_y_id) {
 		sem_post (dictionary_get(semaforos, get->pokemon.nombre));
 
 
+		enviar_localized(posiciones_a_enviar, get->pokemon, id_mensaje);
+
+
 		liberar_strings(lineas_archivo);
 		liberar_strings(linea_dividida);
 		liberar_strings(posiciones_separadas);
@@ -268,6 +278,8 @@ void funcion_get_pokemon(void* get_y_id) {
 		string_iterate_lines(strings_bloques, (void*) free);
 		free(strings_bloques);
 		free(linea_con_bloques);
+
+		list_destroy_and_destroy_elements(posiciones_a_enviar, free);
 	}
 
 	else {
@@ -895,8 +907,6 @@ void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id){
 
 				enviar_appeared_pokemon(pokemon, x, y, mensaje_id, broker);
 				log_info(logger_GC,"Se ha enviado un APPEARED %s a Broker", pokemon);
-
-				free(mensaje_id);
 			}
 		}
 	}
@@ -919,8 +929,6 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 
 				enviar_caught_pokemon(id_mensaje_correlativo, fueAtrapado, broker);
 				log_info(logger_GC,"Se ha enviado un CAUGHT %s a Broker", fueAtrapado);
-
-				free(id_mensaje_correlativo);
 			}
 		}
 	}
@@ -943,8 +951,6 @@ void enviar_localized (t_list* posiciones, t_pokemon pokemon, int32_t id_mensaje
 
 				enviar_localized_pokemon (&pokemon, posiciones, id_mensaje_correlativo, broker);
 				log_info(logger_GC,"Se ha enviado un LOCALIZED de %s a Broker", pokemon.nombre);
-
-				list_destroy_and_destroy_elements(posiciones, free);
 			}
 		}
 	}
