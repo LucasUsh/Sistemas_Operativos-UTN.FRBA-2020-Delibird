@@ -20,6 +20,8 @@ int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por
 int deadlocks_totales = 0; //deadlocks totales sin repetir
 int deadlocks_resueltos_totales = 0; // deadlocks resueltos
 int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
+int total_deadlock_resueltos;
+t_list* total_deadlocks;
 
 //colas de planificacion
 t_list* cola_ready;
@@ -46,6 +48,7 @@ t_list* pokemones_recibidos; // registro para saber si rechazar appeareds y loca
 t_list* pokemones_ubicados; // estos son los pokemones capturables. Esta lista varía con el tiempo.
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
+
 
 void show_estado(){
 
@@ -103,8 +106,8 @@ char* get_metricas_string(){
 
 	string_append_with_format(&metricas, "CANTIDAD DE CICLOS DE CPU TOTALES: %d\n", ciclos_totales);
 	string_append_with_format(&metricas, "CANTIDAD DE CAMBIOS DE CONTEXTO: %d\n", cambios_contexto);
-	string_append_with_format(&metricas, "CANTIDAD DE DEADLOCKS PRODUCIDOS: %d\n", deadlocks_totales);
-	string_append_with_format(&metricas, "CANTIDAD DE DEADLOCKS RESUELTOS: %d\n", deadlocks_resueltos_totales);
+	string_append_with_format(&metricas, "CANTIDAD DE DEADLOCKS DETECTADOS: %d\n", total_deadlocks->elements_count);
+	string_append_with_format(&metricas, "CANTIDAD DE DEADLOCKS RESUELTOS: %d\n", total_deadlock_resueltos);
 
 	return metricas;
 }
@@ -259,6 +262,8 @@ bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
 
 void detectar_deadlocks(){
 	bool puede_haber_deadlock =false;
+
+
 	for(int i = 0; i< entrenadores->elements_count; i++){
 		t_entrenador* e = list_get(entrenadores,i);
 		if(!esta_en_deadlock(e) && !(e->estado == EXIT)){
@@ -368,16 +373,25 @@ void detectar_deadlocks(){
 
 					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
 						list_add(deadlocks_detectados, deadlock);
+
 					break;
 				}
 			}
 		}
 	}
 
-	printf("deadlocks detectados: %d\n", deadlocks_detectados->elements_count);
+	log_debug(logger, "deadlocks detectados: %d\n", deadlocks_detectados->elements_count);
 	for(int m = 0; m < deadlocks_detectados->elements_count; m++){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
-		printf("se detectó un deadlock entre el entrenador: ");
+
+
+		if(!deadlock_ya_detectado(total_deadlocks, dl)){
+			log_debug(logger, "deadlock agregado al total \n");
+			list_add(total_deadlocks, dl);
+		}
+
+
+		log_debug(logger, "se detectó un deadlock entre el entrenador: ");
 		for(int n=0; n < dl->procesos_involucrados->elements_count ; n++){
 			int* proceso_involucrado = list_get(dl->procesos_involucrados, n);
 			t_entrenador* entrenador_involucrado = list_get(entrenadores_DL, *proceso_involucrado);
@@ -769,6 +783,12 @@ void intercambio(t_entrenador* entrenador){
 
 			printf("INTERCAMBIO FINALIZADO!\n");
 
+
+			if(!esta_en_deadlock((void*)entrenador) || !esta_en_deadlock((void*)entrenador_en_posicion) ){
+				total_deadlock_resueltos++;
+			}
+
+
 			entrenador->estado = BLOCKED;
 			entrenador->ocupado = false;
 			entrenador_en_posicion->estado = BLOCKED;
@@ -870,41 +890,52 @@ void ejecutar_algoritmo(t_entrenador* entrenador)
 }
 
 
-void generar_y_enviar_get(){
-	for(int i = 0; i < objetivo_global->elements_count; i++){
-		int32_t socket = conexion_broker();
 
-		if(socket == 0){
-			log_error(logger,"Error al conectar al Broker para enviar GET...");
-			//logica para reintentar
-			return;
-		}
+void hilo_enviar_get(int i){
+	int32_t socket = conexion_broker();
 
-		log_info(logger,"Conectado al Broker para enviar GET");
+	log_debug(logger, "hilo creado para enviar get...\n");
 
-		int32_t operacion = 0;
-		int32_t id_mensaje = 0;
-		int32_t tamanio_estructura = 0;
-		t_pokemon_team* pokemon = list_get(objetivo_global, i);
+	while(socket == 0){
+		log_error(logger,"Error al conectar al Broker para enviar GET...");
+		socket = reconectar(socket);
+	}
 
-		enviar_handshake(PROCESS_ID, socket);
+	log_debug(logger,"Conectado al Broker para enviar GET");
 
-		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-			if(operacion == ACK){
-				recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+	int32_t operacion = 0;
+	int32_t id_mensaje = 0;
+	int32_t tamanio_estructura = 0;
+	t_pokemon_team* pokemon = list_get(objetivo_global, i);
 
-				enviar_get_pokemon(pokemon->nombre, "0", socket);
-				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-					if(operacion == ACK){
-						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-					}
+	enviar_handshake(PROCESS_ID, socket);
+
+	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+		if(operacion == ACK){
+			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+			enviar_get_pokemon(pokemon->nombre, "0", socket);
+			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
+				if(operacion == ACK){
+					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 				}
 			}
 		}
+	}
 
-		liberar_conexion(socket);
+	liberar_conexion(socket);
+}
+
+void generar_y_enviar_get(){
+	for(int i = 0; i < objetivo_global->elements_count; i++){
+
+		/* HILO PLANIFICADOR */
+		pthread_t p_enviar_get;
+		pthread_create(&p_enviar_get, NULL, (void*)hilo_enviar_get, (void*)i);
+		pthread_detach(p_enviar_get);
+
 	}
 
 	return;
@@ -1033,8 +1064,6 @@ void recibidor_mensajes_appeared(void* args){
 			printf("el entrenador %d fue agregado a la cola READY\n", entrenador_mas_cercano->id);
 			sem_post(&s_cola_ready_con_items);
 			//sem_post(entrenador_mas_cercano->semaforo);
-
-
 		} else {
 			t_pokemon_team* pokemon_ubicado = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
 			pokemon_ubicado->planificable = true;
@@ -1371,6 +1400,7 @@ int inicializar_team(char* entrenador){
 	mensajes_catch_esperando_respuesta = list_create();
 	entrenadores_DL = list_create();
 	entrenadores = list_create();
+	total_deadlocks = list_create();
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	sem_init(&s_posiciones_a_mover, 0, 0);
 	sem_init(&s_procesos_en_exec, 0, 1);
@@ -1384,7 +1414,9 @@ int inicializar_team(char* entrenador){
 	pthread_mutex_init(&mutex_deadlocks_resueltos_totales, NULL);
 	pthread_mutex_init(&mutex_cola_ready, NULL);
 
+
 	srand(time(NULL));
+
 	config = config_create(get_config_path(entrenador));
 	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
 	char* log_path = config_get_string_value(config, "LOG_FILE");
@@ -1394,6 +1426,7 @@ int inicializar_team(char* entrenador){
 	PROCESS_ID = atoi(config_get_string_value(config, "PROCESS_ID"));
 	RETARDO_CICLO_CPU = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
 	algoritmo = get_algoritmo(config);
+	TIEMPO_RECONEXION = atoi(config_get_string_value(config,"TIEMPO_RECONEXION"));
 
 	//sem_init(&s_control_planificador_rr, 0, algoritmo.quantum);
 
@@ -1434,22 +1467,6 @@ void entrenador(void* index){
 }
 
 
-
-
-void reconectar_broker(){
-	while(1){
-		sem_wait(&s_reconnect_broker);
-		int socket = conexion_broker();
-		int tiempo_reconexion = atoi(config_get_string_value(config, "TIEMPO_RECONEXION"));
-		while(socket == 0){
-			printf("intentando reconcetar... \n");
-			sleep(tiempo_reconexion);
-		}
-
-		printf("reconectado correctamente!");
-	}
-}
-
 int32_t main(int32_t argc, char** argv){
 	if(!argv[1]){
 		printf("Fata definir el team a cargar\n");
@@ -1465,8 +1482,8 @@ int32_t main(int32_t argc, char** argv){
     objetivo_global = get_objetivo_global(entrenadores);
 
 
-/*
     generar_y_enviar_get();
+/*
 
     pthread_t p_suscribirse_appeared;
    	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, (void*)entrenadores);
