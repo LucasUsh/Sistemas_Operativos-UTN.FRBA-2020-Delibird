@@ -207,7 +207,8 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		particionAMirar = list_get(tabla_particiones, posicion-1);
 		if(!particionAMirar->ocupada){//si la particion anterior esta libre
 			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
+				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particion->size)
+						&& particionAMirar->posicion_inicial == (particion->posicion_inicial^particion->size)){
 					int32_t posicion1 = particionAMirar->posicion_inicial;
 					int32_t posicion2 = particion->posicion_inicial;
 
@@ -227,7 +228,8 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		particionAMirar = list_get(tabla_particiones, posicion+1);
 		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
 			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
+				if(particionAMirar->posicion_inicial == (particion->posicion_inicial^particion->size)
+						&& particion->posicion_inicial == (particionAMirar->posicion_inicial^particion->size)){
 					int32_t posicion1 = particion->posicion_inicial;
 					int32_t posicion2 = particionAMirar->posicion_inicial;
 
