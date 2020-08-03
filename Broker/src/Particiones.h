@@ -43,8 +43,8 @@ t_particion * algoritmoLRU();
 
 int obtenerPosicion(t_particion * particion);
 void actualizarID(int32_t id_mensaje);
-t_particion * consolidarParticion(t_particion * particion, int posicion);
-t_particion * consolidarParticionBS(t_particion * particion, int posicion);
+void consolidarParticion(t_particion * particion, int posicion);
+void consolidarParticionBS(t_particion * particion, int posicion);
 
 int32_t tamanioMinimo(int32_t sizeMsg);
 void generarParticionBS(t_particion* particionInicial);

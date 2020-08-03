@@ -125,7 +125,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
 		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
-		particion=consolidarParticion(particion, posicion);
+		consolidarParticion(particion, posicion);
 		break;
 	case LRU:
 		particion = algoritmoLRU();
@@ -137,7 +137,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
 		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
-		particion=consolidarParticion(particion, posicion);
+		consolidarParticion(particion, posicion);
 		break;
 	default:
 		printf("Ese algoritmo de liberacion no esta implementado\n");
@@ -160,7 +160,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
 		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
-		particion=consolidarParticionBS(particion, posicion);
+		consolidarParticionBS(particion, posicion);
 		break;
 	case LRU:
 		particion = algoritmoLRU();
@@ -172,7 +172,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
 		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
-		particion=consolidarParticionBS(particion, posicion);
+		consolidarParticionBS(particion, posicion);
 		break;
 	default:
 		printf("Ese algoritmo de liberacion no esta implementado\n");
@@ -180,7 +180,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 	}
 }
 
-t_particion * consolidarParticion(t_particion * particion, int posicion){
+void consolidarParticion(t_particion * particion, int posicion){
 	t_particion* particionAMirar;
 
 	if(posicion !=0){//si tiene una particion antes
@@ -197,10 +197,9 @@ t_particion * consolidarParticion(t_particion * particion, int posicion){
 			particion->size += particionAMirar->size;
 		}
 	}
-	return particion;
 }
 
-t_particion * consolidarParticionBS(t_particion * particion, int posicion){
+void consolidarParticionBS(t_particion * particion, int posicion){
 	t_particion* particionAIzquierda;
 	t_particion* particionADerecha;
 
@@ -208,13 +207,15 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		particionAIzquierda = list_get(tabla_particiones, posicion-1);
 		if(!particionAIzquierda->ocupada){//si la particion anterior esta libre
 			if(particion->size==particionAIzquierda->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAIzquierda->posicion_inicial^particion->size)
-						&& particionAIzquierda->posicion_inicial == (particion->posicion_inicial^particion->size)){
+				if(particion->posicion_inicial == (particionAIzquierda->posicion_inicial+particion->size)
+						&& particionAIzquierda->posicion_inicial == (particion->posicion_inicial-particion->size)){
 					int32_t posicion1 = particionAIzquierda->posicion_inicial;
 					int32_t posicion2 = particion->posicion_inicial;
 
 					particion->posicion_inicial = particionAIzquierda->posicion_inicial;
 					particion->size += particionAIzquierda->size;
+
+					free(particionAIzquierda);
 					list_remove(tabla_particiones, posicion);
 					list_remove(tabla_particiones, posicion-1);
 					list_add_in_index(tabla_particiones,posicion-1, particion);
@@ -229,14 +230,15 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		particionADerecha = list_get(tabla_particiones, posicion+1);
 		if(!particionADerecha->ocupada){//si la particion siguiente esta libre
 			if(particion->size==particionADerecha->size){ //si son del mismo tamanio
-				if(!(particionADerecha->posicion_inicial == (particion->posicion_inicial^particion->size)
-						&& particion->posicion_inicial == (particionADerecha->posicion_inicial^particion->size))){
+				if(particionADerecha->posicion_inicial == (particion->posicion_inicial+particion->size)
+						&& particion->posicion_inicial == (particionADerecha->posicion_inicial-particion->size)){
 					int32_t posicion1 = particion->posicion_inicial;
 					int32_t posicion2 = particionADerecha->posicion_inicial;
 
 					particion->posicion_final = particionADerecha->posicion_final;
 					particion->size += particionADerecha->size;
 
+					free(particionADerecha);
 					list_remove(tabla_particiones, posicion+1);
 					list_remove(tabla_particiones, posicion);
 					list_add_in_index(tabla_particiones,posicion, particion);
@@ -246,7 +248,6 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 			}
 		}
 	}
-	return particion;
 }
 
 void algoritmoCompactacion(){
