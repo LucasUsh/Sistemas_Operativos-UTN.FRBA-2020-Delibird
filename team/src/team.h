@@ -72,7 +72,9 @@ typedef struct {
 	int32_t id;
 	bool ocupado;
 	sem_t* semaforo;
-	int estimacion_anterior;
+	double estimacion_anterior;
+	double estimacion;
+	int rafaga_ejecutada;
 	int ciclos;
 } t_entrenador;
 

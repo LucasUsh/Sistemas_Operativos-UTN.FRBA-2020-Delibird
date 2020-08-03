@@ -20,6 +20,7 @@ int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por
 int deadlocks_totales = 0; //deadlocks totales sin repetir
 int deadlocks_resueltos_totales = 0; // deadlocks resueltos
 int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
+bool cambios_cola_ready = false;
 
 //colas de planificacion
 t_list* cola_ready;
@@ -28,6 +29,7 @@ t_list* entrenadores_DL;
 //semaforos
 sem_t s_cola_ready_con_items;
 sem_t s_procesos_en_exec;
+sem_t s_planificar_sjfcd;
 sem_t s_reconnect_broker;
 sem_t s_posiciones_a_mover;
 sem_t s_control_planificador_rr;
@@ -39,13 +41,55 @@ pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_ciclos_totales;
 pthread_mutex_t mutex_deadlocks_totales;
 pthread_mutex_t mutex_deadlocks_resueltos_totales;
-
+pthread_mutex_t mutex_cambios_contexto;
 
 //colas de mensajes
 t_list* pokemones_recibidos; // registro para saber si rechazar appeareds y localizeds
 t_list* pokemones_ubicados; // estos son los pokemones capturables. Esta lista varía con el tiempo.
 t_list* mensajes_get_esperando_respuesta; // seguramente algun id o algo
 t_list* mensajes_catch_esperando_respuesta; // seguramente algun id o algo
+
+
+
+double calcular_estimacion(t_entrenador* entrenador){
+	int rafaga_real = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
+
+	printf("_______________\n");
+	printf("| ----- estimacion del entrenador: %d\n", entrenador->id);
+	printf("| Rafaga real: %d\n", rafaga_real);
+	printf("| Estimada anterior: %f\n", entrenador->estimacion_anterior);
+
+
+	//primera vez que va a ejecutar necesito mantener la estimacion
+	if(entrenador->estimacion_anterior == 0){
+		return entrenador->estimacion;
+	}
+
+	double EST_siguiente = 0;
+
+	EST_siguiente =  algoritmo.alpha * rafaga_real + (1-algoritmo.alpha) * entrenador->estimacion_anterior; //podria ser entrenador->estimacion
+
+	printf("| estimacion: %f\n", EST_siguiente);
+	printf("_______________\n");
+
+	return EST_siguiente;
+}
+
+
+void show_cola_ready(){
+	printf("////////// COLA READY ///////////\n");
+	for(int i = 0; i < cola_ready->elements_count; i++){
+		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+
+		printf("posicion en la lista: %d\n", i);
+		printf("entrenador: %d\n", entrenador_actual->id);
+		printf("posicion actual: X:%d, Y:%d\n", entrenador_actual->posicion.X, entrenador_actual->posicion.Y);
+		printf("posicion destino: X:%d, Y:%d\n", entrenador_actual->pokemon_destino->posicion.X, entrenador_actual->pokemon_destino->posicion.Y);
+		printf("estimacion: %f\n", entrenador_actual->estimacion);
+	}
+	printf("////////// COLA READY ///////////\n");
+}
+
 
 void show_estado(){
 
@@ -407,6 +451,8 @@ void ejecuta(t_entrenador* entrenador){
 	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
 	entrenador->ciclos++;
+	entrenador->rafaga_ejecutada++;
+
 	sleep(RETARDO_CICLO_CPU);
 	if(posicion_final_X != 0){
 		if(posicion_final_X < 0){
@@ -449,11 +495,17 @@ void replanificar_entrenador(t_entrenador* entrenador){
 
 	} else {
 		printf("SU NUEVO POKEMON ES: %s\n", entrenador->pokemon_destino->nombre);
+
+		entrenador->estimacion_anterior = entrenador->estimacion;
+		entrenador->estimacion = calcular_estimacion(entrenador);
+
 		entrenador->estado = READY;
 		pthread_mutex_lock(&mutex_cola_ready);
 		list_add(cola_ready, entrenador);
 		pthread_mutex_unlock(&mutex_cola_ready);
+		cambios_cola_ready = true;
 		sem_post(&s_cola_ready_con_items);
+		sem_post(&s_planificar_sjfcd);
 	}
 }
 
@@ -537,6 +589,38 @@ void planificar_rr(){
 	return;
 }
 
+
+
+
+
+int get_index_entrenador_estimacion_mas_corta_con_desalojo(){
+
+	double estimacion_mas_corta = -1;
+	t_entrenador* entrenador_mas_rapido=NULL;
+	int indice = 0;
+
+	for(int i = 0; i < cola_ready->elements_count; i++){
+		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+
+
+		if(estimacion_mas_corta == -1){
+			estimacion_mas_corta = entrenador_actual->estimacion_anterior;
+			entrenador_mas_rapido = entrenador_actual;
+		} else if(entrenador_actual->estimacion_anterior < estimacion_mas_corta) {
+			estimacion_mas_corta = entrenador_actual->estimacion_anterior;
+			entrenador_mas_rapido= entrenador_actual;
+			indice = i;
+		}
+	}
+
+	printf("el próximo va a ser el entrenador %d\n", entrenador_mas_rapido->id);
+
+	t_entrenador* entrenador_actual = list_get(entrenadores, entrenador_mas_rapido->id);
+	entrenador_actual->estimacion_anterior = estimacion_mas_corta;
+	return indice;
+
+}
+
 int get_index_entrenador_estimacion_mas_corta(){
 
 	// FORMULA DE ESTIMACION: ESTn+1 = alpha * TEn + (1-alpha) * ESTn
@@ -553,23 +637,8 @@ int get_index_entrenador_estimacion_mas_corta(){
 
 	for(int i = 0; i < cola_ready->elements_count; i++){
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
-		int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
-		double EST = entrenador_actual->estimacion_anterior;
-		printf("estimacion entrenador: %d\n", entrenador_actual->id);
-		printf("| Rafaga real: %d\n", TE);
-		printf("| Estimada: %f\n", EST);
 
-
-		double EST_siguiente = 0;
-
-		if(entrenador_actual->estimacion_anterior == 0){
-			EST_siguiente = atoi(config_get_string_value(config, "ESTIMACION_INICIAL"));
-		} else {
-			EST_siguiente =  algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
-		}
-
-		printf("| estimacion: %f\n", EST_siguiente);
-		printf("_______________\n");
+		double EST_siguiente = calcular_estimacion(entrenador_actual); //esto creo que no va
 
 		if(estimacion_mas_corta == -1){
 			estimacion_mas_corta = EST_siguiente;
@@ -591,7 +660,6 @@ int get_index_entrenador_estimacion_mas_corta(){
 void planificar_sjfsd(){
 
 	pthread_mutex_lock(&mutex_cola_ready);
-	printf("procesos en redyyyyyyyyyyyyy: %d\n", cola_ready->elements_count);
 	int i = get_index_entrenador_estimacion_mas_corta();
 	t_entrenador* entrenador = list_remove(cola_ready, i);
 	pthread_mutex_unlock(&mutex_cola_ready);
@@ -600,7 +668,84 @@ void planificar_sjfsd(){
 	return;
 }
 
+
+t_entrenador* get_entrenador_exec(){
+	for(int i = 0; i < entrenadores->elements_count; i++){
+		t_entrenador* e = list_get(entrenadores, i);
+		if(e->estado == EXEC) return e;
+	}
+
+	return NULL;
+}
+
+
+void ordenar_cola_ready(){
+
+
+	bool _estimacion_mas_chica(void* e1, void* e2){
+		t_entrenador* ent1 = (t_entrenador*)e1;
+		t_entrenador* ent2 = (t_entrenador*)e2;
+
+		return ent1->estimacion <= ent2->estimacion;
+
+	}
+
+	list_sort(cola_ready, _estimacion_mas_chica);
+
+	return;
+}
+
 void planificar_sjfcd(){
+	//comparo lo que tengo en ready cuando entra alguien y elijo al que tiene menor rafaga
+	//me fijo en el nuevo entrenador que entró en READY y lo comparo con el que está ejecutando
+
+	t_entrenador* entrenador_en_exec = get_entrenador_exec();
+
+	ordenar_cola_ready();
+
+	t_entrenador* nuevo_entrenador = list_get(cola_ready, 0);
+
+	printf("el entrenador en ready con menor rafaga es este: %d\n", nuevo_entrenador->id);
+
+
+	if(entrenador_en_exec == NULL){
+		t_entrenador* entrenador = list_remove(cola_ready, 0);
+		sem_post(entrenador->semaforo);
+	} else {
+		printf("lo voy a comparar con el que tengo en exec que es el %d\n", entrenador_en_exec->id);
+
+		printf("$$$$$$$$ ENTRENADOR ACTUAL EN EXEC $$$$$$$$$$\n");
+		printf("| ----- entrenador: %d\n", entrenador_en_exec->id);
+
+		int rafaga_real = get_distancia_entre_puntos(entrenador_en_exec->posicion, entrenador_en_exec->pokemon_destino->posicion)
+				+ entrenador_en_exec->rafaga_ejecutada;
+
+
+		double falta_ejecutar = entrenador_en_exec->estimacion - entrenador_en_exec->rafaga_ejecutada;
+
+		printf("| Rafaga real: %d\n", rafaga_real);
+		printf("| estimacion: %f\n", entrenador_en_exec->estimacion);
+		printf("| le falta ejecutar (y es con lo que comparo): %f\n", falta_ejecutar);
+		printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+
+
+		if(falta_ejecutar < nuevo_entrenador->estimacion){
+			printf("sigue ejecutando el entrenador actual\n");
+			cambios_cola_ready=false;
+			sem_post(entrenador_en_exec->semaforo);
+		} else {
+			//pasa a ejecutar el nuevo proceso
+			t_entrenador* entrenador = list_remove(cola_ready, 0);
+			cambios_cola_ready=false;
+			entrenador_en_exec->estado = READY;
+			entrenador_en_exec->ocupado = true;
+			entrenador->estado = EXEC;
+			entrenador->ocupado = true;
+			sem_post(entrenador->semaforo);
+		}
+
+	}
+
 	return;
 }
 
@@ -617,9 +762,9 @@ void planificar()
 	case SJFSD:
 		planificar_sjfsd();
 		break;
-	case SJFCD:
-		planificar_sjfcd();
-		break;
+//	case SJFCD:
+//		planificar_sjfcd();
+//		break;
 	default:
 		return;
 	}
@@ -791,6 +936,7 @@ void capturar_pokemon(t_entrenador* entrenador){
 	printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
 	entrenador->estado=BLOCKED;
 	entrenador->ocupado=true;
+	entrenador->rafaga_ejecutada = 0;
 	sem_post(&s_procesos_en_exec); // salgo de exec
 
 	if(puede_capturar_pokemones(entrenador)){
@@ -843,7 +989,28 @@ void ejecutar_sjfsd(t_entrenador* entrenador){
 }
 
 void ejecutar_sjfcd(t_entrenador* entrenador){
-	return;
+	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
+			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
+
+		if(cambios_cola_ready && cola_ready->elements_count > 0){
+			cambios_cola_ready = false;
+			log_debug(logger, "Llegó algo a ready desde que empecé a planificar");
+			sem_post(&s_planificar_sjfcd); //necesito replanificar
+			sem_wait(entrenador->semaforo);//me bloqueo hasta que me libere el planificador
+
+		} else {
+			ejecuta(entrenador);
+		}
+		printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+	}
+
+	entrenador->estado=BLOCKED;
+	sem_post(&s_planificar_sjfcd);
+	log_debug(logger, "elementos en ready: %d\n", cola_ready->elements_count);
+	show_cola_ready();
+
+	capturar_pokemon(entrenador);
+
 }
 
 
@@ -910,15 +1077,6 @@ void generar_y_enviar_get(){
 	return;
 }
 
-void show_cola_ready(){
-	for(int i = 0; i < cola_ready->elements_count; i++){
-		t_entrenador* entrenador_actual = list_get(cola_ready, i);
-
-		printf("posicion en la lista: %d\n", i);
-		printf("posicion actual: X:%d, Y:%d\n", entrenador_actual->posicion.X, entrenador_actual->posicion.Y);
-		printf("posicion destino: X:%d, Y:%d\n", entrenador_actual->pokemon_destino->posicion.X, entrenador_actual->pokemon_destino->posicion.Y);
-	}
-}
 
 void hilo_planificador(){
 
@@ -926,11 +1084,19 @@ void hilo_planificador(){
 		//printf("esperando que llegue algo a la cola de ready....\n");
 		sem_wait(&s_cola_ready_con_items);//inicializado en 0
 
-		printf("llegó algo a la cola de READY\n");
-		sem_wait(&s_procesos_en_exec); //inicializado en 1, o sea que solo puede haber uno a la vez;
+		log_debug(logger, "llegó algo a la cola de READY\n");
 
-		//printf("nadie en EXEC, voy a planificar tranquilo..\n");
-		planificar();
+		if(algoritmo.algoritmo_code==SJFCD){
+
+			sem_wait(&s_planificar_sjfcd);
+			log_debug(logger, "ME LLEGO ALGO PARA PLANIFICAR CON SJFCD");
+			planificar_sjfcd();
+		} else {
+			sem_wait(&s_procesos_en_exec); //inicializado en 1, o sea que solo puede haber uno a la vez;
+
+			//printf("nadie en EXEC, voy a planificar tranquilo..\n");
+			planificar();
+		}
 	}
 }
 
@@ -1010,7 +1176,7 @@ void recibidor_mensajes_appeared(void* args){
 	t_Appeared* mensaje = (t_Appeared*)arg->mensaje;
 
 
-	printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
+	//printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
 
 	if(appeared_valido(mensaje, entrenadores, objetivo_global)){
 		printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
@@ -1026,9 +1192,16 @@ void recibidor_mensajes_appeared(void* args){
 			entrenador_mas_cercano->pokemon_destino = pokemon_destino;
 			entrenador_mas_cercano->ocupado = true;
 
+
+
+			entrenador_mas_cercano->estimacion = calcular_estimacion(entrenador_mas_cercano);
+
+
 			pthread_mutex_lock(&mutex_cola_ready);
 			list_add(cola_ready, entrenador_mas_cercano);
 			pthread_mutex_unlock(&mutex_cola_ready);
+			cambios_cola_ready = true;
+			sem_post(&s_planificar_sjfcd);
 
 			printf("el entrenador %d fue agregado a la cola READY\n", entrenador_mas_cercano->id);
 			sem_post(&s_cola_ready_con_items);
@@ -1101,11 +1274,11 @@ void hilo_recibidor_mensajes_gameboy(){
 					printf("Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
 
-					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
-							mensaje_appeared->pokemon.size_Nombre,
-							mensaje_appeared->pokemon.nombre,
-							mensaje_appeared->posicion.X,
-							mensaje_appeared->posicion.Y);
+//					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+//							mensaje_appeared->pokemon.size_Nombre,
+//							mensaje_appeared->pokemon.nombre,
+//							mensaje_appeared->posicion.X,
+//							mensaje_appeared->posicion.Y);
 
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 					args->mensaje = mensaje_appeared;
@@ -1374,11 +1547,15 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_cola_ready_con_items, 0, 0);
 	sem_init(&s_posiciones_a_mover, 0, 0);
 	sem_init(&s_procesos_en_exec, 0, 1);
+	sem_init(&s_planificar_sjfcd, 0, 1);
 	sem_init(&s_control_planificador_rr, 0, 0);
 	sem_init(&s_detectar_deadlock, 0, 0);
 	sem_init(&s_replanificar, 0, 0);
 	sem_init(&s_entrenador_exit, 0, 0);
 	sem_init(&s_resuelve_deadlock, 0, 0);
+
+
+	pthread_mutex_init(&mutex_cambios_contexto, NULL);
 	pthread_mutex_init(&mutex_ciclos_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_resueltos_totales, NULL);
@@ -1411,9 +1588,16 @@ void entrenador(void* index){
 	while(!cumplio_objetivo(entrenador)){
 
 		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
+
+		pthread_mutex_lock(&mutex_cambios_contexto);
+		cambios_contexto++;
+		pthread_mutex_unlock(&mutex_cambios_contexto);
+
+		log_info(logger, "Cambio de contexto detectado\n");
 		printf("soy el entrenador %d y estoy ejecutando\n", entrenador->id);
 		printf("----------------------------\n");
-		cambios_contexto++;
+
+
 		if(entrenador->pokemon_destino != NULL){ // agora sim
 		log_info(logger, "El entrenador %d se mueve a atrapar a %s en posición %d-%d.\n",
 				entrenador->id, entrenador->pokemon_destino->nombre,
