@@ -168,7 +168,6 @@ void funcion_catch_pokemon(void* catch_y_id) {
 	free(id_msj);
 }
 
-
 void funcion_get_pokemon(void* get_y_id) {
 	t_Get* get = NULL;
 	memcpy(&get, get_y_id, sizeof(t_Get*));
@@ -697,7 +696,7 @@ char* quitar_pokemon (char* archivo_cargado, char* apuntador, t_posicion posicio
 	}
 
 	if (cantidad_total == 0) {
-		if(*(apuntador-1) == '\n') {
+		if(apuntador != archivo_cargado) {
 			memmove(apuntador - 1, apuntador + i, strlen(apuntador + i) + 1);
 			archivo_cargado = realloc(archivo_cargado, strlen(archivo_cargado) + 1);
 		}
