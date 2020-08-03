@@ -201,19 +201,20 @@ t_particion * consolidarParticion(t_particion * particion, int posicion){
 }
 
 t_particion * consolidarParticionBS(t_particion * particion, int posicion){
-	t_particion* particionAMirar;
+	t_particion* particionAIzquierda;
+	t_particion* particionADerecha;
 
 	if(posicion !=0){//si tiene una particion antes
-		particionAMirar = list_get(tabla_particiones, posicion-1);
-		if(!particionAMirar->ocupada){//si la particion anterior esta libre
-			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particion->size)
-						&& particionAMirar->posicion_inicial == (particion->posicion_inicial^particion->size)){
-					int32_t posicion1 = particionAMirar->posicion_inicial;
+		particionAIzquierda = list_get(tabla_particiones, posicion-1);
+		if(!particionAIzquierda->ocupada){//si la particion anterior esta libre
+			if(particion->size==particionAIzquierda->size){ //si son del mismo tamanio
+				if(particion->posicion_inicial == (particionAIzquierda->posicion_inicial^particion->size)
+						&& particionAIzquierda->posicion_inicial == (particion->posicion_inicial^particion->size)){
+					int32_t posicion1 = particionAIzquierda->posicion_inicial;
 					int32_t posicion2 = particion->posicion_inicial;
 
-					particion->posicion_inicial = particionAMirar->posicion_inicial;
-					particion->size += particionAMirar->size;
+					particion->posicion_inicial = particionAIzquierda->posicion_inicial;
+					particion->size += particionAIzquierda->size;
 					list_remove(tabla_particiones, posicion);
 					list_remove(tabla_particiones, posicion-1);
 					list_add_in_index(tabla_particiones,posicion-1, particion);
@@ -225,16 +226,16 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		}
 	}
 	if(posicion != (tabla_particiones->elements_count)-1){//si tiene una particion despues
-		particionAMirar = list_get(tabla_particiones, posicion+1);
-		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
-			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
-				if(particionAMirar->posicion_inicial == (particion->posicion_inicial^particion->size)
-						&& particion->posicion_inicial == (particionAMirar->posicion_inicial^particion->size)){
+		particionADerecha = list_get(tabla_particiones, posicion+1);
+		if(!particionADerecha->ocupada){//si la particion siguiente esta libre
+			if(particion->size==particionADerecha->size){ //si son del mismo tamanio
+				if(!(particionADerecha->posicion_inicial == (particion->posicion_inicial^particion->size)
+						&& particion->posicion_inicial == (particionADerecha->posicion_inicial^particion->size))){
 					int32_t posicion1 = particion->posicion_inicial;
-					int32_t posicion2 = particionAMirar->posicion_inicial;
+					int32_t posicion2 = particionADerecha->posicion_inicial;
 
-					particion->posicion_final = particionAMirar->posicion_final;
-					particion->size += particionAMirar->size;
+					particion->posicion_final = particionADerecha->posicion_final;
+					particion->size += particionADerecha->size;
 
 					list_remove(tabla_particiones, posicion+1);
 					list_remove(tabla_particiones, posicion);
@@ -428,9 +429,10 @@ void algoritmoBuddySystem(info_mensaje * mensaje, int32_t algoritmoReemplazo){
 	t_particion * particion;
 	bool buscar = true;
 	int32_t liberadas = 0;
+	int32_t cantElementos = tabla_particiones->elements_count;
 
 	while(buscar){
-		if(liberadas < tabla_particiones->elements_count){
+		if(liberadas <= cantElementos){
 			if(hayParticionesCandidatasBS(tamanio) == true){ //hay una particion libre del tamanio exacto que necesito?
 				particion = getParticionBS(tamanio);
 				guardarMensaje(mensaje, particion);
@@ -463,9 +465,10 @@ void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompac
 	t_particion * particion;
 	bool buscar = true;
 	int32_t liberadas = 0;
+	int32_t cantElementos = tabla_particiones->elements_count;
 
 	while(buscar){
-		if(liberadas < tabla_particiones->elements_count){
+		if(liberadas <= cantElementos){
 			if(hayParticionesCandidatas(tamanio) == true){ //hay una particion libre que pueda truncar?
 				switch(algoritmoParticionLibre){
 				case FF:
