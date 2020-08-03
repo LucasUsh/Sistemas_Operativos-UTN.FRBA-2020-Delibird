@@ -124,7 +124,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", inicioMemoria + particion->posicion_inicial);
 		consolidarParticion(particion, posicion);
 		break;
 	case LRU:
@@ -136,7 +136,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", inicioMemoria + particion->posicion_inicial);
 		consolidarParticion(particion, posicion);
 		break;
 	default:
@@ -159,7 +159,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", inicioMemoria + particion->posicion_inicial);
 		consolidarParticionBS(particion, posicion);
 		break;
 	case LRU:
@@ -171,7 +171,7 @@ void algoritmoLiberacionBS(int32_t algoritmoReemplazo){
 		particion->id_mensaje =0;
 		list_remove(tabla_particiones, posicion);
 		list_add_in_index(tabla_particiones,posicion, particion);
-		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", particion->posicion_inicial);
+		log_info(logger, "Se elimino un mensaje de la memoria. Posicion de inicio: %d", inicioMemoria + particion->posicion_inicial);
 		consolidarParticionBS(particion, posicion);
 		break;
 	default:
@@ -207,10 +207,10 @@ void consolidarParticionBS(t_particion * particion, int posicion){
 		particionAIzquierda = list_get(tabla_particiones, posicion-1);
 		if(!particionAIzquierda->ocupada){//si la particion anterior esta libre
 			if(particion->size==particionAIzquierda->size){ //si son del mismo tamanio
-				if(particion->posicion_inicial == (particionAIzquierda->posicion_inicial+particion->size)
-						&& particionAIzquierda->posicion_inicial == (particion->posicion_inicial-particion->size)){
-					int32_t posicion1 = particionAIzquierda->posicion_inicial;
-					int32_t posicion2 = particion->posicion_inicial;
+				if(particion->posicion_inicial == (particionAIzquierda->posicion_inicial^particion->size)
+						&& particionAIzquierda->posicion_inicial == (particion->posicion_inicial^particion->size)){
+					int32_t posicion1 = inicioMemoria + particionAIzquierda->posicion_inicial;
+					int32_t posicion2 = inicioMemoria + particion->posicion_inicial;
 
 					particion->posicion_inicial = particionAIzquierda->posicion_inicial;
 					particion->size += particionAIzquierda->size;
@@ -230,10 +230,10 @@ void consolidarParticionBS(t_particion * particion, int posicion){
 		particionADerecha = list_get(tabla_particiones, posicion+1);
 		if(!particionADerecha->ocupada){//si la particion siguiente esta libre
 			if(particion->size==particionADerecha->size){ //si son del mismo tamanio
-				if(particionADerecha->posicion_inicial == (particion->posicion_inicial+particion->size)
+				if(particionADerecha->posicion_inicial == (particion->posicion_inicial^particion->size)
 						&& particion->posicion_inicial == (particionADerecha->posicion_inicial-particion->size)){
-					int32_t posicion1 = particion->posicion_inicial;
-					int32_t posicion2 = particionADerecha->posicion_inicial;
+					int32_t posicion1 = inicioMemoria + particion->posicion_inicial;
+					int32_t posicion2 = inicioMemoria + particionADerecha->posicion_inicial;
 
 					particion->posicion_final = particionADerecha->posicion_final;
 					particion->size += particionADerecha->size;
@@ -366,7 +366,7 @@ void guardarMensaje(info_mensaje * mensaje, t_particion * particion){
 	particion->ocupada = true;
 	particion->id_mensaje = mensaje->id_mensaje;
 	particion->id = get_id_particion();
-	log_info(logger, "Se guardo un mensaje en la memoria. Posicion de inicio: %d", particion->posicion_inicial);
+	log_info(logger, "Se guardo un mensaje en la memoria. Posicion de inicio: %d", inicioMemoria + particion->posicion_inicial);
 }
 
 int32_t tamanioMinimo(int32_t sizeMsg){

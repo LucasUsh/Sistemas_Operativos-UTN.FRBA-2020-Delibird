@@ -542,7 +542,7 @@ void iniciarBroker(){
 
 	//Inicializar memoria
 	inicioMemoria = (int32_t)malloc(sizeMemoria); //f00X12345  f00X12345 + 2048
-	t_particion* particionInicial = crearParticion(inicioMemoria, sizeMemoria, false);
+	t_particion* particionInicial = crearParticion(0, sizeMemoria, false);
 	tabla_particiones = list_create();
 	list_add(tabla_particiones, particionInicial);
 
@@ -739,7 +739,7 @@ void hacerDump(){
 			break;
 		}
 		log_info(dump, "Particion %d: %p - %p.	[%s]\n Size: %db	LRU: %d		COLA: %s		ID_MENSAJE: %d",
-				i, particion->posicion_inicial, particion->posicion_final, estado, particion->size, particion->id,
+				i, inicioMemoria + particion->posicion_inicial, inicioMemoria + particion->posicion_final, estado, particion->size, particion->id,
 				cola, particion->id_mensaje);
 		//%06p
 	}
