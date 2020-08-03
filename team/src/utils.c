@@ -245,6 +245,8 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 
 	if(distancia_mas_chica == -1) return NULL;
 
+	//free(entrenador);
+
 	return entrenador_cercano;
 }
 
@@ -486,6 +488,14 @@ bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_lis
 int32_t conexion_broker()
 {
 	int32_t socket = crear_conexion(IP_BROKER, PUERTO_BROKER);
+	return socket;
+}
+
+
+int32_t reconectar(int32_t socket){
+	log_info(logger, "reintentado contectarse al Broker...");
+	sleep(TIEMPO_RECONEXION);
+	socket = crear_conexion(IP_BROKER,PUERTO_BROKER);
 	return socket;
 }
 

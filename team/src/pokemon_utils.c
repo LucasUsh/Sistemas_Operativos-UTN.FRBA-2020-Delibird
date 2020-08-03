@@ -7,6 +7,11 @@
 #include "pokemon_utils.h"
 
 
+bool puede_capturar_pokemones(t_entrenador* entrenador){
+	return get_cantidad_pokemon(entrenador->pokemones) < get_cantidad_pokemon(entrenador->objetivo);
+}
+
+
 t_pokemon_team* get_pokemon(char* pokemon_name){
 	t_pokemon_team* pokemon = malloc(sizeof(t_pokemon_team));
 
@@ -55,9 +60,6 @@ int32_t get_cantidad_pokemon(t_list* list_pokemones){
 	return total_pokemon;
 }
 
-bool puede_capturar_pokemones(t_entrenador* entrenador){
-	return get_cantidad_pokemon(entrenador->pokemones) < get_cantidad_pokemon(entrenador->objetivo);
-}
 
 t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 
