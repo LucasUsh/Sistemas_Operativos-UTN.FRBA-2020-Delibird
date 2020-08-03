@@ -208,14 +208,17 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		if(!particionAMirar->ocupada){//si la particion anterior esta libre
 			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
 				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
+					int32_t posicion1 = particionAMirar->posicion_inicial;
+					int32_t posicion2 = particion->posicion_inicial;
+
 					particion->posicion_inicial = particionAMirar->posicion_inicial;
 					particion->size += particionAMirar->size;
-
+					list_remove(tabla_particiones, posicion);
 					list_remove(tabla_particiones, posicion-1);
 					list_add_in_index(tabla_particiones,posicion-1, particion);
+					posicion --;
 
-					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n"
-							"Posicion de inicio particion 2: %d", particion->posicion_inicial, particionAMirar->posicion_inicial);
+					log_info(logger, "Se consolidaron dos particiones. Posicion de inicio particion 1: %d. Posicion de inicio particion 2: %d", posicion1, posicion2);
 				}
 			}
 		}
@@ -225,14 +228,17 @@ t_particion * consolidarParticionBS(t_particion * particion, int posicion){
 		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
 			if(particion->size==particionAMirar->size){ //si son del mismo tamanio
 				if(particion->posicion_inicial == (particionAMirar->posicion_inicial^particionAMirar->size)){
+					int32_t posicion1 = particion->posicion_inicial;
+					int32_t posicion2 = particionAMirar->posicion_inicial;
+
 					particion->posicion_final = particionAMirar->posicion_final;
 					particion->size += particionAMirar->size;
 
 					list_remove(tabla_particiones, posicion+1);
-					list_add_in_index(tabla_particiones,posicion+1, particion);
+					list_remove(tabla_particiones, posicion);
+					list_add_in_index(tabla_particiones,posicion, particion);
 
-					log_info(logger, "Se consolidaron dos particiones.\n Posicion de inicio particion 1: %d.\n"
-							"Posicion de inicio particion 2: %d", particion->posicion_inicial, particionAMirar->posicion_inicial);
+					log_info(logger, "Se consolidaron dos particiones. Posicion de inicio particion 1: %d. Posicion de inicio particion 2: %d", posicion1, posicion2);
 				}
 			}
 		}
