@@ -7,8 +7,8 @@ int32_t main(void)
 	instalar_filesystem ();
 
 	pthread_t hilo_servidor_GC;
-	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) == 0)
-		log_info (logger_GC, "Hilo servidor creado correctamente.");
+	if (pthread_create (&hilo_servidor_GC, NULL, (void *) &crear_servidor_GC, NULL) != 0)
+		log_error(logger_GC, "Al crear Hilo servidor.");
 
 	op_code codigo_new = SUSCRIPCION_NEW;
 
@@ -193,15 +193,16 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			t_New* new = NULL;
 			new = deserializar_paquete_new (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
+			log_info(logger_GC, "ID de Mensaje recibido: %d", id_mensaje);
 
 			void* stream_new = malloc(sizeof(t_New*) + sizeof(id_mensaje));
 			memcpy(stream_new, &new, sizeof(t_New*));
 			memcpy(stream_new + sizeof(t_New*), &id_mensaje, sizeof(id_mensaje));
 
-			log_debug (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
+			log_info (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, stream_new) == 0)
-				log_info (logger_GC, "Hilo para responder NEW_POKEMON creado correctamente.");
+			if (pthread_create(&hilo, NULL, (void*)funcion_new_pokemon, stream_new) != 0)
+				log_error (logger_GC, "Al crear Hilo para responder NEW_POKEMON.");
 
 			pthread_join(hilo, NULL);
 
@@ -216,6 +217,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			t_Catch* catch = NULL;
 			catch = deserializar_paquete_catch (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
+			log_info(logger_GC, "ID de Mensaje recibido: %d", id_mensaje);
 
 			void* stream_catch = malloc(sizeof(t_Catch*) + sizeof(id_mensaje));
 			memcpy(stream_catch, &catch, sizeof(t_Catch*));
@@ -223,8 +225,8 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 
 			log_debug(logger_GC, "Nombre: %s, Posicion: (%d, %d)", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_catch_pokemon, stream_catch) == 0)
-				log_info (logger_GC, "Hilo para responder CATCH_POKEMON creado correctamente.");
+			if (pthread_create(&hilo, NULL, (void*)funcion_catch_pokemon, stream_catch) != 0)
+				log_error (logger_GC, "Al crear Hilo para responder CATCH_POKEMON.");
 
 			pthread_join(hilo, NULL);
 
@@ -239,6 +241,7 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 			t_Get* get = NULL;
 			get = deserializar_paquete_get (&socket_cliente);
 			enviar_ACK(0, socket_cliente);
+			log_info(logger_GC, "ID de Mensaje recibido: %d", id_mensaje);
 
 			void* stream_get = malloc(sizeof(t_Get*) + sizeof(id_mensaje));
 			memcpy(stream_get, &get, sizeof(t_Get*));
@@ -246,8 +249,8 @@ void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t
 
 			log_debug(logger_GC, "Get %s", get->pokemon.nombre);
 
-			if (pthread_create(&hilo, NULL, (void*)funcion_get_pokemon, stream_get) == 0)
-				log_info (logger_GC, "Hilo para responder GET_POKEMON creado correctamente.");
+			if (pthread_create(&hilo, NULL, (void*)funcion_get_pokemon, stream_get) != 0)
+				log_error (logger_GC, "Al crear Hilo para responder GET_POKEMON.");
 
 			pthread_join(hilo, NULL);
 
@@ -289,7 +292,7 @@ void hilo_suscriptor(op_code* code){
 								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-									log_info(logger_GC, "ID de Mensaje: %d", id_mensaje);
+									//log_info(logger_GC, "ID de Mensaje: %d", id_mensaje);
 									responder_mensaje(socket_broker, operacion, id_mensaje);
 
 									} else {

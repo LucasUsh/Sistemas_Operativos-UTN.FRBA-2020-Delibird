@@ -926,7 +926,7 @@ void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id){
 	int32_t id_mensaje = 0;
 	int32_t broker = crear_conexion(ip_broker,puerto_broker);
 	if(broker == 0){
-		log_info(logger_GC, "Error al enviar appeared al Broker");
+		log_error(logger_GC, "Error al enviar appeared al Broker");
 	}else{
 		enviar_handshake(2, broker);
 		if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
@@ -935,7 +935,6 @@ void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id){
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_appeared_pokemon(pokemon, x, y, mensaje_id, broker);
-				log_info(logger_GC,"Se ha enviado un APPEARED %s a Broker", pokemon);
 			}
 		}
 	}
@@ -948,7 +947,7 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 	int32_t id_mensaje = 0;
 	int32_t broker = crear_conexion(ip_broker,puerto_broker);
 	if(broker == 0){
-		log_info(logger_GC, "Error al enviar caught al Broker");
+		log_error(logger_GC, "Error al enviar caught al Broker");
 	}else{
 		enviar_handshake(2, broker);
 		if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
@@ -957,7 +956,6 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_caught_pokemon(id_mensaje_correlativo, fueAtrapado, broker);
-				log_info(logger_GC,"Se ha enviado un CAUGHT %s a Broker", fueAtrapado);
 			}
 		}
 	}
@@ -970,7 +968,7 @@ void enviar_localized (t_list* posiciones, t_pokemon pokemon, int32_t id_mensaje
 	int32_t id_mensaje = 0;
 	int32_t broker = crear_conexion(ip_broker,puerto_broker);
 	if(broker == 0){
-		log_info(logger_GC, "Error al enviar caught al Broker");
+		log_error(logger_GC, "Error al enviar caught al Broker");
 	}else{
 		enviar_handshake(2, broker);
 		if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
@@ -979,7 +977,7 @@ void enviar_localized (t_list* posiciones, t_pokemon pokemon, int32_t id_mensaje
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_localized_pokemon (&pokemon, posiciones, id_mensaje_correlativo, broker);
-				log_info(logger_GC,"Se ha enviado un LOCALIZED de %s a Broker", pokemon.nombre);
+				//log_info(logger_GC,"Se ha enviado un LOCALIZED de %s a Broker", pokemon.nombre);
 			}
 		}
 	}
