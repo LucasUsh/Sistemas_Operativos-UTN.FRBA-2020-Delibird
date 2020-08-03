@@ -313,6 +313,7 @@ t_particion * algoritmoFIFO(){ //debemos tomar la de id mas chico
 			particionAEliminar = particionActual;
 		}
 	}
+	list_destroy(particionesCandidatas);
 	return particionAEliminar;
 }
 
@@ -333,6 +334,7 @@ t_particion * algoritmoLRU(){ //debemos tomar la de id mas grande
 			particionAEliminar = particionActual;
 		}
 	}
+	list_destroy(particionesCandidatas);
 	return particionAEliminar;
 }
 
