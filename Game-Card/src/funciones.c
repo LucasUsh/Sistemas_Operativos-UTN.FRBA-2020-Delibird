@@ -255,11 +255,7 @@ void funcion_get_pokemon(void* get_y_id) {
 			auxiliar->Y = atoi (posiciones_separadas[i]);
 			i++;
 			list_add(posiciones_a_enviar, auxiliar);
-			log_debug(logger_GC, "(%d, %d)", auxiliar->X, auxiliar->Y);
 		}
-
-		log_debug(logger_GC, "Cantidad de posiciones: %d", posiciones_a_enviar->elements_count);
-
 
 		sleep(tiempo_retardo_operacion);
 
