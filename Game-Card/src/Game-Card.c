@@ -22,15 +22,15 @@ int32_t main(void)
 	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, &codigo_catch) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
-	op_code codigo_get = SUSCRIPCION_GET;
-
-	pthread_t hilo_get;
-	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo_get) == 0)
-		log_debug (logger_GC, "Hilo cola get creado correctamente.");
+//	op_code codigo_get = SUSCRIPCION_GET;
+//
+//	pthread_t hilo_get;
+//	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo_get) == 0)
+//		log_debug (logger_GC, "Hilo cola get creado correctamente.");
 
 	pthread_join(hilo_new,NULL);
 	pthread_join(hilo_catch,NULL);
-	pthread_join(hilo_get,NULL);
+//	pthread_join(hilo_get,NULL);
 	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();
@@ -267,53 +267,64 @@ void hilo_suscriptor(op_code* code){
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
-	int32_t socket_broker_new = crear_conexion(ip_broker,puerto_broker);
+	int32_t socket_broker = crear_conexion(ip_broker,puerto_broker);
 	bool fin = false;
 
 	while(1){
-		if(socket_broker_new != 0){
-			enviar_handshake(2, socket_broker_new);
-			if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+		if(socket_broker != 0){
+			enviar_handshake(2, socket_broker);
+			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
-					recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-					recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
-					enviar_suscripcion(*code, socket_broker_new);
-					if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+					enviar_suscripcion(*code, socket_broker);
+					if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 						if(operacion == ACK){
-							recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 							while(fin == false){
-								if(recv(socket_broker_new, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
-									recv(socket_broker_new, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-									recv(socket_broker_new, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 									log_info(logger_GC, "ID de Mensaje: %d", id_mensaje);
-									responder_mensaje(socket_broker_new, operacion, id_mensaje);
+									responder_mensaje(socket_broker, operacion, id_mensaje);
 
 									} else {
 										log_info(logger_GC, "Se cayo la conexion");
+										liberar_conexion(socket_broker);
+										socket_broker = 0;
 										fin = true;
 										}
 							}
 
 						} else {
 							log_error(logger_GC, "Fallo la suscripcion, respondieron algo que no era un ACK");
-							socket_broker_new = reconectar(socket_broker_new);
+							liberar_conexion(socket_broker);
+							socket_broker = 0;
+							//socket_broker = reconectar(socket_broker);
 						}
 					} else {
 						log_error(logger_GC, "Game-Card: se cayo la conexion con Broker");
-						socket_broker_new = reconectar(socket_broker_new);
+						liberar_conexion(socket_broker);
+						socket_broker = 0;
+						//socket_broker = reconectar(socket_broker);
 					}
 				} else {
 					log_error(logger_GC, "Game-Card: Fallo el ACK del handshake con Broker");
-					socket_broker_new = reconectar(socket_broker_new);
+					liberar_conexion(socket_broker);
+					socket_broker = 0;
+					//socket_broker = reconectar(socket_broker);
 				}
 
-			} else socket_broker_new = reconectar(socket_broker_new);
+			} //else socket_broker = reconectar(socket_broker);
 
-		} else socket_broker_new = reconectar(socket_broker_new);
+		} else {
+			log_info(logger_GC, "Reintentando conexion cola...");
+			socket_broker = reconectar(socket_broker);
+		}
 	}
 }
 
@@ -350,7 +361,6 @@ void liberar_memoria() {
 }
 
 int32_t reconectar(int32_t socket){
-	log_info(logger_GC, "Reintentando conexion...");
 	sleep(tiempo_reintento_conexion);
 	socket = crear_conexion(ip_broker,puerto_broker);
 	return socket;
