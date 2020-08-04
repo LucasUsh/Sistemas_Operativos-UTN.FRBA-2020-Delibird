@@ -142,3 +142,27 @@ t_pokemon_team* get_pokemon_team(char* nombre, t_posicion posicion){
 
 	return pokemon_team;
 }
+
+
+void pokemon_destroyer(void* elem){
+	t_pokemon_team* pokemon = (t_pokemon_team*) elem;
+	free(pokemon);
+}
+
+void liberar_elementos_lista_pokemon(t_list* lista){
+	list_clean_and_destroy_elements(lista, pokemon_destroyer);
+	free(lista);
+}
+
+
+void entrenador_destroyer(void* elem){
+	t_entrenador* entrenador = (t_entrenador*) elem;
+	free(entrenador);
+}
+
+void liberar_elementos_lista_entrenador(t_list* lista){
+	list_clean_and_destroy_elements(lista, entrenador_destroyer);
+	free(lista);
+}
+
+

@@ -27,4 +27,6 @@ t_list* get_nombres_pokemon();
 char* get_nombre_aleatorio(t_list* nombre_pokemones);
 t_list* localized_to_pokemon_team(t_Localized mensaje_localized);
 t_pokemon_team* get_pokemon_team(char* nombre, t_posicion posicion);
+void liberar_elementos_lista_pokemon(t_list* lista);
+void liberar_elementos_lista_entrenador(t_list* lista);
 #endif /* POKEMON_UTILS_H_ */

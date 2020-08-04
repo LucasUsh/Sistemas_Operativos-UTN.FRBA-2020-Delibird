@@ -17,7 +17,6 @@ int32_t socket_escucha_team;
 int RETARDO_CICLO_CPU = 0;
 
 int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por moverse
-int deadlocks_totales = 0; //deadlocks totales sin repetir
 int deadlocks_resueltos_totales = 0; // deadlocks resueltos
 int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
 int total_deadlock_resueltos;
@@ -30,18 +29,16 @@ t_list* entrenadores_DL;
 //semaforos
 sem_t s_cola_ready_con_items;
 sem_t s_procesos_en_exec;
-sem_t s_reconnect_broker;
 sem_t s_posiciones_a_mover;
 sem_t s_control_planificador_rr;
 sem_t s_detectar_deadlock;
 sem_t s_replanificar;
 sem_t s_entrenador_exit;
-sem_t s_resuelve_deadlock;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_ciclos_totales;
 pthread_mutex_t mutex_deadlocks_totales;
 pthread_mutex_t mutex_deadlocks_resueltos_totales;
-
+pthread_mutex_t mutex_list_entrenadores;
 
 //colas de mensajes
 t_list* pokemones_recibidos; // registro para saber si rechazar appeareds y localizeds
@@ -168,7 +165,9 @@ void resolver_deadlock(t_deadlock* deadlock){
 			entrenador1->id, entrenador2->id, entrenador1->pokemon_destino->nombre);
 
 	entrenador1->estado = READY;
+	pthread_mutex_lock(&mutex_cola_ready);
 	list_add(cola_ready, entrenador1);
+	pthread_mutex_unlock(&mutex_cola_ready);
 	sem_post(&s_cola_ready_con_items);
 
 	return;
@@ -380,25 +379,29 @@ void detectar_deadlocks(){
 		}
 	}
 
-	log_debug(logger, "deadlocks detectados: %d\n", deadlocks_detectados->elements_count);
 	for(int m = 0; m < deadlocks_detectados->elements_count; m++){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
 
 
 		if(!deadlock_ya_detectado(total_deadlocks, dl)){
-			log_debug(logger, "deadlock agregado al total \n");
 			list_add(total_deadlocks, dl);
 		}
 
+		char* log_deadlock = string_new();
 
-		log_debug(logger, "se detectó un deadlock entre el entrenador: ");
+		string_append(&log_deadlock, "se detectó un deadlock entre el entrenador: ");
+
 		for(int n=0; n < dl->procesos_involucrados->elements_count ; n++){
 			int* proceso_involucrado = list_get(dl->procesos_involucrados, n);
 			t_entrenador* entrenador_involucrado = list_get(entrenadores_DL, *proceso_involucrado);
-			printf("%d ", entrenador_involucrado->id);
+			string_append_with_format(&log_deadlock, "%d ", entrenador_involucrado->id);
 		}
-		printf("\n");
 
+		string_append(&log_deadlock, "\n");
+
+		log_debug(logger, log_deadlock);
+
+		free(log_deadlock);
 	}
 	//show_entrenadores();
 
@@ -455,7 +458,6 @@ void replanificar_entrenador(t_entrenador* entrenador){
 	printf("VOY A REPLANIFICAR AL ENTRENADOR %d\n", entrenador->id);
 	if(entrenador->pokemon_destino == NULL){
 		entrenador->pokemon_destino = get_pokemon_necesario_mas_cercano(pokemones_ubicados, entrenador->posicion);
-
 	}
 
 	if(entrenador->pokemon_destino == NULL){
@@ -566,7 +568,9 @@ int get_index_entrenador_estimacion_mas_corta(){
 	// => si el est_anterior es 0, vamos a decir que es la primera vez que va a ejecutar y no hay que hacer el calculo.
 
 	for(int i = 0; i < cola_ready->elements_count; i++){
+		pthread_mutex_lock(&mutex_cola_ready);
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+		pthread_mutex_unlock(&mutex_cola_ready);
 		int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
 		double EST = entrenador_actual->estimacion_anterior;
 		printf("estimacion entrenador: %d\n", entrenador_actual->id);
@@ -604,11 +608,11 @@ int get_index_entrenador_estimacion_mas_corta(){
 
 void planificar_sjfsd(){
 
-	pthread_mutex_lock(&mutex_cola_ready);
-	printf("procesos en redyyyyyyyyyyyyy: %d\n", cola_ready->elements_count);
 	int i = get_index_entrenador_estimacion_mas_corta();
+	pthread_mutex_lock(&mutex_cola_ready);
 	t_entrenador* entrenador = list_remove(cola_ready, i);
 	pthread_mutex_unlock(&mutex_cola_ready);
+
 
 	sem_post(entrenador->semaforo);
 	return;
@@ -654,9 +658,7 @@ void hilo_replanificar(){
 				replanificar = entrenador;
 			}
 		}
-
 		replanificar_entrenador(replanificar);
-
 	}
 
 }
@@ -673,16 +675,6 @@ void hilo_detectar_deadlock(){
 		detectar_deadlocks();
 	}
 }
-
-void hilo_resuelve_deadlock(){
-	while(1){
-		printf("soy el hilo que resuelve deadlocks! esperando...");
-		sem_wait(&s_resuelve_deadlock);
-		printf("voy a resolver un deadlock\n");
-		//resolver_deadlocks();
-	}
-}
-
 
 void capturar(t_entrenador* entrenador){
 	if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
@@ -848,9 +840,11 @@ void ejecutar_rr(t_entrenador* entrenador){
 	if(cantidad_a_moverse > 0 ){
 		printf("se terminó el quantum y todavía falta que se mueva, lo mando a la cola de READY\n");
 		entrenador->estado = READY;
+
 		pthread_mutex_lock(&mutex_cola_ready);
 		list_add(cola_ready, entrenador);
 		pthread_mutex_unlock(&mutex_cola_ready);
+
 		sem_post(&s_cola_ready_con_items);
 		sem_post(&s_procesos_en_exec);
 	} else {
@@ -896,9 +890,9 @@ void hilo_enviar_get(int i){
 
 	log_debug(logger, "hilo creado para enviar get...\n");
 
-	while(socket == 0){
+	if(socket == 0){
 		log_error(logger,"Error al conectar al Broker para enviar GET...");
-		socket = reconectar(socket);
+		return;
 	}
 
 	log_debug(logger,"Conectado al Broker para enviar GET");
@@ -943,7 +937,9 @@ void generar_y_enviar_get(){
 
 void show_cola_ready(){
 	for(int i = 0; i < cola_ready->elements_count; i++){
+		pthread_mutex_lock(&mutex_cola_ready);
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
+		pthread_mutex_unlock(&mutex_cola_ready);
 
 		printf("posicion en la lista: %d\n", i);
 		printf("posicion actual: X:%d, Y:%d\n", entrenador_actual->posicion.X, entrenador_actual->posicion.Y);
@@ -967,12 +963,9 @@ void hilo_planificador(){
 
 void ubicar_pokemones_localized(t_Localized* pokemones_a_ubicar){
 	for(int i = 0; i < pokemones_a_ubicar->listaPosiciones->elements_count; i++){
-		t_pokemon_team* pokemon_ubicado = malloc(sizeof(t_pokemon));
-		t_posicion* posicion = list_get(pokemones_a_ubicar->listaPosiciones, i);
 
-		pokemon_ubicado->cantidad = 1;
-		pokemon_ubicado->posicion = *posicion;
-		pokemon_ubicado->nombre = pokemones_a_ubicar->pokemon.nombre;
+		t_posicion* posicion = list_get(pokemones_a_ubicar->listaPosiciones, i);
+		t_pokemon_team* pokemon_ubicado = get_pokemon_team(pokemones_a_ubicar->pokemon.nombre, *posicion);
 
 		list_add(pokemones_ubicados, pokemon_ubicado);
 	}
@@ -983,57 +976,54 @@ void recibidor_mensajes_localized(void* args){
 	t_Localized* mensaje = (t_Localized*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
-	while(1){
-		// esto simula que recibí un mensaje localized
-		//t_Localized* mensaje = simular_localized(1);
+	printf("Se recibió un LOCALIZED %s (id: %d)\n", mensaje->pokemon.nombre, respuesta->id_respuesta);
 
-		//int id = (rand() % (15)) + 1; // genero el id acá para probar
-
-		printf("Se recibió un LOCALIZED %s (id: %d)\n", mensaje->pokemon.nombre, respuesta->id_respuesta);
-
-		if(localized_valido(mensaje, respuesta->id_respuesta, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
-			printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
-			list_add(pokemones_recibidos, mensaje->pokemon.nombre);
+	if(localized_valido(mensaje, respuesta->id_respuesta, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
+		printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
+		list_add(pokemones_recibidos, mensaje->pokemon.nombre);
 
 
-			//tengo que planificar tantas posiciones como pokemon necesite.
-			//Ej, si me llegan 3 posiciones y necesito 2, solo planifico 2 pero las otras las guardo en memoria
-			//Si necesito 2 posiciones y llega 1, planifico 1.
+		//tengo que planificar tantas posiciones como pokemon necesite.
+		//Ej, si me llegan 3 posiciones y necesito 2, solo planifico 2 pero las otras las guardo en memoria
+		//Si necesito 2 posiciones y llega 1, planifico 1.
 
-			int cantidad_pokemones_global = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
+		int cantidad_pokemones_global = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
 
-			// me quedo con la menor de las cantidades
-			int cantidad_a_planificar = 0;
-			if(mensaje->listaPosiciones->elements_count <= cantidad_pokemones_global ){
-				cantidad_a_planificar = mensaje->listaPosiciones->elements_count;
+		// me quedo con la menor de las cantidades
+		int cantidad_a_planificar = 0;
+		if(mensaje->listaPosiciones->elements_count <= cantidad_pokemones_global ){
+			cantidad_a_planificar = mensaje->listaPosiciones->elements_count;
+		} else {
+			cantidad_a_planificar = cantidad_pokemones_global;
+		}
+
+		for(int i = 0; i < cantidad_a_planificar; i++){
+			t_posicion* posicion = list_get(mensaje->listaPosiciones, i);
+
+			t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
+
+			if(entrenador_mas_cercano != NULL){
+
+				//Si hay entrenadores planificables, planifico esa posicion que siempre va a ser la 0
+				list_remove(mensaje->listaPosiciones, 0);
+
+				t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, *posicion);
+
+				entrenador_mas_cercano->estado = READY;
+				entrenador_mas_cercano->pokemon_destino = pokemon_destino;
+
+				pthread_mutex_lock(&mutex_cola_ready);
+				list_add(cola_ready, entrenador_mas_cercano);
+				pthread_mutex_unlock(&mutex_cola_ready);
+
+				sem_post(&s_cola_ready_con_items);
+				sem_post(entrenador_mas_cercano->semaforo);
 			} else {
-				cantidad_a_planificar = cantidad_pokemones_global;
-			}
-
-			for(int i = 0; i < cantidad_a_planificar; i++){
-				t_posicion* posicion = list_get(mensaje->listaPosiciones, i);
-
-				t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, *posicion);
-
-				if(entrenador_mas_cercano != NULL){
-
-					//Si hay entrenadores planificables, planifico esa posicion que siempre va a ser la 0
-					list_remove(mensaje->listaPosiciones, 0);
-
-					t_pokemon_team* pokemon_destino = get_pokemon_team(mensaje->pokemon.nombre, *posicion);
-
-					entrenador_mas_cercano->estado = READY;
-					entrenador_mas_cercano->pokemon_destino = pokemon_destino;
-
-					list_add(cola_ready, entrenador_mas_cercano);
-					sem_post(&s_cola_ready_con_items);
-					sem_post(entrenador_mas_cercano->semaforo);
-				} else {
-					ubicar_pokemones_localized(mensaje);
-				}
+				ubicar_pokemones_localized(mensaje);
 			}
 		}
 	}
+
 }
 
 void recibidor_mensajes_appeared(void* args){
@@ -1408,10 +1398,10 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_detectar_deadlock, 0, 0);
 	sem_init(&s_replanificar, 0, 0);
 	sem_init(&s_entrenador_exit, 0, 0);
-	sem_init(&s_resuelve_deadlock, 0, 0);
 	pthread_mutex_init(&mutex_ciclos_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_resueltos_totales, NULL);
+	pthread_mutex_init(&mutex_cola_ready, NULL);
 	pthread_mutex_init(&mutex_cola_ready, NULL);
 
 
@@ -1463,6 +1453,33 @@ void entrenador(void* index){
 	sem_post(&s_detectar_deadlock);
 	sem_post(&s_entrenador_exit);
 	//show_entrenadores();
+
+}
+
+
+void liberar_memoria(){
+	liberar_elementos_lista_pokemon(objetivo_global);
+	liberar_elementos_lista_entrenador(entrenadores);
+	liberar_elementos_lista_pokemon(pokemones_recibidos);
+	liberar_elementos_lista_pokemon(pokemones_ubicados);
+	free(mensajes_get_esperando_respuesta);
+	free(mensajes_catch_esperando_respuesta);
+	free(total_deadlocks);
+	free(cola_ready);
+	free(entrenadores_DL);
+	sem_destroy(&s_cola_ready_con_items);
+	sem_destroy(&s_procesos_en_exec);
+	sem_destroy(&s_posiciones_a_mover);
+	sem_destroy(&s_control_planificador_rr);
+	sem_destroy(&s_detectar_deadlock);
+	sem_destroy(&s_replanificar);
+	sem_destroy(&s_entrenador_exit);
+	pthread_mutex_destroy(&mutex_cola_ready);
+	pthread_mutex_destroy(&mutex_ciclos_totales);
+	pthread_mutex_destroy(&mutex_deadlocks_totales);
+	pthread_mutex_destroy(&mutex_deadlocks_resueltos_totales);
+	config_destroy(config);
+	log_destroy(logger);
 
 }
 
@@ -1546,11 +1563,8 @@ int32_t main(int32_t argc, char** argv){
 	pthread_join(p_exit, NULL);
 
 
-
-	free(objetivo_global);
-	free(entrenadores);
-
 	liberar_conexion(socket_escucha_team);
+	liberar_memoria();
 
     printf("End\n");
 
