@@ -15,6 +15,7 @@
 int32_t id_mensaje_global = 0;
 pthread_mutex_t mutex_id_mensaje;
 pthread_mutex_t mutex_list_mensaje;
+pthread_mutex_t mutex_list_suscriptores;
 pthread_mutex_t mutex_guardar_en_memoria;
 
 int32_t main(void) {
@@ -57,6 +58,7 @@ int32_t main(void) {
 						case SUSCRIPCION_NEW:
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_list_suscriptores);
 							t_estructura_hilo_suscriptor estructura_suscriptor;
 							estructura_suscriptor.socket_cliente = socket_cliente;
 							estructura_suscriptor.operacion = operacion;
@@ -189,6 +191,8 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		list_add(list_suscriptores, suscriptor);
 
 	}
+	pthread_mutex_unlock(&mutex_list_suscriptores);
+
 	char cola[9];
 	switch(suscripcion){
 	case SUSCRIPCION_NEW:

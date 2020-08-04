@@ -324,17 +324,18 @@ t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
 	recv(*socket_cliente, localized->pokemon.nombre, localized->pokemon.size_Nombre, MSG_WAITALL);
 
 	localized->listaPosiciones = list_create();
-	recv(*socket_cliente, &(localized->listaPosiciones->elements_count), sizeof(localized->listaPosiciones->elements_count), MSG_WAITALL);
+	int32_t cantARecibir;
+	recv(*socket_cliente, &(cantARecibir), sizeof(localized->listaPosiciones->elements_count), MSG_WAITALL);
 
-	int i;
 	t_posicion posicion;
-	for(i=0; i < localized->listaPosiciones->elements_count; i++){
+	for(int i=0; i < cantARecibir; i++){
 
 		recv(*socket_cliente, &(posicion.X), sizeof(posicion.X), MSG_WAITALL);
 		recv(*socket_cliente, &(posicion.Y), sizeof(posicion.Y), MSG_WAITALL);
 		list_add(localized->listaPosiciones, &posicion);
 	}
-	if(localized->listaPosiciones->elements_count == 0){
+	if(cantARecibir == 0){
+		localized->listaPosiciones->elements_count = 0;
 		localized->listaPosiciones->head = NULL;
 	}
 
