@@ -48,5 +48,6 @@ t_list* objetivos_pendientes(t_entrenador* entrenador);
 t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2);
 t_pokemon_team* remove_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones);
 t_pokemon_team* pokemon_para_intercambio(t_entrenador* entrenador, t_pokemon_team* pokemon);
+int32_t reconectar(int32_t socket);
 
 #endif /* UTILS_H_ */

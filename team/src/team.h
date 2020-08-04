@@ -103,4 +103,6 @@ int TIEMPO_RECONEXION;
 pthread_mutex_t mutex_pokemones_ubicados;
 pthread_mutex_t mutex_list_entrenadores;
 
+void hilo_suscriptor(op_code* operacion);
+
 #endif /* TEAM_H_ */

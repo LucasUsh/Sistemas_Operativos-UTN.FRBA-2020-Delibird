@@ -1351,7 +1351,91 @@ char* get_config_path(char* entrenador){
 	return cfg_path;
 }
 
+void hilo_suscriptor(op_code* code){
+	int32_t operacion=0;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje=0;
+	int32_t socket_broker = crear_conexion(IP_BROKER,PUERTO_BROKER);
+	bool fin = false;
 
+	while(1){
+		if(socket_broker != 0){
+			enviar_handshake(PROCESS_ID, socket_broker);
+			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+				if(operacion == ACK){
+					recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+
+					enviar_suscripcion(*code, socket_broker);
+					if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+						if(operacion == ACK){
+							recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+							while(fin == false){
+								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+									t_Appeared* app;
+									t_Localized* loc;
+									t_Caught* caught;
+
+									pthread_t p_generador_mensajes;
+
+									switch(operacion){
+										case APPEARED_POKEMON:
+											app = deserializar_paquete_appeared(&socket_broker);
+											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_appeared, (void*)app);
+											pthread_detach(p_generador_mensajes);
+											break;
+										case LOCALIZED_POKEMON:
+											loc = deserializar_paquete_localized(&socket_broker);
+											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_localized, (void*)loc);
+											pthread_detach(p_generador_mensajes);
+											break;
+										case CAUGHT_POKEMON:
+											caught = deserializar_paquete_caught(&socket_broker);
+											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_caught, (void*)caught);
+											pthread_detach(p_generador_mensajes);
+											break;
+										default:
+											printf("No me interesa el mensaje");
+											return;
+									}
+									} else {
+										log_info(logger, "Se cayo la conexion");
+										liberar_conexion(socket_broker);
+										socket_broker = 0;
+										fin = true;
+										}
+							}
+
+						} else {
+							log_error(logger, "Fallo la suscripcion, respondieron algo que no era un ACK");
+							liberar_conexion(socket_broker);
+							socket_broker = 0;
+						}
+					} else {
+						log_error(logger, "Se cayo la conexion con Broker");
+						liberar_conexion(socket_broker);
+						socket_broker = 0;
+					}
+				} else {
+					log_error(logger, "Fallo el ACK del handshake con Broker");
+					liberar_conexion(socket_broker);
+					socket_broker = 0;
+				}
+
+			}
+
+		} else {
+			log_info(logger, "Reintentando conexion cola...");
+			socket_broker = reconectar(socket_broker);
+		}
+	}
+}
+/*
 void hilo_suscribirse_appeared(void* l_entrenadores){
 
 	int32_t socket_suscripcion = conexion_broker();
@@ -1528,7 +1612,7 @@ void hilo_suscribirse_localized(void* l_entrenadores){
 
 	return;
 }
-
+*/
 int inicializar_team(char* entrenador){
 
 	cola_ready = list_create();
@@ -1655,23 +1739,24 @@ int32_t main(int32_t argc, char** argv){
     objetivo_global = get_objetivo_global(entrenadores);
 
 
-/*
+
     generar_y_enviar_get();
 
     pthread_t p_suscribirse_appeared;
-   	pthread_create(&p_suscribirse_appeared, NULL, (void*)hilo_suscribirse_appeared, (void*)entrenadores);
-
+    op_code op_appeared = SUSCRIPCION_APPEARED;
+   	pthread_create(&p_suscribirse_appeared, NULL, (void*)&hilo_suscriptor, &op_appeared);
+   	pthread_detach(p_suscribirse_appeared);
 
 	pthread_t p_suscribirse_caught;
-	pthread_create(&p_suscribirse_caught, NULL, (void*)hilo_suscribirse_caught, (void*)entrenadores);
+	op_code op_caught = SUSCRIPCION_CAUGHT;
+	pthread_create(&p_suscribirse_caught, NULL, (void*)&hilo_suscriptor, &op_caught);
+	pthread_detach(p_suscribirse_caught);
 
 	pthread_t p_suscribirse_localized;
-	pthread_create(&p_suscribirse_localized, NULL, (void*)hilo_suscribirse_localized, (void*)entrenadores);
+	op_code op_localized = SUSCRIPCION_LOCALIZED;
+	pthread_create(&p_suscribirse_localized, NULL, (void*)&hilo_suscriptor, &op_localized);
+	pthread_detach(p_suscribirse_localized);
 
-	pthread_t p_reconnect;
-	pthread_create(&p_reconnect, NULL, (void*)reconectar_broker, NULL);
-
- */
 
     /* HILO PLANIFICADOR */
     pthread_t p_planificador;
