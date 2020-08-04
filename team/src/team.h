@@ -73,6 +73,8 @@ typedef struct {
 	bool ocupado;
 	sem_t* semaforo;
 	int estimacion_anterior;
+	int cantidad_ejecutada;
+	int estimacion;
 	int ciclos;
 } t_entrenador;
 

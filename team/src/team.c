@@ -20,7 +20,10 @@ int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por
 int deadlocks_resueltos_totales = 0; // deadlocks resueltos
 int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
 int total_deadlock_resueltos;
+int proceso_ejecutando = -1;
 t_list* total_deadlocks;
+
+bool cambio_cola_ready = false;
 
 //colas de planificacion
 t_list* cola_ready;
@@ -34,6 +37,7 @@ sem_t s_control_planificador_rr;
 sem_t s_detectar_deadlock;
 sem_t s_replanificar;
 sem_t s_entrenador_exit;
+sem_t s_replanificar_sjfcd;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_ciclos_totales;
 pthread_mutex_t mutex_deadlocks_totales;
@@ -60,9 +64,9 @@ void show_estado(){
 
 
 	    for(int32_t i = 0; i < entrenadores->elements_count; i++){
-	    	pthread_mutex_lock(&mutex_list_entrenadores);
+	    	//pthread_mutex_lock(&mutex_list_entrenadores);
 	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
-	    	pthread_mutex_unlock(&mutex_list_entrenadores);
+	    	//pthread_mutex_unlock(&mutex_list_entrenadores);
 	    	printf("|ENTRENADOR: %d\n|----------------\n|POSICION: (%d,%d)\n",
 	    			i,
 					entrenador_actual->posicion.X,
@@ -100,9 +104,9 @@ char* get_metricas_string(){
 	string_append(&metricas, "CANTIDAD DE CICLOS DE CPU POR ENTRENADOR:\n");
 
 	for(int i =0; i < entrenadores->elements_count; i++){
-		pthread_mutex_lock(&mutex_list_entrenadores);
+		//pthread_mutex_lock(&mutex_list_entrenadores);
 		t_entrenador* entrenador = list_get(entrenadores, i);
-		pthread_mutex_unlock(&mutex_list_entrenadores);
+		//pthread_mutex_unlock(&mutex_list_entrenadores);
 		string_append_with_format(&metricas, " * ENTRENADOR %d: %d\n",entrenador->id, entrenador->ciclos);
 	}
 
@@ -122,9 +126,9 @@ void hilo_exit(){
 	printf("Todos los entrenadores cumplieron sus objetivos\n");
 
 	for(int i =0; i<entrenadores->elements_count;i++){
-		pthread_mutex_lock(&mutex_list_entrenadores);
+		//pthread_mutex_lock(&mutex_list_entrenadores);
 		t_entrenador* e = list_get(entrenadores, i);
-		pthread_mutex_unlock(&mutex_list_entrenadores);
+		//pthread_mutex_unlock(&mutex_list_entrenadores);
 		ciclos_totales += e->ciclos;
 	}
 
@@ -148,10 +152,10 @@ void resolver_deadlock(t_deadlock* deadlock){
 	t_entrenador* entrenadorDL1 = list_get(entrenadores_DL, *e1);
 	t_entrenador* entrenadorDL2 = list_get(entrenadores_DL, *e2);
 
-	pthread_mutex_lock(&mutex_list_entrenadores);
+	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_entrenador* entrenador1= list_get(entrenadores, entrenadorDL1->id);
 	t_entrenador* entrenador2= list_get(entrenadores, entrenadorDL2->id);
-	pthread_mutex_unlock(&mutex_list_entrenadores);
+	//pthread_mutex_unlock(&mutex_list_entrenadores);
 
 	if((entrenador1->estado ==BLOCKED && entrenador1->ocupado) || entrenador1->estado == READY){
 		printf("el entrenador %d ya está resolviendo su deadlock\n", entrenador1->id);
@@ -178,13 +182,14 @@ void resolver_deadlock(t_deadlock* deadlock){
 
 	pthread_mutex_lock(&mutex_cola_ready);
 	list_add(cola_ready, entrenador1);
+	cambio_cola_ready = true;
 	pthread_mutex_unlock(&mutex_cola_ready);
 
 
 	free(e1);
 	free(e2);
-	free(entrenadorDL1);
-	free(entrenadorDL2);
+	entrenador_destroyer((void*)entrenadorDL1);
+	entrenador_destroyer((void*)entrenadorDL2);
 
 	sem_post(&s_cola_ready_con_items);
 
@@ -212,9 +217,9 @@ bool esta_en_deadlock(void* entrenador){
 
 
 t_list* entrenadores_en_deadlock(){
-	pthread_mutex_lock(&mutex_list_entrenadores);
+	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_list* en_DL = list_filter(entrenadores, esta_en_deadlock);
-	pthread_mutex_unlock(&mutex_list_entrenadores);
+	//pthread_mutex_unlock(&mutex_list_entrenadores);
 
 	t_list* entrenadores_en_DL = list_create();
 	for(int i = 0; i < en_DL->elements_count; i++){
@@ -285,9 +290,9 @@ void detectar_deadlocks(){
 
 
 	for(int i = 0; i< entrenadores->elements_count; i++){
-		pthread_mutex_lock(&mutex_list_entrenadores);
+		//pthread_mutex_lock(&mutex_list_entrenadores);
 		t_entrenador* e = list_get(entrenadores,i);
-		pthread_mutex_unlock(&mutex_list_entrenadores);
+		//pthread_mutex_unlock(&mutex_list_entrenadores);
 		if(!esta_en_deadlock(e) && !(e->estado == EXIT)){
 			continue; // no hay deadlock
 		} else {
@@ -422,7 +427,7 @@ void detectar_deadlocks(){
 
 		string_append(&log_deadlock, "\n");
 
-		log_debug(logger, log_deadlock);
+		log_info(logger, log_deadlock);
 
 		free(log_deadlock);
 	}
@@ -447,6 +452,7 @@ void ejecuta(t_entrenador* entrenador){
 	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
 
 	entrenador->ciclos++;
+	entrenador->cantidad_ejecutada++;
 	sleep(RETARDO_CICLO_CPU);
 	if(posicion_final_X != 0){
 		if(posicion_final_X < 0){
@@ -492,6 +498,7 @@ void replanificar_entrenador(t_entrenador* entrenador){
 		entrenador->estado = READY;
 		pthread_mutex_lock(&mutex_cola_ready);
 		list_add(cola_ready, entrenador);
+		cambio_cola_ready = true;
 		pthread_mutex_unlock(&mutex_cola_ready);
 		sem_post(&s_cola_ready_con_items);
 	}
@@ -593,22 +600,31 @@ int get_index_entrenador_estimacion_mas_corta(){
 	// por archivo de cfg se obtiene el EST_siguiente inicial ya CALCULADO.
 	// => si el est_anterior es 0, vamos a decir que es la primera vez que va a ejecutar y no hay que hacer el calculo.
 
+	log_debug(logger, "en cola ready: %d\n", cola_ready->elements_count);
+
 	for(int i = 0; i < cola_ready->elements_count; i++){
+
 		pthread_mutex_lock(&mutex_cola_ready);
 		t_entrenador* entrenador_actual = list_get(cola_ready, i);
 		pthread_mutex_unlock(&mutex_cola_ready);
-		int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
-		double EST = entrenador_actual->estimacion_anterior;
-		printf("estimacion entrenador: %d\n", entrenador_actual->id);
-		printf("| Rafaga real: %d\n", TE);
-		printf("| Estimada: %f\n", EST);
+
 
 
 		double EST_siguiente = 0;
 
+		printf("estimacion entrenador: %d\n", entrenador_actual->id);
+
 		if(entrenador_actual->estimacion_anterior == 0){
 			EST_siguiente = atoi(config_get_string_value(config, "ESTIMACION_INICIAL"));
 		} else {
+
+			int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
+			double EST = entrenador_actual->estimacion_anterior;
+
+			printf("| Rafaga real: %d\n", TE);
+			printf("| Estimacion anterior: %f\n", EST);
+
+
 			EST_siguiente =  algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
 		}
 
@@ -627,11 +643,11 @@ int get_index_entrenador_estimacion_mas_corta(){
 
 	printf("el próximo va a ser el entrenador %d\n", entrenador_mas_rapido->id);
 
-	pthread_mutex_lock(&mutex_list_entrenadores);
+	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_entrenador* entrenador_actual = list_get(entrenadores, entrenador_mas_rapido->id);
-	pthread_mutex_unlock(&mutex_list_entrenadores);
+	//pthread_mutex_unlock(&mutex_list_entrenadores);
 
-	entrenador_actual->estimacion_anterior = estimacion_mas_corta;
+	//entrenador_actual->estimacion_anterior = estimacion_mas_corta;
 	return indice;
 }
 
@@ -648,6 +664,7 @@ void planificar_sjfsd(){
 }
 
 void planificar_sjfcd(){
+	planificar_sjfsd();
 	return;
 }
 
@@ -680,16 +697,64 @@ void hilo_replanificar(){
 		printf("soy el hilo que replanifica! esperando...\n");
 		sem_wait(&s_replanificar);
 		printf("llegó algo pa replanificar\n");
-		t_entrenador* replanificar = malloc(sizeof(replanificar));
+		t_entrenador* replanificar = malloc(sizeof(t_entrenador));
 		for(int i = 0; i < entrenadores->elements_count; i++){
-			pthread_mutex_lock(&mutex_list_entrenadores);
+			//pthread_mutex_lock(&mutex_list_entrenadores);
 			t_entrenador* entrenador = list_get(entrenadores, i);
-			pthread_mutex_unlock(&mutex_list_entrenadores);
+			//pthread_mutex_unlock(&mutex_list_entrenadores);
 			if(puede_capturar_pokemones(entrenador) && entrenador->estado == BLOCKED && !entrenador->ocupado && entrenador->pokemon_destino == NULL){
+				entrenador_destroyer(replanificar);
 				replanificar = entrenador;
 			}
 		}
 		replanificar_entrenador(replanificar);
+	}
+
+}
+
+void hilo_replanificar_sjfcd(){
+
+	while(1){
+		printf("soy el hilo que replanifica sjfcd! esperando que llegue algo a ready...\n");
+		sem_wait(&s_replanificar_sjfcd);
+
+		printf("llegó algo pa replanificar y el algoritmo es SJF-CD\n");
+		cambio_cola_ready = false;
+
+		//t_entrenador* replanificar = malloc(sizeof(t_entrenador));
+
+		//t_entrenador* entrenador_en_exec =
+
+		printf("el proceso ejecutando es :%d\n", proceso_ejecutando);
+		t_entrenador* entrenador_ejecutando = list_get(entrenadores, proceso_ejecutando);
+
+		int i = get_index_entrenador_estimacion_mas_corta();
+
+		pthread_mutex_lock(&mutex_cola_ready);
+		t_entrenador* entrenador = list_get(cola_ready, i);
+
+		log_debug(logger, "entrenador ejecutando: %d y su rafaga es de: %d - %d = %d\n",
+				proceso_ejecutando, entrenador_ejecutando->estimacion,
+				entrenador_ejecutando->cantidad_ejecutada,
+				entrenador_ejecutando->estimacion - entrenador_ejecutando->cantidad_ejecutada);
+		log_debug(logger, "entrenador en cola con menor rafaga: %d y su rafaga es de: %d\n",
+				entrenador->id, entrenador->estimacion);
+
+
+		if(entrenador_ejecutando->estimacion - entrenador_ejecutando->cantidad_ejecutada <= entrenador->estimacion){
+			printf("sigue ejecutando el entrenador actual\n");
+			entrenador_ejecutando->estado=EXEC;
+			sem_post(entrenador_ejecutando->semaforo);
+		} else {
+			entrenador_ejecutando->estado = READY;
+			entrenador->estado = EXEC;
+			sem_post(entrenador_ejecutando->semaforo);
+			sem_post(entrenador->semaforo);
+		}
+
+		pthread_mutex_unlock(&mutex_cola_ready);
+
+
 	}
 
 }
@@ -712,6 +777,9 @@ void capturar(t_entrenador* entrenador){
 
 		list_add(entrenador->pokemones, entrenador->pokemon_destino);
 		entrenador->pokemon_destino = NULL;
+		entrenador->cantidad_ejecutada = 0;
+		entrenador->estimacion_anterior = entrenador->estimacion;
+		entrenador->estimacion = 0;
 		printf("POKEMON CAPTURADO!\n");
 		entrenador->ocupado = false;
 
@@ -737,9 +805,9 @@ void capturar(t_entrenador* entrenador){
 t_entrenador* get_entrenador_by_posicion(t_posicion posicion, int id){
 
 	for(int i = 0; i < entrenadores->elements_count; i++){
-		pthread_mutex_lock(&mutex_list_entrenadores);
+		//pthread_mutex_lock(&mutex_list_entrenadores);
 		t_entrenador* entrenador_actual = list_get(entrenadores, i);
-		pthread_mutex_unlock(&mutex_list_entrenadores);
+		//pthread_mutex_unlock(&mutex_list_entrenadores);
 		if(entrenador_actual->id == id) continue;
 
 		if(entrenador_actual->posicion.X == posicion.X && entrenador_actual->posicion.Y == posicion.Y){
@@ -793,9 +861,9 @@ void intercambio(t_entrenador* entrenador){
 
 			for(int i =0; i < 5; i++){
 				printf("%d ciclo de cpu\n", i + 1);
-				pthread_mutex_lock(&mutex_ciclos_totales);
+				//	pthread_mutex_lock(&mutex_ciclos_totales);
 				ciclos_totales++;
-				pthread_mutex_unlock(&mutex_ciclos_totales);
+				//	pthread_mutex_unlock(&mutex_ciclos_totales);
 				sleep(RETARDO_CICLO_CPU);
 			}
 
@@ -850,9 +918,9 @@ void ejecutar_fifo(t_entrenador* entrenador){
 
 	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
 			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
-		pthread_mutex_lock(&mutex_list_entrenadores);
+		//pthread_mutex_lock(&mutex_list_entrenadores);
 		ejecuta(entrenador);
-		pthread_mutex_unlock(&mutex_list_entrenadores);
+		//pthread_mutex_unlock(&mutex_list_entrenadores);
 	}
 
 	printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
@@ -867,9 +935,9 @@ void ejecutar_rr(t_entrenador* entrenador){
 	int movimientos = cantidad_a_moverse < algoritmo.quantum ? cantidad_a_moverse : algoritmo.quantum;
 
 	for(int i = 0; i < movimientos; i++){
-		pthread_mutex_lock(&mutex_list_entrenadores);
+		//pthread_mutex_lock(&mutex_list_entrenadores);
 		ejecuta(entrenador);
-		pthread_mutex_unlock(&mutex_list_entrenadores);
+		//pthread_mutex_unlock(&mutex_list_entrenadores);
 	}
 
 	printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
@@ -881,6 +949,7 @@ void ejecutar_rr(t_entrenador* entrenador){
 
 		pthread_mutex_lock(&mutex_cola_ready);
 		list_add(cola_ready, entrenador);
+		cambio_cola_ready = true;
 		pthread_mutex_unlock(&mutex_cola_ready);
 
 		sem_post(&s_cola_ready_con_items);
@@ -895,6 +964,33 @@ void ejecutar_sjfsd(t_entrenador* entrenador){
 }
 
 void ejecutar_sjfcd(t_entrenador* entrenador){
+
+	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
+			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
+
+		if(cambio_cola_ready && cola_ready->elements_count > 0){
+			log_debug(logger, "llegó algo a la cola de ready mientras ejecutaba");
+			sem_post(&s_replanificar_sjfcd);
+			sem_wait(entrenador->semaforo); // mme bloqueo hasta que me saque el planificador
+			log_debug(logger, "me desbloqueó el planificador!!! \n");
+			printf("soy el entrenador %d y mi estado es: %d", entrenador->id, entrenador->estado);
+			if(entrenador->estado == READY){
+				return;
+			} else if (entrenador->estado == EXEC){
+				ejecuta(entrenador);
+
+			}
+
+		} else {
+			ejecuta(entrenador);
+			printf("posicion actual: %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
+		}
+	}
+
+
+	capturar_pokemon(entrenador);
+
+
 	return;
 }
 
@@ -999,6 +1095,9 @@ void hilo_planificador(){
 	}
 }
 
+
+
+
 void ubicar_pokemones_localized(t_Localized* pokemones_a_ubicar){
 	for(int i = 0; i < pokemones_a_ubicar->listaPosiciones->elements_count; i++){
 
@@ -1052,6 +1151,7 @@ void recibidor_mensajes_localized(void* args){
 
 				pthread_mutex_lock(&mutex_cola_ready);
 				list_add(cola_ready, entrenador_mas_cercano);
+				cambio_cola_ready = true;
 				pthread_mutex_unlock(&mutex_cola_ready);
 
 				sem_post(&s_cola_ready_con_items);
@@ -1069,14 +1169,14 @@ void recibidor_mensajes_appeared(void* args){
 	t_Appeared* mensaje = (t_Appeared*)arg->mensaje;
 
 
-	printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
+	//printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
 
 	if(appeared_valido(mensaje, entrenadores, objetivo_global)){
 		printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
 
-		pthread_mutex_lock(&mutex_pokemones_ubicados);
+		//pthread_mutex_lock(&mutex_pokemones_ubicados);
 		list_add(pokemones_recibidos, mensaje->pokemon.nombre);
-		pthread_mutex_unlock(&mutex_pokemones_ubicados);
+		//pthread_mutex_unlock(&mutex_pokemones_ubicados);
 
 		t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, mensaje->posicion);
 
@@ -1090,7 +1190,9 @@ void recibidor_mensajes_appeared(void* args){
 
 			pthread_mutex_lock(&mutex_cola_ready);
 			list_add(cola_ready, entrenador_mas_cercano);
+			cambio_cola_ready = true;
 			pthread_mutex_unlock(&mutex_cola_ready);
+
 
 			printf("el entrenador %d fue agregado a la cola READY\n", entrenador_mas_cercano->id);
 			sem_post(&s_cola_ready_con_items);
@@ -1098,9 +1200,9 @@ void recibidor_mensajes_appeared(void* args){
 		} else {
 			t_pokemon_team* pokemon_ubicado = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
 			pokemon_ubicado->planificable = true;
-			pthread_mutex_lock(&mutex_pokemones_ubicados);
+			//pthread_mutex_lock(&mutex_pokemones_ubicados);
 			list_add(pokemones_ubicados, pokemon_ubicado);
-			pthread_mutex_unlock(&mutex_pokemones_ubicados);
+			//pthread_mutex_unlock(&mutex_pokemones_ubicados);
 		}
 	}
 
@@ -1115,9 +1217,9 @@ void recibidor_mensajes_caught(void* args){
 	t_Caught* mensaje = (t_Caught*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
-	pthread_mutex_lock(&mutex_list_entrenadores);
+	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
-	pthread_mutex_unlock(&mutex_list_entrenadores);
+	//pthread_mutex_unlock(&mutex_list_entrenadores);
 
 	printf("TRYING TO CATCH A %s \nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, entrenador->id);
 	printf("3...\n2... \n1... \n");
@@ -1167,11 +1269,11 @@ void hilo_recibidor_mensajes_gameboy(){
 					printf("Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
 
-					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
-							mensaje_appeared->pokemon.size_Nombre,
-							mensaje_appeared->pokemon.nombre,
-							mensaje_appeared->posicion.X,
-							mensaje_appeared->posicion.Y);
+//					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
+//							mensaje_appeared->pokemon.size_Nombre,
+//							mensaje_appeared->pokemon.nombre,
+//							mensaje_appeared->posicion.X,
+//							mensaje_appeared->posicion.Y);
 
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 					args->mensaje = mensaje_appeared;
@@ -1190,10 +1292,10 @@ void hilo_recibidor_mensajes_gameboy(){
 					printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
 							mensaje_localized->pokemon.nombre);
 
-					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
-						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
-					}
+//					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
+//						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
+//						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+//					}
 
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
@@ -1445,6 +1547,7 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_detectar_deadlock, 0, 0);
 	sem_init(&s_replanificar, 0, 0);
 	sem_init(&s_entrenador_exit, 0, 0);
+	sem_init(&s_replanificar_sjfcd, 0,0);
 	pthread_mutex_init(&mutex_ciclos_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_resueltos_totales, NULL);
@@ -1474,17 +1577,20 @@ int inicializar_team(char* entrenador){
 
 
 void entrenador(void* index){
-	pthread_mutex_lock(&mutex_list_entrenadores);
+	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, (int)index);
-	pthread_mutex_unlock(&mutex_list_entrenadores);
+	//pthread_mutex_unlock(&mutex_list_entrenadores);
 	//NEW
 	printf("este hilo maneja al entrenador %d\n", entrenador->id);
 	while(!cumplio_objetivo(entrenador)){
 
 		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
-		printf("soy el entrenador %d y estoy ejecutando\n", entrenador->id);
+		log_debug(logger, "soy el entrenador %d y estoy ejecutando\n", entrenador->id);
+		if(proceso_ejecutando != entrenador->id){
+			cambios_contexto++;
+			proceso_ejecutando = entrenador->id;
+		}
 		printf("----------------------------\n");
-		cambios_contexto++;
 		if(entrenador->pokemon_destino != NULL){ // agora sim
 
 		log_info(logger, "El entrenador %d se mueve a atrapar a %s en posición %d-%d.\n",
@@ -1496,7 +1602,7 @@ void entrenador(void* index){
 		printf("----------------------------\n");
 	}
 
-	printf("El entrenador %d cumplió todos sus objetivos :D \n", entrenador->id);
+	log_info(logger, "El entrenador %d cumplió todos sus objetivos.\n", entrenador->id);
 	entrenador->estado=EXIT;
 	//show_entrenadores();
 	sem_post(&s_detectar_deadlock);
@@ -1511,11 +1617,12 @@ void liberar_memoria(){
 	liberar_elementos_lista_entrenador(entrenadores);
 	liberar_elementos_lista_pokemon(pokemones_recibidos);
 	liberar_elementos_lista_pokemon(pokemones_ubicados);
+	//liberar_elementos_lista_deadlock(total_deadlocks);
+	free(total_deadlocks);;
+	liberar_elementos_lista_entrenador(entrenadores_DL);
 	free(mensajes_get_esperando_respuesta);
 	free(mensajes_catch_esperando_respuesta);
-	free(total_deadlocks);
 	free(cola_ready);
-	free(entrenadores_DL);
 	sem_destroy(&s_cola_ready_con_items);
 	sem_destroy(&s_procesos_en_exec);
 	sem_destroy(&s_posiciones_a_mover);
@@ -1581,6 +1688,11 @@ int32_t main(int32_t argc, char** argv){
 	pthread_t p_replanificar;
 	pthread_create(&p_replanificar, NULL, (void*)hilo_replanificar, NULL);
 	pthread_detach(p_replanificar);
+
+	 /* HILO DETECTOR DE DEADLOCKS */
+	pthread_t p_replanificar_sjfcd;
+	pthread_create(&p_replanificar_sjfcd, NULL, (void*)hilo_replanificar_sjfcd, NULL);
+	pthread_detach(p_replanificar_sjfcd);
 
 	/* UN HILO POR PROCESO */
     for(int x = 0; x < cantidad_entrenadores; x++){

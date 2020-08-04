@@ -127,7 +127,9 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 	entrenador->ocupado = false;
 	entrenador->semaforo = (sem_t*)malloc(sizeof(sem_t));
 	entrenador->estimacion_anterior= 0;
+	entrenador->estimacion =  atoi(config_get_string_value(config,"ESTIMACION_INICIAL"));
 	entrenador->ciclos = 0;
+	entrenador->cantidad_ejecutada = 0;
 
 	sem_init(entrenador->semaforo, 0, 0);
 	return entrenador;

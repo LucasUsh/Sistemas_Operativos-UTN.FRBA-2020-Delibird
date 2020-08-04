@@ -123,7 +123,7 @@ char* get_nombre_aleatorio(t_list* nombre_pokemones){
 t_list* localized_to_pokemon_team(t_Localized mensaje_localized){
 	t_list* pokemones = list_create();
 	for(int i = 0; i < mensaje_localized.listaPosiciones->elements_count; i++){
-		t_pokemon_team* pokemon;
+		t_pokemon_team* pokemon = malloc(sizeof(t_pokemon_team));
 		pokemon->cantidad = 1;
 		pokemon->nombre = mensaje_localized.pokemon.nombre;
 		pokemon->posicion = *(t_posicion*)(list_get(mensaje_localized.listaPosiciones, i));
@@ -164,5 +164,30 @@ void liberar_elementos_lista_entrenador(t_list* lista){
 	list_clean_and_destroy_elements(lista, entrenador_destroyer);
 	free(lista);
 }
+
+
+
+void deadlock_destroyer(void* elem){
+	int* proceso_involucrado = (int*) elem;
+	free(proceso_involucrado);
+}
+
+void liberar_elementos_deadlock(t_list* lista){
+	list_clean_and_destroy_elements(lista, deadlock_destroyer);
+	free(lista);
+}
+
+
+void deadlock_list_destroyer(void* elem){
+	t_list* procesos_involucrados = (t_list*) elem;
+	liberar_elementos_deadlock(procesos_involucrados);
+}
+
+void liberar_elementos_lista_deadlock(t_list* lista){
+	list_clean_and_destroy_elements(lista, deadlock_list_destroyer);
+	free(lista);
+}
+
+
 
 
