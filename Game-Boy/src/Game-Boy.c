@@ -210,12 +210,7 @@ int32_t main(int32_t argc, char *argv[])
 			return 0;
 		}
 
-		char ruta_cronometro[] = "/dev/shm/sem.cronometro";
-
-		if (!existe(ruta_cronometro)) cronometro = sem_open("/cronometro", O_CREAT | O_EXCL, 0644, 1);
-			else cronometro = sem_open ("/cronometro", 0);
-
-		sem_init(cronometro, 0, 1);
+		sem_init(&cronometro, 0, 1);
 
 		enviar_handshake(1, socket);
 		if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
@@ -265,12 +260,12 @@ int32_t main(int32_t argc, char *argv[])
 								recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 								recibir_mensaje(socket, operacion);
 							}
-							sem_wait(cronometro);
+							sem_wait(&cronometro);
 							if (!sigue_corriendo) break;
-							sem_post(cronometro);
+							sem_post(&cronometro);
 						}
 
-						sem_destroy(cronometro);
+						sem_destroy(&cronometro);
 					}
 				}
 			}
@@ -311,9 +306,9 @@ void cronometrar(t_estructura_cronometro * estructura_cronometro){
 	int32_t socket = estructura_cronometro->socket;
 
 	sleep(tiempo);
-	sem_wait(cronometro);
+	sem_wait(&cronometro);
 	sigue_corriendo = 0;
-	sem_post(cronometro);
+	sem_post(&cronometro);
 	shutdown(socket, SHUT_RDWR);
 }
 
@@ -321,7 +316,6 @@ void recibir_mensaje(int32_t socket, op_code operacion){
 	t_New* new = NULL;
 	t_Appeared* app = NULL;
 	t_Get* get = NULL;
-	t_Localized* loc= NULL;
 	t_Catch* catch = NULL;
 	t_Caught* caught = NULL;
 
@@ -339,10 +333,6 @@ void recibir_mensaje(int32_t socket, op_code operacion){
 	case GET_POKEMON:
 		get = deserializar_paquete_get(&socket);
 		log_info(logger, "Recibi un GET_POKEMON. Pokemon: %s",get->pokemon.nombre);
-		break;
-	case LOCALIZED_POKEMON:
-		//loc = deserializar_paquete_localized(&socket);
-		log_info(logger, "Recibi un LOCALIZED_POKEMON");
 		break;
 	case CATCH_POKEMON:
 		catch = deserializar_paquete_catch(&socket);
