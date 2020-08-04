@@ -39,7 +39,7 @@ int32_t main(int32_t argc, char *argv[])
 		sem_post(envio_Broker);
 
 		if(socket == 0){
-			log_info(logger,"Error al conectar al Broker");
+			log_error(logger,"Error al conectar al Broker");
 			finalizar(logger, config, socket);
 			return 0;
 		}
@@ -129,7 +129,7 @@ int32_t main(int32_t argc, char *argv[])
 		sem_post(envio_GC);
 
 		if(socket == 0){
-			log_info(logger,"Error al conectar con Game-Card");
+			log_error(logger,"Error al conectar con Game-Card");
 			finalizar(logger, config, socket);
 			return 0;
 		}
@@ -146,7 +146,6 @@ int32_t main(int32_t argc, char *argv[])
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 				}
 			}
-			log_info(logger,"OK");
 		}
 
 		if(string_contains(argv[2], "CATCH_POKEMON")){
@@ -160,7 +159,6 @@ int32_t main(int32_t argc, char *argv[])
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 				}
 			}
-			log_info(logger,"OK");
 		}
 
 		if(string_contains(argv[2], "GET_POKEMON")){
@@ -174,7 +172,6 @@ int32_t main(int32_t argc, char *argv[])
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 				}
 			}
-			log_info(logger,"OK");
 		}
 	}
 
@@ -188,7 +185,7 @@ int32_t main(int32_t argc, char *argv[])
 
 		if(socket == 0)
 		{
-			log_info(logger,"Error al conectar al Team");
+			log_error(logger,"Error al conectar al Team");
 			finalizar(logger, config, socket);
 			return 0;
 		}
@@ -208,7 +205,7 @@ int32_t main(int32_t argc, char *argv[])
 		sem_post(envio_Broker);
 
 		if(socket == 0){
-			log_info(logger,"Error al conectar al Broker");
+			log_error(logger,"Error al conectar al Broker");
 			finalizar(logger, config, socket);
 			return 0;
 		}
