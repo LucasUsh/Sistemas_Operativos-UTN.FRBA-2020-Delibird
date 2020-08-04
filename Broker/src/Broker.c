@@ -249,8 +249,9 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						break;
 					}
 			}
-			list_destroy(mensajesAEnviar);
-		}else list_destroy(mensajesAEnviar);
+			//list_destroy_and_destroy_elements(mensajesAEnviar, free);
+		}//else list_destroy_and_destroy_elements(mensajesAEnviar, free);
+	list_destroy(mensajesAEnviar);
 	}
 }
 
@@ -871,9 +872,11 @@ t_suscriptor * obtenerSuscriptor(int32_t id_proceso){
 	t_list * suscriptores = list_filter(list_suscriptores, _esElSuscriptor);
 	if(suscriptores->elements_count >1){
 		printf("Estaba suscripto mas de una vez a la misma cola \n");
+		list_destroy(suscriptores);
 		return suscriptor;
 	}else {
 		suscriptor = list_get(suscriptores, 0);
+		list_destroy(suscriptores);
 		return suscriptor;
 	}
 }
