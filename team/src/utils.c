@@ -227,8 +227,9 @@ t_entrenador* get_entrenador_planificable_mas_cercano(t_list* entrenadores, t_po
 	int32_t distancia_mas_chica = -1;
 
 	for(int32_t i = 0; i < entrenadores->elements_count; i++){
-
+		pthread_mutex_lock(&mutex_list_entrenadores);
 		entrenador = list_get(entrenadores, i);
+		pthread_mutex_unlock(&mutex_list_entrenadores);
 
 		if((entrenador->estado == BLOCKED || entrenador->estado == NEW) && !entrenador->ocupado && (puede_capturar_pokemones(entrenador))){
 			int32_t distancia_entrenador = get_distancia_entre_puntos(entrenador->posicion, posicion_pokemon);
@@ -263,7 +264,9 @@ bool alguien_yendo(t_pokemon_team* pokemon){
 
 
 	for(int i = 0; i < entrenadores->elements_count; i++){
+		pthread_mutex_lock(&mutex_list_entrenadores);
 		t_entrenador* e = list_get(entrenadores, i);
+		pthread_mutex_unlock(&mutex_list_entrenadores);
 
 		if(e->pokemon_destino != NULL &&
 		   e->pokemon_destino->nombre == pokemon->nombre &&
@@ -282,7 +285,11 @@ int get_cantidad_entrenadores_yendo(char* pokemon){
 				e->pokemon_destino->nombre == pokemon;
 	}
 
-	return list_filter(entrenadores, _yendo)->elements_count;
+	pthread_mutex_lock(&mutex_list_entrenadores);
+	t_list* filtrados = list_filter(entrenadores, _yendo);
+	pthread_mutex_unlock(&mutex_list_entrenadores);
+
+	return filtrados->elements_count;
 }
 
 
@@ -305,9 +312,11 @@ t_pokemon_team* get_pokemon_necesario_mas_cercano(t_list* pokemones_ubicados, t_
 
 	for(int i = 0; i < pokemones_ubicados->elements_count; i++){
 
+		pthread_mutex_lock(&mutex_pokemones_ubicados);
 		t_pokemon_team* pokemon = list_get(pokemones_ubicados, i);
+		pthread_mutex_unlock(&mutex_pokemones_ubicados);
 
-		if(pokemon_necesario(pokemon)){
+		if(pokemon_necesario(pokemon) && pokemon->planificable){
 			int32_t distancia_pokemon = get_distancia_entre_puntos(posicion_entrenador, pokemon->posicion);
 
 			if(distancia_mas_chica == -1){

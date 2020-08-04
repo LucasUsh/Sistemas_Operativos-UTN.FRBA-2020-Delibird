@@ -89,6 +89,7 @@ typedef struct {
 t_log* logger;
 t_config* config;
 
+
 //Datos traidos por config
 char* IP_BROKER;
 char* PUERTO_BROKER;
@@ -97,5 +98,7 @@ t_list* objetivo_global;
 t_list* entrenadores;
 t_algoritmo algoritmo;
 int TIEMPO_RECONEXION;
+pthread_mutex_t mutex_pokemones_ubicados;
+pthread_mutex_t mutex_list_entrenadores;
 
 #endif /* TEAM_H_ */
