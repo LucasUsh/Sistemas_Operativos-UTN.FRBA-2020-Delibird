@@ -50,6 +50,7 @@ t_bitarray mapa_de_bloques;
 
 sem_t diccionario;
 sem_t bitmap;
+sem_t envio_respuesta;
 
 int32_t tiempo_reintento_conexion;
 int32_t tiempo_reintento_operacion;

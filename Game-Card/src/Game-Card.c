@@ -348,6 +348,7 @@ void inicializaciones_globales() {
 	puerto_broker = config_get_string_value(config_GC,"PUERTO_BROKER");
 //	id_proceso = atoi(config_get_string_value(config_GC,"ID_PROCESO"));
 	id_proceso = 2;
+	sem_init (&envio_respuesta, 0, 1);
 }
 
 void liberar_memoria() {
