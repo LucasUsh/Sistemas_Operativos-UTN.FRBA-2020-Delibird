@@ -31,6 +31,7 @@ extern t_bitarray mapa_de_bloques;
 
 extern sem_t diccionario;
 extern sem_t bitmap;
+extern sem_t envio_respuesta;
 
 extern int32_t tiempo_reintento_operacion;
 extern int32_t tiempo_retardo_operacion;
@@ -81,5 +82,6 @@ char* traer_bloques(char** bloques, int32_t cantidad);
 char* posicion_a_string (t_posicion posicion);
 char* metadata_traer (char* ruta_metadata, char* pokemon, int32_t* tam_alojamiento);
 char* copiar_stream_con_tamanio(FILE* archivo_lectura, char* ruta, int32_t* tamanio_copiado);
+
 
 #endif
