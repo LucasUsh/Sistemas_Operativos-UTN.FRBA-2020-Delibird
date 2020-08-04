@@ -252,7 +252,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 			}
 		list_destroy(mensajesAEnviar);
 		}
-	free(mensajesAEnviar);
+	//free(mensajesAEnviar);
 	}
 }
 
@@ -504,8 +504,8 @@ bool esCorrelativo(int32_t id_mensaje){
 }
 
 void iniciarBroker(){
-	logger = iniciar_logger();
 	config = leer_config();
+	logger = iniciar_logger();
 
 	log_info(logger, "Iniciando Broker");
 	unsigned int miPid= process_getpid();
@@ -550,7 +550,8 @@ void iniciarBroker(){
 
 t_log* iniciar_logger(void){
 	t_log* logger;
-	logger = log_create("/home/utnso/workspace/tp-2020-1c-5rona/Broker/Broker.log", "Broker", 1, LOG_LEVEL_INFO);
+	LOG_FILE= config_get_string_value(config, "LOG_FILE");
+	logger = log_create(LOG_FILE, "Broker", 1, LOG_LEVEL_INFO);
 	if(logger == NULL){
 		printf("No pude iniciar el logger\n");
 		exit(1);
