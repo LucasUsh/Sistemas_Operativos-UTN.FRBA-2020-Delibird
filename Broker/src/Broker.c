@@ -221,16 +221,14 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
-		//chequear mensajes nuevos filtrados por operacion. Agregar semaforo?
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
-		if(mensajesAEnviar->elements_count > 0){
+		if(mensajesAEnviar != NULL){
 			for(int i=0; i<mensajesAEnviar->elements_count; i++){
 					mensaje = list_get(mensajesAEnviar, i);
 					enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
 					if(esCorrelativo(mensaje->id_mensaje_correlativo)){
 						id_msg_log = mensaje->id_mensaje_correlativo;
 					}else id_msg_log = mensaje->id_mensaje;
-					mensaje = obtenerMensaje(mensaje->id_mensaje);
 					pthread_mutex_lock(&mutex_list_mensaje);
 					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
 					pthread_mutex_unlock(&mutex_list_mensaje);
@@ -239,7 +237,6 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						if(operacion == ACK){
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							mensaje = obtenerMensaje(mensaje->id_mensaje);
 							log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
 							pthread_mutex_lock(&mutex_list_mensaje);
 							list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
@@ -253,9 +250,9 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						break;
 					}
 			}
-			//list_destroy_and_destroy_elements(mensajesAEnviar, free);
-		}//else list_destroy_and_destroy_elements(mensajesAEnviar, free);
-	list_destroy(mensajesAEnviar);
+		list_destroy(mensajesAEnviar);
+		}
+	free(mensajesAEnviar);
 	}
 }
 
@@ -748,8 +745,7 @@ void hacerDump(){
 t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	info_mensaje * mensaje;
 	t_particion * mensajeCacheado;
-	t_list* mensajesAEnviar=list_create();
-	mensajesAEnviar->elements_count=0;
+	t_list* mensajesAEnviar = NULL;
 	op_code tipoMensajeABuscar;
 	switch(operacion){
 	case SUSCRIPCION_NEW:
@@ -780,11 +776,12 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 		mensajeCacheado = list_get(mensajesCacheados, i);
 		if(!recibioMensaje(id_proceso, mensajeCacheado->id_mensaje)){
 			mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
+			mensajesAEnviar=list_create();
 			list_add(mensajesAEnviar, mensaje);
 		}
 	}
-	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	list_destroy(mensajesCacheados);
+	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	return mensajesAEnviar;
 }
 
@@ -812,9 +809,7 @@ t_list* getMensajesCacheadosDeOperacion(op_code operacion){
 	bool _mensajeCacheadoDeOperacion(void* element){
 		return mensajeCacheadoDeOperacion((t_particion*)element, operacion);
 	}
-	t_list* mensajesCacheados = list_filter(tabla_particiones, _mensajeCacheadoDeOperacion);
-
-	return mensajesCacheados;
+	return list_filter(tabla_particiones, _mensajeCacheadoDeOperacion);
 }
 
 bool esElMensaje(info_mensaje* mensaje, int32_t id_mensaje){
