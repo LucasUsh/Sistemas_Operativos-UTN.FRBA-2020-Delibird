@@ -17,6 +17,7 @@ pthread_mutex_t mutex_id_mensaje;
 pthread_mutex_t mutex_list_mensaje;
 pthread_mutex_t mutex_list_suscriptores;
 pthread_mutex_t mutex_guardar_en_memoria;
+pthread_mutex_t mutex_estructura_mensajes;
 
 int32_t main(void) {
 	iniciarBroker();
@@ -71,6 +72,7 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje NEW_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_estructura_mensajes);
 							estructura_mensaje.socket_cliente = socket_cliente;
 							estructura_mensaje.id_mensaje = id_mensaje;
 							estructura_mensaje.id_proceso = id_proceso;
@@ -83,6 +85,7 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje APPEARED_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_estructura_mensajes);
 							estructura_mensaje.socket_cliente = socket_cliente;
 							estructura_mensaje.id_mensaje = id_mensaje;
 							estructura_mensaje.id_proceso = id_proceso;
@@ -95,6 +98,7 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje GET_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_estructura_mensajes);
 							estructura_mensaje.socket_cliente = socket_cliente;
 							estructura_mensaje.id_mensaje = id_mensaje;
 							estructura_mensaje.id_proceso = id_proceso;
@@ -107,6 +111,7 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_estructura_mensajes);
 							estructura_mensaje.socket_cliente = socket_cliente;
 							estructura_mensaje.id_mensaje = id_mensaje;
 							estructura_mensaje.id_proceso = id_proceso;
@@ -119,6 +124,7 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje CATCH_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_estructura_mensajes);
 							estructura_mensaje.socket_cliente = socket_cliente;
 							estructura_mensaje.id_mensaje = id_mensaje;
 							estructura_mensaje.id_proceso = id_proceso;
@@ -131,6 +137,7 @@ int32_t main(void) {
 							log_info(logger, "Llego un mensaje CAUGHT_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_estructura_mensajes);
 							estructura_mensaje.socket_cliente = socket_cliente;
 							estructura_mensaje.id_mensaje = id_mensaje;
 							estructura_mensaje.id_proceso = id_proceso;
@@ -261,6 +268,7 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 	int32_t id_proceso = estructura_mensaje->id_proceso;
 	int32_t id_mensaje = estructura_mensaje->id_mensaje;
 	int32_t operacion = estructura_mensaje->operacion;
+	pthread_mutex_unlock(&mutex_estructura_mensajes);
 	info_mensaje * mensaje;
 
 	switch(operacion){
@@ -459,7 +467,6 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		enviar_new_pokemon(new->pokemon.nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
 		log_info(logger, "Se envio un mensaje NEW_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
-		free(new);
 		break;
 	case SUSCRIPCION_APPEARED:
 		app = mensaje->mensaje;
