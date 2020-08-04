@@ -22,15 +22,15 @@ int32_t main(void)
 	if (pthread_create(&hilo_catch, NULL, (void*) &hilo_suscriptor, &codigo_catch) == 0)
 		log_debug (logger_GC, "Hilo cola catch creado correctamente.");
 
-//	op_code codigo_get = SUSCRIPCION_GET;
-//
-//	pthread_t hilo_get;
-//	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo_get) == 0)
-//		log_debug (logger_GC, "Hilo cola get creado correctamente.");
+	op_code codigo_get = SUSCRIPCION_GET;
+
+	pthread_t hilo_get;
+	if (pthread_create(&hilo_get, NULL, (void*) &hilo_suscriptor, &codigo_get) == 0)
+		log_debug (logger_GC, "Hilo cola get creado correctamente.");
 
 	pthread_join(hilo_new,NULL);
 	pthread_join(hilo_catch,NULL);
-//	pthread_join(hilo_get,NULL);
+	pthread_join(hilo_get,NULL);
 	pthread_join(hilo_servidor_GC, NULL);
 
 	liberar_memoria();

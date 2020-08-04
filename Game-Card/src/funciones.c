@@ -225,7 +225,9 @@ void funcion_get_pokemon(void* get_y_id) {
 
 		if (cantidad == 0) {
 			log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", get->pokemon.nombre);
-			enviar_localized(NULL, get->pokemon, id_mensaje);
+			t_list * listaNull = list_create();
+			enviar_localized(listaNull, get->pokemon, id_mensaje);
+			list_destroy(listaNull);
 
 			sem_wait (dictionary_get(semaforos, get->pokemon.nombre));
 			set_open (ruta_metadata, 'N');
@@ -313,7 +315,9 @@ void funcion_get_pokemon(void* get_y_id) {
 
 	else {
 		log_info (logger_GC, "En este momento no hay ejemplares de %ss en el mapa.", get->pokemon.nombre);
-		enviar_localized(NULL, get->pokemon, id_mensaje);
+		t_list * listaNull = list_create();
+		enviar_localized(listaNull, get->pokemon, id_mensaje);
+		list_destroy(listaNull);
 	}
 
 	free(ruta_metadata);
@@ -935,10 +939,10 @@ void enviar_appeared (char* pokemon, char* x, char* y, char* mensaje_id){
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_appeared_pokemon(pokemon, x, y, mensaje_id, broker);
-				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){ //no lo uso pero el broker lo envia
+				if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){ //no lo uso pero el broker lo envia
 					if(operacion == ACK){
-						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					}
 				}
 			}
@@ -962,10 +966,10 @@ void enviar_caught (char* id_mensaje_correlativo, char * fueAtrapado) {
 				recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 				enviar_caught_pokemon(id_mensaje_correlativo, fueAtrapado, broker);
-				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){ //no lo uso pero el broker lo envia
+				if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){ //no lo uso pero el broker lo envia
 					if(operacion == ACK){
-						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					}
 				}
 			}
@@ -990,10 +994,10 @@ void enviar_localized (t_list* posiciones, t_pokemon pokemon, int32_t id_mensaje
 
 				enviar_localized_pokemon (&pokemon, posiciones, id_mensaje_correlativo, broker);
 				//log_info(logger_GC,"Se ha enviado un LOCALIZED de %s a Broker", pokemon.nombre);
-				if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){ //no lo uso pero el broker lo envia
+				if(recv(broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){ //no lo uso pero el broker lo envia
 					if(operacion == ACK){
-						recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-						recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						recv(broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 					}
 				}
 			}

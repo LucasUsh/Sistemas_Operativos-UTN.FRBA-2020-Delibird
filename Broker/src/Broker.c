@@ -377,13 +377,7 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	t_Localized* localized = NULL;
 	localized = deserializar_paquete_localized(&socket_cliente);
-	/*printf("Llego un mensaje Localized Pokemon con los siguientes datos: %d  %s  ", localized->pokemon.size_Nombre,
-			localized->pokemon.nombre);*/
-	/*int i;
-	for(i=0; i<localized->listaPosiciones->elements_count; i++){
-		t_posicion * posicion = list_get(localized->listaPosiciones, i);
-		printf("%d  %d \n", posicion->X, posicion->Y);
-	}*/
+
 	info_mensaje * mensajeLocalized = malloc(sizeof(info_mensaje));
 	mensajeLocalized->op_code = LOCALIZED_POKEMON;
 	mensajeLocalized->id_mensaje = get_id();
@@ -479,9 +473,9 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		loc = mensaje->mensaje;
-		//enviar mensaje localized
-		//log_info(logger, "Se envio un mensaje LOCALIZED con id: %d al proceso %d", id_mensaje, id_proceso);
-		//if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		enviar_localized_pokemon(&(loc->pokemon), loc->listaPosiciones, id_mensaje, socket_cliente);
+		log_info(logger, "Se envio un mensaje LOCALIZED con id: %d al proceso %d", id_mensaje, id_proceso);
+		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
 	case SUSCRIPCION_CATCH:
 		catch = mensaje->mensaje;
@@ -620,9 +614,10 @@ int32_t getSizeMensajeLocalized(t_Localized msgLocalized){
 	*/
 
 	int32_t sizeMsg = 0;
-	sizeMsg += getSizePokemon(msgLocalized.pokemon) +
-			sizeof(typeof(msgLocalized.listaPosiciones->elements_count)) +
-			sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
+	sizeMsg += getSizePokemon(msgLocalized.pokemon) + sizeof(typeof(msgLocalized.listaPosiciones->elements_count));
+	if(msgLocalized.listaPosiciones->head == 0){
+		sizeMsg += sizeof(msgLocalized.listaPosiciones->head);
+	}else sizeMsg += sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
 
 	return sizeMsg;
 }
