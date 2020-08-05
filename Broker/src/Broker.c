@@ -251,7 +251,6 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 						} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 					} else {
 						liberar_conexion(socket_cliente);
-						list_destroy(mensajesAEnviar);
 						printf("Fallo al recibir codigo de operacion = -1\n");
 						fin = true;
 						break;
