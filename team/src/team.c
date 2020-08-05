@@ -1145,7 +1145,7 @@ void recibidor_mensajes_localized(void* args){
 	t_Localized* mensaje = (t_Localized*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
-	printf("Se recibió un LOCALIZED %s (id: %d)\n", mensaje->pokemon.nombre, respuesta->id_respuesta);
+	log_info(logger, "Se recibió un LOCALIZED %s (id: %d)", mensaje->pokemon.nombre, respuesta->id_respuesta);
 
 	if(localized_valido(mensaje, respuesta->id_respuesta, mensajes_get_esperando_respuesta, pokemones_recibidos, objetivo_global)){
 		printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
@@ -1196,12 +1196,10 @@ void recibidor_mensajes_localized(void* args){
 
 }
 
-void recibidor_mensajes_appeared(void* args){
-	t_args_mensajes* arg = (t_args_mensajes*)args;
-	t_Appeared* mensaje = (t_Appeared*)arg->mensaje;
-
-
-	//printf("se recibió un mensaje APPEARED: %s\n", mensaje->pokemon.nombre);
+void recibidor_mensajes_appeared(t_Appeared* args){
+	//t_args_mensajes* arg = (t_args_mensajes*)args;
+	t_Appeared* mensaje = NULL;
+	memcpy(&mensaje, args, sizeof(t_Appeared*));
 
 	if(appeared_valido(mensaje, entrenadores, objetivo_global)){
 		printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
@@ -1410,28 +1408,37 @@ void hilo_suscriptor(op_code* code){
 								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-									t_Appeared* app;
-									t_Localized* loc;
-									t_Caught* caught;
 
 									pthread_t p_generador_mensajes;
-									log_debug(logger, "entró algo");
+									log_debug(logger, "Recibi algo");
 									switch(operacion){
 										case APPEARED_POKEMON:
-											app = deserializar_paquete_appeared(&socket_broker);
+											;
+											t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_broker);
 											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje APPEARED recibido: %d\n", id_mensaje);
-											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_appeared, (void*)app);
-											pthread_detach(p_generador_mensajes);
+											log_info(logger, "ID de Mensaje APPEARED recibido: %d", id_mensaje);
+
+											t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+											args->mensaje = mensaje_appeared;
+											args->respuesta = NULL;
+
+											pthread_t p_generador_mensajes_appeared;
+											pthread_create(&p_generador_mensajes_appeared, NULL, (void*) recibidor_mensajes_appeared, (void*)args);
+											pthread_join(p_generador_mensajes_appeared,NULL);
+
+											free(args);
+
 											break;
 										case LOCALIZED_POKEMON:
+											;
+											t_Localized* loc = NULL;
 											loc = deserializar_paquete_localized(&socket_broker);
 											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje LOCALIZED recibido: %d\n", id_mensaje);
+											log_info(logger, "ID de Mensaje LOCALIZED recibido: %d", id_mensaje);
 
 
-											printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
-																	loc->pokemon.nombre);
+											//printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
+											//						loc->pokemon.nombre);
 
 						//					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
 						//						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
@@ -1441,7 +1448,6 @@ void hilo_suscriptor(op_code* code){
 											t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
 											if(respuesta_get != NULL){
-												log_debug(logger, "es respuesta");
 												t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 												args->mensaje = loc;
 												args->respuesta = respuesta_get;
@@ -1453,9 +1459,11 @@ void hilo_suscriptor(op_code* code){
 
 											break;
 										case CAUGHT_POKEMON:
+											;
+											t_Caught* caught = NULL;
 											caught = deserializar_paquete_caught(&socket_broker);
 											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje CAUGHT recibido: %d\n", id_mensaje);
+											log_info(logger, "ID de Mensaje CAUGHT recibido: %d", id_mensaje);
 											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_caught, (void*)caught);
 											pthread_detach(p_generador_mensajes);
 											break;
@@ -1799,11 +1807,8 @@ int32_t main(int32_t argc, char** argv){
 
     objetivo_global = get_objetivo_global(entrenadores);
 
+	//generar_y_enviar_get();
 
-
-	generar_y_enviar_get();
-
-    sleep(5);
 
     pthread_t p_suscribirse_appeared;
     op_code op_appeared = SUSCRIPCION_APPEARED;

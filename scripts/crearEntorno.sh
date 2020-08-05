@@ -8,7 +8,9 @@ cd ${PROYECTO}/Game-Card/Debug/
 make clean
 make all
 
-
+cd ${PROYECTO}/team/Default
+make clean
+make all
 
 cd ${PROYECTO}/Game-Boy/Debug/
 make clean
