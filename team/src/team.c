@@ -1071,6 +1071,15 @@ void hilo_enviar_get(int i){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+					log_debug(logger, "el id redicibo es: %d", id_mensaje);
+
+					t_respuesta* respuesta = malloc(sizeof(t_respuesta));
+					respuesta->id_respuesta = id_mensaje;
+					respuesta->id_entrenador = 0;
+
+					//mutex
+					list_add(mensajes_get_esperando_respuesta, respuesta);
+
 				}
 			}
 		}
@@ -1331,6 +1340,7 @@ void hilo_recibidor_mensajes_gameboy(){
 
 						 pthread_t p_generador_mensajes_localized;
 						 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+						 pthread_detach(p_generador_mensajes_appeared);
 					}
 
 					break;
@@ -1405,26 +1415,47 @@ void hilo_suscriptor(op_code* code){
 									t_Caught* caught;
 
 									pthread_t p_generador_mensajes;
-
+									log_debug(logger, "entró algo");
 									switch(operacion){
 										case APPEARED_POKEMON:
 											app = deserializar_paquete_appeared(&socket_broker);
 											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje recibido: %d", id_mensaje);
+											log_info(logger, "ID de Mensaje APPEARED recibido: %d\n", id_mensaje);
 											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_appeared, (void*)app);
 											pthread_detach(p_generador_mensajes);
 											break;
 										case LOCALIZED_POKEMON:
 											loc = deserializar_paquete_localized(&socket_broker);
 											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje recibido: %d", id_mensaje);
-											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_localized, (void*)loc);
-											pthread_detach(p_generador_mensajes);
+											log_info(logger, "ID de Mensaje LOCALIZED recibido: %d\n", id_mensaje);
+
+
+											printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
+																	loc->pokemon.nombre);
+
+						//					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
+						//						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
+						//						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+						//					}
+
+											t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
+
+											if(respuesta_get != NULL){
+												log_debug(logger, "es respuesta");
+												t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+												args->mensaje = loc;
+												args->respuesta = respuesta_get;
+
+												 pthread_t p_generador_mensajes_localized;
+												 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+												 pthread_detach(p_generador_mensajes);
+											}
+
 											break;
 										case CAUGHT_POKEMON:
 											caught = deserializar_paquete_caught(&socket_broker);
 											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje recibido: %d", id_mensaje);
+											log_info(logger, "ID de Mensaje CAUGHT recibido: %d\n", id_mensaje);
 											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_caught, (void*)caught);
 											pthread_detach(p_generador_mensajes);
 											break;
@@ -1432,12 +1463,12 @@ void hilo_suscriptor(op_code* code){
 											printf("No me interesa el mensaje");
 											return;
 									}
-									} else {
-										log_info(logger, "Se cayo la conexion");
-										liberar_conexion(socket_broker);
-										socket_broker = 0;
-										fin = true;
-										}
+								} else {
+									log_info(logger, "Se cayo la conexion");
+									liberar_conexion(socket_broker);
+									socket_broker = 0;
+									fin = true;
+								}
 							}
 
 						} else {
@@ -1770,7 +1801,9 @@ int32_t main(int32_t argc, char** argv){
 
 
 
-    generar_y_enviar_get();
+	generar_y_enviar_get();
+
+    sleep(5);
 
     pthread_t p_suscribirse_appeared;
     op_code op_appeared = SUSCRIPCION_APPEARED;
@@ -1832,6 +1865,8 @@ int32_t main(int32_t argc, char** argv){
 	}
 
 	pthread_detach(p_escuchador);
+
+
 
 	 /* HILO DE EXITS */
 	pthread_t p_exit;

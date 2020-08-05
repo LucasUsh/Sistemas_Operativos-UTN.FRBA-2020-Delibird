@@ -388,6 +388,7 @@ t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* ob
 t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 	for(int i = 0; i < respuestas->elements_count; i++){
 		t_respuesta* respuesta = list_get(respuestas, i);
+
 		if(id == respuesta->id_respuesta){
 			list_remove(respuestas, i);
 			return respuesta;
