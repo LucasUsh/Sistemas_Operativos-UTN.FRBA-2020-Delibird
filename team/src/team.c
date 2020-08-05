@@ -1386,16 +1386,22 @@ void hilo_suscriptor(op_code* code){
 									switch(operacion){
 										case APPEARED_POKEMON:
 											app = deserializar_paquete_appeared(&socket_broker);
+											enviar_ACK(0, socket_broker);
+											log_info(logger, "ID de Mensaje recibido: %d", id_mensaje);
 											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_appeared, (void*)app);
 											pthread_detach(p_generador_mensajes);
 											break;
 										case LOCALIZED_POKEMON:
 											loc = deserializar_paquete_localized(&socket_broker);
+											enviar_ACK(0, socket_broker);
+											log_info(logger, "ID de Mensaje recibido: %d", id_mensaje);
 											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_localized, (void*)loc);
 											pthread_detach(p_generador_mensajes);
 											break;
 										case CAUGHT_POKEMON:
 											caught = deserializar_paquete_caught(&socket_broker);
+											enviar_ACK(0, socket_broker);
+											log_info(logger, "ID de Mensaje recibido: %d", id_mensaje);
 											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_caught, (void*)caught);
 											pthread_detach(p_generador_mensajes);
 											break;
