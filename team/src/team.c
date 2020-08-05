@@ -316,14 +316,28 @@ void detectar_deadlocks(){
 	 *
 	 * ej: grafo de deadlock triple
 	 *
-	 *     0	 1	   2
-	 * 0|	  | 	|	  |
-	 * 1|	  | 	|	  |
-	 * 2|	  | 	|	  |
+	 *      A	 B
+	 * A|   0  | 1	|
+	 * B|	1  | 0	|
+	 *
+	 * 		PIK 	SQRT 	ONIX
+	 * A |   1
+	 * B |
+	 * C |
 	 *
 	 *
+	 * 	   A B C
+	 *  A| 0 1 0
+		B| 1 0 1
+		C| 0 1 0
+	 *
+	 * 0: 2pik
+	 *1: 1sqr, 1onix
 	 *
 	*/
+
+
+
 
 	int matriz[filas][columnas];
 	//lleno la matriz
@@ -340,12 +354,21 @@ void detectar_deadlocks(){
 		}
 	}
 
-//	for(int i = 0; i < filas; i++){
-//		for(int j = 0; j < columnas; j++){
-//			printf("%d ", matriz[i][j]);
-//		}
-//		 printf("\n");
-//	}
+	for(int i = 0; i < filas; i++){
+		for(int j = 0; j < columnas; j++){
+			printf("%d ", matriz[i][j]);
+		}
+		 printf("\n");
+	}
+
+
+
+
+
+
+
+
+
 
 	t_list* deadlocks_detectados = list_create();
 
@@ -600,7 +623,7 @@ int get_index_entrenador_estimacion_mas_corta(){
 	// por archivo de cfg se obtiene el EST_siguiente inicial ya CALCULADO.
 	// => si el est_anterior es 0, vamos a decir que es la primera vez que va a ejecutar y no hay que hacer el calculo.
 
-	log_debug(logger, "en cola ready: %d\n", cola_ready->elements_count);
+	printf("en cola ready: %d\n", cola_ready->elements_count);
 
 	for(int i = 0; i < cola_ready->elements_count; i++){
 
@@ -626,6 +649,7 @@ int get_index_entrenador_estimacion_mas_corta(){
 
 
 			EST_siguiente =  algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
+			entrenador_actual->estimacion = EST_siguiente;
 		}
 
 		printf("| estimacion: %f\n", EST_siguiente);
@@ -644,10 +668,13 @@ int get_index_entrenador_estimacion_mas_corta(){
 	printf("el próximo va a ser el entrenador %d\n", entrenador_mas_rapido->id);
 
 	//pthread_mutex_lock(&mutex_list_entrenadores);
-	t_entrenador* entrenador_actual = list_get(entrenadores, entrenador_mas_rapido->id);
+	//t_entrenador* entrenador_actual = list_get(entrenadores, entrenador_mas_rapido->id);
 	//pthread_mutex_unlock(&mutex_list_entrenadores);
 
 	//entrenador_actual->estimacion_anterior = estimacion_mas_corta;
+
+
+
 	return indice;
 }
 
@@ -732,12 +759,13 @@ void hilo_replanificar_sjfcd(){
 
 		pthread_mutex_lock(&mutex_cola_ready);
 		t_entrenador* entrenador = list_get(cola_ready, i);
+		pthread_mutex_unlock(&mutex_cola_ready);
 
-		log_debug(logger, "entrenador ejecutando: %d y su rafaga es de: %d - %d = %d\n",
+		printf("entrenador ejecutando: %d y su estimacion es de: %d - %d = %d\n",
 				proceso_ejecutando, entrenador_ejecutando->estimacion,
 				entrenador_ejecutando->cantidad_ejecutada,
 				entrenador_ejecutando->estimacion - entrenador_ejecutando->cantidad_ejecutada);
-		log_debug(logger, "entrenador en cola con menor rafaga: %d y su rafaga es de: %d\n",
+		printf("entrenador en cola con menor rafaga: %d y su estimacion es de: %d\n",
 				entrenador->id, entrenador->estimacion);
 
 
@@ -751,12 +779,7 @@ void hilo_replanificar_sjfcd(){
 			sem_post(entrenador_ejecutando->semaforo);
 			sem_post(entrenador->semaforo);
 		}
-
-		pthread_mutex_unlock(&mutex_cola_ready);
-
-
 	}
-
 }
 
 void hilo_detectar_deadlock(){
@@ -969,10 +992,10 @@ void ejecutar_sjfcd(t_entrenador* entrenador){
 			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
 
 		if(cambio_cola_ready && cola_ready->elements_count > 0){
-			log_debug(logger, "llegó algo a la cola de ready mientras ejecutaba");
+			printf("llegó algo a la cola de ready mientras ejecutaba");
 			sem_post(&s_replanificar_sjfcd);
 			sem_wait(entrenador->semaforo); // mme bloqueo hasta que me saque el planificador
-			log_debug(logger, "me desbloqueó el planificador!!! \n");
+			printf("me desbloqueó el planificador!!! \n");
 			printf("soy el entrenador %d y mi estado es: %d", entrenador->id, entrenador->estado);
 			if(entrenador->estado == READY){
 				return;
@@ -1022,7 +1045,7 @@ void ejecutar_algoritmo(t_entrenador* entrenador)
 void hilo_enviar_get(int i){
 	int32_t socket = conexion_broker();
 
-	log_debug(logger, "hilo creado para enviar get...\n");
+	printf(logger, "hilo creado para enviar get...\n");
 
 	if(socket == 0){
 		log_error(logger,"Error al conectar al Broker para enviar GET...");
@@ -1675,7 +1698,7 @@ void entrenador(void* index){
 	while(!cumplio_objetivo(entrenador)){
 
 		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
-		log_debug(logger, "soy el entrenador %d y estoy ejecutando\n", entrenador->id);
+		printf("soy el entrenador %d y estoy ejecutando\n", entrenador->id);
 		if(proceso_ejecutando != entrenador->id){
 			cambios_contexto++;
 			proceso_ejecutando = entrenador->id;
@@ -1738,7 +1761,8 @@ int32_t main(int32_t argc, char** argv){
 
 	inicializar_team(argv[1]);
     cantidad_entrenadores = array_length(config_get_array_value(config, "POSICIONES_ENTRENADORES"));
-	printf("Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s\n", cantidad_entrenadores, algoritmo.algoritmo_string);
+	printf("Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s\n",
+			cantidad_entrenadores, algoritmo.algoritmo_string);
 
     entrenadores = get_entrenadores(config, cantidad_entrenadores);
 
