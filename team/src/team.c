@@ -1486,7 +1486,7 @@ void hilo_suscriptor_appeared(op_code *code){
 
 									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
-									if(operacion == *code){
+									if(operacion == APPEARED_POKEMON){
 										t_Appeared* mensaje_appeared = NULL;
 										mensaje_appeared = deserializar_paquete_appeared(&socket_broker);
 										enviar_ACK(0, socket_broker);
@@ -1566,7 +1566,7 @@ void hilo_suscriptor_caught(op_code* code){
 
 									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
-									if(operacion == *code){
+									if(operacion == CAUGHT_POKEMON){
 										t_Caught* mensaje_caught = NULL;
 										mensaje_caught = deserializar_paquete_caught(&socket_broker);
 										enviar_ACK(0, socket_broker);
@@ -1578,7 +1578,7 @@ void hilo_suscriptor_caught(op_code* code){
 										pthread_t p_generador_mensajes_caught;
 										pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
 										pthread_detach(p_generador_mensajes_caught);
-									}else printf("Mandaron algo que no era un Appeared \n");
+									}else printf("Mandaron algo que no era un caught \n");
 
 									free(args);
 								} else {
@@ -1841,7 +1841,7 @@ int32_t main(int32_t argc, char** argv){
 
     objetivo_global = get_objetivo_global(entrenadores);
 
-	generar_y_enviar_get();
+	//generar_y_enviar_get();
 
 
     pthread_t p_suscribirse_appeared;
