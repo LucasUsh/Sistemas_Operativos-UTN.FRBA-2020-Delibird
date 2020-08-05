@@ -21,6 +21,12 @@ int deadlocks_resueltos_totales = 0; // deadlocks resueltos
 int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
 int total_deadlock_resueltos;
 int proceso_ejecutando = -1;
+
+int DL_nodo_inicial = -1;
+int DL_nodo_final = -1;
+t_deadlock* deadlock_actual;
+int intentos = 0;
+
 t_list* total_deadlocks;
 
 bool cambio_cola_ready = false;
@@ -284,6 +290,36 @@ bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
 
 }
 
+//void recorrer_fila_DL(int fila, int** matriz){
+//
+//	if(intentos < entrenadores->elements_count){
+//		log_debug(logger, "no hay deadlock");
+//	};
+//
+//	for(int i = fila; i < entrenadores->elements_count; i++){
+//		for(int j = 0; j < entrenadores->elements_count; j++){
+//			if(i==j)continue;
+//			if(matriz[i][j]){
+//				intentos++;
+//				int* p = malloc(sizeof(int));
+//				*p = i;
+//
+//				list_add(deadlock_actual->procesos_involucrados, p);
+//
+//				DL_nodo_final = j;
+//				if(DL_nodo_final == DL_nodo_inicial){
+//
+//					printf("hay deadlock");
+//
+//				} else {
+//					recorrer_fila_DL(j, matriz);
+//				}
+//
+//			}
+//
+//		}
+//	}
+//}
 
 void detectar_deadlocks(){
 	bool puede_haber_deadlock =false;
@@ -354,28 +390,42 @@ void detectar_deadlocks(){
 		}
 	}
 
-	for(int i = 0; i < filas; i++){
-		for(int j = 0; j < columnas; j++){
-			printf("%d ", matriz[i][j]);
-		}
-		 printf("\n");
-	}
-
-
-
-
-
-
-
+//	for(int i = 0; i < filas; i++){
+//		for(int j = 0; j < columnas; j++){
+//			printf("%d ", matriz[i][j]);
+//		}
+//		 printf("\n");
+//	}
+//
+//
+//
+//
 
 
 
 	t_list* deadlocks_detectados = list_create();
 
+
+	deadlock_actual = malloc(sizeof(t_deadlock));
+
+
+//
+//	for(int i = 0; i < filas; i++){
+//		log_debug(logger, "verificando DL");
+//		for(int j = 0; j < columnas; j++){
+//			recorrer_fila_DL(i, matriz);
+//		}
+//	}
+//
+
+
+
+
 	for(int i = 0; i < filas; i++){
 		for(int j = 0; j < columnas; j++){
 			if(i==j) continue;
 			if(matriz[i][j]){
+
 				if(matriz[j][i]){
 					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
 					deadlock->procesos_involucrados = list_create();
@@ -429,6 +479,21 @@ void detectar_deadlocks(){
 			}
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	for(int m = 0; m < deadlocks_detectados->elements_count; m++){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
@@ -1045,7 +1110,7 @@ void ejecutar_algoritmo(t_entrenador* entrenador)
 void hilo_enviar_get(int i){
 	int32_t socket = conexion_broker();
 
-	printf(logger, "hilo creado para enviar get...\n");
+	printf("hilo creado para enviar get...\n");
 
 	if(socket == 0){
 		log_error(logger,"Error al conectar al Broker para enviar GET...");
@@ -1067,6 +1132,11 @@ void hilo_enviar_get(int i){
 			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 			enviar_get_pokemon(pokemon->nombre, "0", socket);
+
+			pthread_mutex_lock(&mutex_ciclos_totales);
+			ciclos_totales++;
+			pthread_mutex_unlock(&mutex_ciclos_totales);
+
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
@@ -1234,6 +1304,8 @@ void recibidor_mensajes_appeared(t_Appeared* args){
 			list_add(pokemones_ubicados, pokemon_ubicado);
 			//pthread_mutex_unlock(&mutex_pokemones_ubicados);
 		}
+	} else {
+		log_debug(logger, "se recibió un appeared pero no me interesa!");
 	}
 
 	free(mensaje);
@@ -1409,8 +1481,14 @@ void hilo_suscriptor(op_code* code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
+									log_debug(logger, "id mensaje recibido %d", id_mensaje);
+									log_debug(logger, "operacion %d", operacion);
+									t_Appeared* app;
+									t_Localized* loc;
+									t_Caught* caught;
+
 									pthread_t p_generador_mensajes;
-									log_debug(logger, "Recibi algo");
+
 									switch(operacion){
 										case APPEARED_POKEMON:
 											;
@@ -1440,10 +1518,10 @@ void hilo_suscriptor(op_code* code){
 											//printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
 											//						loc->pokemon.nombre);
 
-						//					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
-						//						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-						//						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
-						//					}
+											for(int i = 0; i < loc->listaPosiciones->elements_count; i++){
+												t_posicion* posicion = list_get(loc->listaPosiciones, i);
+												printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+											}
 
 											t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
@@ -1451,10 +1529,12 @@ void hilo_suscriptor(op_code* code){
 												t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 												args->mensaje = loc;
 												args->respuesta = respuesta_get;
-
-												 pthread_t p_generador_mensajes_localized;
-												 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
-												 pthread_detach(p_generador_mensajes);
+//
+//												 pthread_t p_generador_mensajes_localized;
+//												 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+//												 pthread_detach(p_generador_mensajes);
+											} else {
+												log_debug(logger, "no es respuesta, lo voy a rechazar");
 											}
 
 											break;
@@ -1473,7 +1553,7 @@ void hilo_suscriptor(op_code* code){
 									}
 								} else {
 									log_info(logger, "Se cayo la conexion");
-									liberar_conexion(socket_broker);
+									liberar_conexion(socket_broker);//logica reconectar
 									socket_broker = 0;
 									fin = true;
 								}
@@ -1807,7 +1887,7 @@ int32_t main(int32_t argc, char** argv){
 
     objetivo_global = get_objetivo_global(entrenadores);
 
-	//generar_y_enviar_get();
+	generar_y_enviar_get();
 
 
     pthread_t p_suscribirse_appeared;

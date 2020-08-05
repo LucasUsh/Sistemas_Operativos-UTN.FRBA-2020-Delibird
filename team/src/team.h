@@ -104,6 +104,9 @@ pthread_mutex_t mutex_pokemones_ubicados;
 pthread_mutex_t mutex_list_entrenadores;
 
 void hilo_suscriptor(op_code* operacion);
+
 void recibidor_mensajes_appeared(t_Appeared* args);
+
+//void recorrer_fila_DL(int fila, int** matriz);
 
 #endif /* TEAM_H_ */

@@ -395,7 +395,6 @@ t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 		}
 	}
 
-	printf("No es respuesta, lo voy a rechazar\n");
 	return NULL;
 }
 
