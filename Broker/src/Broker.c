@@ -250,8 +250,8 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 							pthread_mutex_unlock(&mutex_list_mensaje);
 						} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
 					} else {
+						log_info(logger, "El proceso id: %d se desconecto", id_proceso);
 						liberar_conexion(socket_cliente);
-						printf("Fallo al recibir codigo de operacion = -1\n");
 						fin = true;
 						break;
 					}
