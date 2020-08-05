@@ -1454,7 +1454,7 @@ char* get_config_path(char* entrenador){
 	return cfg_path;
 }
 
-void hilo_suscriptor(op_code* code){
+void hilo_suscriptor_appeared(op_code *code){
 	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje=0;
@@ -1483,74 +1483,24 @@ void hilo_suscriptor(op_code* code){
 
 									log_debug(logger, "id mensaje recibido %d", id_mensaje);
 									log_debug(logger, "operacion %d", operacion);
-									t_Appeared* app;
-									t_Localized* loc;
-									t_Caught* caught;
 
-									pthread_t p_generador_mensajes;
+									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
-									switch(operacion){
-										case APPEARED_POKEMON:
-											;
-											t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_broker);
-											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje APPEARED recibido: %d", id_mensaje);
+									if(operacion == *code){
+										t_Appeared* mensaje_appeared = NULL;
+										mensaje_appeared = deserializar_paquete_appeared(&socket_broker);
+										enviar_ACK(0, socket_broker);
+										log_info(logger, "ID de Mensaje APPEARED recibido: %d", id_mensaje);
 
-											t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-											args->mensaje = mensaje_appeared;
-											args->respuesta = NULL;
+										args->mensaje = mensaje_appeared;
+										args->respuesta = NULL;
 
-											pthread_t p_generador_mensajes_appeared;
-											pthread_create(&p_generador_mensajes_appeared, NULL, (void*) recibidor_mensajes_appeared, (void*)args);
-											pthread_join(p_generador_mensajes_appeared,NULL);
+										pthread_t p_generador_mensajes_appeared;
+										pthread_create(&p_generador_mensajes_appeared, NULL, (void*) recibidor_mensajes_appeared, (void*)args);
+										pthread_join(p_generador_mensajes_appeared,NULL);
+									} else printf("Mandaron algo que no era un Appeared \n");
 
-											free(args);
-
-											break;
-										case LOCALIZED_POKEMON:
-											;
-											t_Localized* loc = NULL;
-											loc = deserializar_paquete_localized(&socket_broker);
-											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje LOCALIZED recibido: %d", id_mensaje);
-
-
-											//printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
-											//						loc->pokemon.nombre);
-
-											for(int i = 0; i < loc->listaPosiciones->elements_count; i++){
-												t_posicion* posicion = list_get(loc->listaPosiciones, i);
-												printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
-											}
-
-											t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
-
-											if(respuesta_get != NULL){
-												t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-												args->mensaje = loc;
-												args->respuesta = respuesta_get;
-//
-//												 pthread_t p_generador_mensajes_localized;
-//												 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
-//												 pthread_detach(p_generador_mensajes);
-											} else {
-												log_debug(logger, "no es respuesta, lo voy a rechazar");
-											}
-
-											break;
-										case CAUGHT_POKEMON:
-											;
-											t_Caught* caught = NULL;
-											caught = deserializar_paquete_caught(&socket_broker);
-											enviar_ACK(0, socket_broker);
-											log_info(logger, "ID de Mensaje CAUGHT recibido: %d", id_mensaje);
-											pthread_create(&p_generador_mensajes, NULL, (void*)recibidor_mensajes_caught, (void*)caught);
-											pthread_detach(p_generador_mensajes);
-											break;
-										default:
-											printf("No me interesa el mensaje");
-											return;
-									}
+									free(args);
 								} else {
 									log_info(logger, "Se cayo la conexion");
 									liberar_conexion(socket_broker);//logica reconectar
@@ -1583,184 +1533,188 @@ void hilo_suscriptor(op_code* code){
 		}
 	}
 }
-/*
-void hilo_suscribirse_appeared(void* l_entrenadores){
 
-	int32_t socket_suscripcion = conexion_broker();
-	if(socket_suscripcion == 0){
-		log_error(logger,"Error al conectar al Broker para suscribirse a Appeared...");
-		//logica para reintentar
-		return;
-	}
-
-	log_info(logger,"Conectado al Broker para suscribirse a APPEARED...\n");
-
-	int32_t operacion = 0;
-	int32_t id_mensaje = 0;
+void hilo_suscriptor_caught(op_code* code){
+	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje=0;
+	int32_t socket_broker = crear_conexion(IP_BROKER,PUERTO_BROKER);
+	bool fin = false;
 
-	if(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-		printf("codigo de op respuesta: %d\n", operacion);
-		if(operacion == ACK){
-			printf("el broker me dio el OK\n");
-			recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
-			//voy a ir recibiendo mensajes APPEARED
-			printf("Esperando que llegue algún APPEARED de la cola de suscripcion...\n");
-			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
-				enviar_handshake(PROCESS_ID, socket_suscripcion);
-
-				if(operacion == APPEARED_POKEMON){
-					printf("Llego un mensaje APPEARED desde el GAME BOY\n");
-					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_suscripcion);
-
-					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
-							mensaje_appeared->pokemon.size_Nombre,
-							mensaje_appeared->pokemon.nombre,
-							mensaje_appeared->posicion.X,
-							mensaje_appeared->posicion.Y);
-
-					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->mensaje = mensaje_appeared;
-					args->respuesta = NULL;
-
-					pthread_t p_generador_mensajes_appeared;
-					pthread_create(&p_generador_mensajes_appeared, NULL, (void*)recibidor_mensajes_appeared, (void*)args);
-				}
-			}
-		}
-	} else {
-		log_error(logger, "el hilo murió\n");
-		return;
-	}
-
-	return;
-}
-
-void hilo_suscribirse_caught(void* l_entrenadores){
-
-	int32_t socket_suscripcion = conexion_broker();
-
-	if(socket_suscripcion == 0){
-		log_error(logger,"Error al conectar al Broker para suscribirse a CAUGHT...");
-		//logica para reintentar (signal a un hilo?)
-		return;
-	}
-
-	log_info(logger,"Conectado al Broker para suscribirse a CAUGHT...\n");
-
-	int32_t operacion = 0;
-	int32_t id_mensaje = 0;
-	int32_t tamanio_estructura = 0;
-
-	if(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-		printf("codigo de op respuesta: %d\n", operacion);
-		if(operacion == ACK){
-			printf("el broker me dio el OK\n");
-			recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-			recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
-			//voy a ir recibiendo mensajes CAUGHT
-			printf("Esperando que llegue algún CAUGHT de la cola de suscripcion...\n");
-			while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
-				enviar_handshake(PROCESS_ID, socket_suscripcion);
-
-				if(operacion == CAUGHT_POKEMON){
-					printf("Recibí un mensaje CAUGHT\n");
-					t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_suscripcion);
-
-					printf("Llego un mensaje Caught Pokemon con los siguientes datos: %d\n",
-												mensaje_caught->fueAtrapado);
-
-					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
-
-					//debería ser un hilo
-					if(respuesta_catch != NULL){
-
-					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->mensaje = mensaje_caught;
-					args->respuesta = respuesta_catch;
-
-					pthread_t p_generador_mensajes_caught;
-					pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
+	while(1){
+		if(socket_broker != 0){
+			enviar_handshake(PROCESS_ID, socket_broker);
+			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+				if(operacion == ACK){
+					recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
-						//recibidor_mensajes_caught(l_entrenadores, mensaje_caught); // cambiar nombre a la funcion
+					enviar_suscripcion(*code, socket_broker);
+					if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+						if(operacion == ACK){
+							recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+							while(fin == false){
+								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+									log_debug(logger, "id mensaje recibido %d", id_mensaje);
+									log_debug(logger, "operacion %d", operacion);
+
+									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+
+									if(operacion == *code){
+										t_Caught* mensaje_caught = NULL;
+										mensaje_caught = deserializar_paquete_caught(&socket_broker);
+										enviar_ACK(0, socket_broker);
+										log_info(logger, "ID de Mensaje CAUGHT recibido: %d", id_mensaje);
+
+										args->mensaje = mensaje_caught;
+										args->respuesta = NULL;
+
+										pthread_t p_generador_mensajes_caught;
+										pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
+										pthread_detach(p_generador_mensajes_caught);
+									}else printf("Mandaron algo que no era un Appeared \n");
+
+									free(args);
+								} else {
+									log_info(logger, "Se cayo la conexion");
+									liberar_conexion(socket_broker);//logica reconectar
+									socket_broker = 0;
+									fin = true;
+								}
+							}
+
+						} else {
+							log_error(logger, "Fallo la suscripcion, respondieron algo que no era un ACK");
+							liberar_conexion(socket_broker);
+							socket_broker = 0;
+						}
+					} else {
+						log_error(logger, "Se cayo la conexion con Broker");
+						liberar_conexion(socket_broker);
+						socket_broker = 0;
 					}
+				} else {
+					log_error(logger, "Fallo el ACK del handshake con Broker");
+					liberar_conexion(socket_broker);
+					socket_broker = 0;
 				}
+
 			}
-		}
-	} else {
-		log_error(logger, "el hilo murió\n");
-		return;
-	}
 
-	return;
+		} else {
+			log_info(logger, "Reintentando conexion cola...");
+			socket_broker = reconectar(socket_broker);
+		}
+	}
 }
 
-void hilo_suscribirse_localized(void* l_entrenadores){
-
-	int32_t socket_suscripcion = conexion_broker();
-
-	if(socket_suscripcion == 0){
-		log_error(logger,"Error al conectar al Broker para suscribirse a Appeared...");
-		//logica para reintentar
-		return;
-	}
-
-	log_info(logger,"Conectado al Broker para suscribirse a LOCALIZED...\n");
-
-
-	int32_t operacion = 0;
-	int32_t id_mensaje = 0;
+void hilo_suscriptor_localized(op_code* code){
+	int32_t operacion=0;
 	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje=0;
+	int32_t socket_broker = crear_conexion(IP_BROKER,PUERTO_BROKER);
+	bool fin = false;
 
-	if(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-		printf("codigo de op respuesta: %d\n", operacion);
-			if(operacion == ACK){
-				printf("el broker me dio el OK\n");
-				recv(socket_suscripcion, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-				recv(socket_suscripcion, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-				//voy a ir recibiendo mensajes LOCALIZED
-				printf("Esperando que llegue algún LOCALIZED de la cola de suscripcion...");
-				while(recv(socket_suscripcion, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
-					printf("Recibí un mensaje LOCALIZED\n");
-					t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_suscripcion);
+	while(1){
+		if(socket_broker != 0){
+			enviar_handshake(PROCESS_ID, socket_broker);
+			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+				if(operacion == ACK){
+					recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+					recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-					printf("Llego un mensaje LOCALIZED Pokemon con los siguientes datos: %s\n",
-							mensaje_localized->pokemon.nombre);
 
-					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
-						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+					enviar_suscripcion(*code, socket_broker);
+					if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+						if(operacion == ACK){
+							recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+							while(fin == false){
+								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+
+									log_debug(logger, "id mensaje recibido %d", id_mensaje);
+									log_debug(logger, "operacion %d", operacion);
+
+									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+
+									t_Localized* mensaje_localized = NULL;
+
+									mensaje_localized = deserializar_paquete_localized(&socket_broker);
+									enviar_ACK(0, socket_broker);
+
+									/*int32_t algo1;
+									int32_t algo2;
+									int32_t algo3;
+									recv(socket_broker,&algo1, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker, &algo2, sizeof(int32_t), MSG_WAITALL);
+									recv(socket_broker, &algo3, sizeof(int32_t), MSG_WAITALL);*/
+									log_info(logger, "ID de Mensaje LOCALIZED recibido: %d", id_mensaje);
+
+
+									//printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
+									//						loc->pokemon.nombre);
+
+									for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
+										t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
+										printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+									}
+
+									/*t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
+
+									if(respuesta_get != NULL){
+										args->mensaje = mensaje_localized;
+										args->respuesta = respuesta_get;
+//
+//												 pthread_t p_generador_mensajes_localized;
+//												 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+//												 pthread_detach(p_generador_mensajes);
+									} else {
+										log_debug(logger, "no es respuesta, lo voy a rechazar");
+									}*/
+
+									free(args);
+								} else {
+									log_info(logger, "Se cayo la conexion");
+									liberar_conexion(socket_broker);//logica reconectar
+									socket_broker = 0;
+									fin = true;
+								}
+							}
+
+						} else {
+							log_error(logger, "Fallo la suscripcion, respondieron algo que no era un ACK");
+							liberar_conexion(socket_broker);
+							socket_broker = 0;
+						}
+					} else {
+						log_error(logger, "Se cayo la conexion con Broker");
+						liberar_conexion(socket_broker);
+						socket_broker = 0;
 					}
-
-					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
-
-					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-					args->mensaje = mensaje_localized;
-					args->respuesta = respuesta_get;
-
-					pthread_t p_generador_mensajes_localized;
-					pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
-
+				} else {
+					log_error(logger, "Fallo el ACK del handshake con Broker");
+					liberar_conexion(socket_broker);
+					socket_broker = 0;
 				}
-		}
-	}else {
-		log_error(logger, "el hilo murió\n");
-		return;
-	}
 
-	return;
+			}
+
+		} else {
+			log_info(logger, "Reintentando conexion cola...");
+			socket_broker = reconectar(socket_broker);
+		}
+	}
 }
-*/
+
 int inicializar_team(char* entrenador){
 
 	cola_ready = list_create();
@@ -1892,17 +1846,17 @@ int32_t main(int32_t argc, char** argv){
 
     pthread_t p_suscribirse_appeared;
     op_code op_appeared = SUSCRIPCION_APPEARED;
-   	pthread_create(&p_suscribirse_appeared, NULL, (void*)&hilo_suscriptor, &op_appeared);
+   	pthread_create(&p_suscribirse_appeared, NULL, (void*)&hilo_suscriptor_appeared, &op_appeared);
    	pthread_detach(p_suscribirse_appeared);
 
 	pthread_t p_suscribirse_caught;
 	op_code op_caught = SUSCRIPCION_CAUGHT;
-	pthread_create(&p_suscribirse_caught, NULL, (void*)&hilo_suscriptor, &op_caught);
+	pthread_create(&p_suscribirse_caught, NULL, (void*)&hilo_suscriptor_caught, &op_caught);
 	pthread_detach(p_suscribirse_caught);
 
 	pthread_t p_suscribirse_localized;
 	op_code op_localized = SUSCRIPCION_LOCALIZED;
-	pthread_create(&p_suscribirse_localized, NULL, (void*)&hilo_suscriptor, &op_localized);
+	pthread_create(&p_suscribirse_localized, NULL, (void*)&hilo_suscriptor_localized, &op_localized);
 	pthread_detach(p_suscribirse_localized);
 
 

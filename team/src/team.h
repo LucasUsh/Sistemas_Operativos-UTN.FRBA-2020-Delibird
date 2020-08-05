@@ -103,7 +103,9 @@ int TIEMPO_RECONEXION;
 pthread_mutex_t mutex_pokemones_ubicados;
 pthread_mutex_t mutex_list_entrenadores;
 
-void hilo_suscriptor(op_code* operacion);
+void hilo_suscriptor_appeared(op_code *code);
+void hilo_suscriptor_caught(op_code *code);
+void hilo_suscriptor_localized(op_code *code);
 
 void recibidor_mensajes_appeared(t_Appeared* args);
 

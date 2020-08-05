@@ -69,7 +69,6 @@ int32_t main(void) {
 							pthread_detach(hilo);
 						break;
 						case NEW_POKEMON:
-							log_info(logger, "Llego un mensaje NEW_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_estructura_mensajes);
@@ -82,7 +81,6 @@ int32_t main(void) {
 							pthread_detach(hilo);
 							break;
 						case APPEARED_POKEMON:
-							log_info(logger, "Llego un mensaje APPEARED_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_estructura_mensajes);
@@ -95,7 +93,6 @@ int32_t main(void) {
 							pthread_detach(hilo);
 							break;
 						case GET_POKEMON:
-							log_info(logger, "Llego un mensaje GET_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_estructura_mensajes);
@@ -108,7 +105,6 @@ int32_t main(void) {
 							pthread_detach(hilo);
 							break;
 						case LOCALIZED_POKEMON:
-							log_info(logger, "Llego un mensaje LOCALIZED_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_estructura_mensajes);
@@ -121,7 +117,6 @@ int32_t main(void) {
 							pthread_detach(hilo);
 							break;
 						case CATCH_POKEMON:
-							log_info(logger, "Llego un mensaje CATCH_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_estructura_mensajes);
@@ -134,7 +129,6 @@ int32_t main(void) {
 							pthread_detach(hilo);
 							break;
 						case CAUGHT_POKEMON:
-							log_info(logger, "Llego un mensaje CAUGHT_POKEMON");
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_estructura_mensajes);
@@ -320,6 +314,7 @@ void guardarMensajeEnCache(info_mensaje* mensaje){
 info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	t_New* new = NULL;
 	new = deserializar_paquete_new (&socket_cliente);
+	log_info(logger, "Llego un mensaje NEW_POKEMON");
 	/*printf("Llego un mensaje New Pokemon con los siguientes datos: %d  %s  %d  %d  %d \n", new->pokemon.size_Nombre, new->pokemon.nombre,
 			new->cant, new->posicion.X, new->posicion.Y);*/
 	info_mensaje * mensajeNew = malloc(sizeof(info_mensaje));
@@ -343,6 +338,7 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	t_Appeared* app = NULL;
 	app = deserializar_paquete_appeared(&socket_cliente);
+	log_info(logger, "Llego un mensaje APPEARED_POKEMON");
 	/*printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n", app->pokemon.size_Nombre, app->pokemon.nombre,
 			app->posicion.X, app->posicion.Y);*/
 	info_mensaje * mensajeAppeared = malloc(sizeof(info_mensaje));
@@ -365,6 +361,7 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	t_Get* get = NULL;
 	get = deserializar_paquete_get(&socket_cliente);
+	log_info(logger, "Llego un mensaje GET_POKEMON");
 	/*printf("Llego un mensaje Get Pokemon con los siguientes datos: %d  %s\n", get->pokemon.size_Nombre, get->pokemon.nombre);*/
 	info_mensaje * mensajeGet = malloc(sizeof(info_mensaje));
 	mensajeGet->op_code = GET_POKEMON;
@@ -386,6 +383,7 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	t_Localized* localized = NULL;
 	localized = deserializar_paquete_localized(&socket_cliente);
+	log_info(logger, "Llego un mensaje LOCALIZED_POKEMON");
 
 	info_mensaje * mensajeLocalized = malloc(sizeof(info_mensaje));
 	mensajeLocalized->op_code = LOCALIZED_POKEMON;
@@ -407,6 +405,7 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	t_Catch* catch = NULL;
 	catch = deserializar_paquete_catch(&socket_cliente);
+	log_info(logger, "Llego un mensaje CATCH_POKEMON");
 	/*printf("Llego un mensaje Catch Pokemon con los siguientes datos: %d  %s  %d  %d \n", catch->pokemon.size_Nombre, catch->pokemon.nombre,
 			catch->posicion.X, catch->posicion.Y);*/
 	info_mensaje * mensajeCatch = malloc(sizeof(info_mensaje));
@@ -429,6 +428,7 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	t_Caught* caught = NULL;
 	caught = deserializar_paquete_caught(&socket_cliente);
+	log_info(logger, "Llego un mensaje CAUGHT_POKEMON");
 	/*printf("Llego un mensaje Caught Pokemon con los siguientes datos:  %d\n", caught->fueAtrapado);*/
 	info_mensaje * mensajeCaught = malloc(sizeof(info_mensaje));
 	mensajeCaught->op_code = CAUGHT_POKEMON;
@@ -481,7 +481,11 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		loc = mensaje->mensaje;
-		enviar_localized_pokemon(&(loc->pokemon), loc->listaPosiciones, id_mensaje, socket_cliente);
+		if(loc->listaPosiciones->elements_count == 0){
+			t_list * listaNull = list_create();
+			enviar_localized_pokemon(&(loc->pokemon), listaNull, id_mensaje, socket_cliente);
+			list_destroy(listaNull);
+		}else enviar_localized_pokemon(&(loc->pokemon), loc->listaPosiciones, id_mensaje, socket_cliente);
 		log_info(logger, "Se envio un mensaje LOCALIZED con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
