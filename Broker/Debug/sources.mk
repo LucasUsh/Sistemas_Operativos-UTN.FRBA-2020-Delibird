@@ -13,9 +13,8 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-Sockets/Release \
+Sockets/Debug \
 Sockets \
-UniversoPokemon/Release \
 UniversoPokemon \
 src \
 

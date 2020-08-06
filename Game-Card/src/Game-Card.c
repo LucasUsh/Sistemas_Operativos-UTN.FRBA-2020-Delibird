@@ -315,6 +315,7 @@ void hilo_suscriptor(op_code* code){
 
 									pthread_create(&nuevo_hilo, NULL, (void*) &responder_mensaje, stream);
 									pthread_detach(nuevo_hilo);
+									sleep(1);
 
 									} else {
 										log_info(logger_GC, "Se cayo la conexion");
