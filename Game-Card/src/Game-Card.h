@@ -63,7 +63,7 @@ int32_t id_proceso = 0;
 void instalar_filesystem();
 void recuperar_datos();
 void crear_servidor_GC();
-void responder_mensaje(void* stream);
+void responder_mensaje(int32_t socket, op_code codigo_operacion, int32_t id_mensaje);
 void conexionBroker(int32_t *socket);
 void hilo_suscriptor(op_code* code);
 void suscribirse_broker();
@@ -71,5 +71,6 @@ void salir (const char* mensaje);
 void inicializaciones_globales();
 void liberar_memoria ();
 int32_t reconectar(int32_t socket);
+
 
 #endif

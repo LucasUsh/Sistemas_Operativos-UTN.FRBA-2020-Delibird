@@ -109,6 +109,10 @@ void funcion_new_pokemon(void* new_y_id) {
 	free(id_msj);
 	free(posX);
 	free(posY);
+
+	free(new->pokemon.nombre);
+	free(new);
+	free(new_y_id);
 }
 
 void funcion_catch_pokemon(void* catch_y_id) {
@@ -191,6 +195,10 @@ void funcion_catch_pokemon(void* catch_y_id) {
 
 	free(ruta_metadata);
 	free(id_msj);
+
+	free(catch->pokemon.nombre);
+	free(catch);
+	free(catch_y_id);
 }
 
 void funcion_get_pokemon(void* get_y_id) {
@@ -321,6 +329,10 @@ void funcion_get_pokemon(void* get_y_id) {
 	}
 
 	free(ruta_metadata);
+
+	free(get->pokemon.nombre);
+	free(get);
+	free(get_y_id);
 }
 
 /****************************************************************************/

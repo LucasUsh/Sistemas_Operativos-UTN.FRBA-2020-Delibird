@@ -171,11 +171,6 @@ void crear_servidor_GC() {
 	int32_t socket_servidor_GC = crear_socket_escucha(ip_gamecard, puerto_gamecard);
 	int32_t socket_cliente_entrante;
 
-	pthread_t nuevo_hilo;
-
-	void* stream;
-
-
     while(1) {
     	socket_cliente_entrante = recibir_cliente(socket_servidor_GC);
 
@@ -183,35 +178,25 @@ void crear_servidor_GC() {
 		recv(socket_cliente_entrante, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 		recv(socket_cliente_entrante, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-		stream = malloc(3 * sizeof(int32_t));
-		memcpy(stream, &socket_cliente_entrante, sizeof(int32_t));
-		memcpy(stream + sizeof(int32_t), &operacion, sizeof(int32_t));
-		memcpy(stream + 2 * sizeof(int32_t), &id_mensaje, sizeof(int32_t));
+		log_debug(logger_GC, "Valor del codigo despues del recv SERVER: %d", operacion);
 
-		pthread_create(&nuevo_hilo, NULL, (void*) &responder_mensaje, stream);
-		pthread_detach(nuevo_hilo);
+		responder_mensaje (socket_cliente_entrante, operacion, id_mensaje);
     }
 }
 
-void responder_mensaje(void* stream) {
+void responder_mensaje(int32_t socket, op_code codigo_operacion, int32_t id_mensaje) {
 
-	int32_t socket_cliente;
-	int32_t id_mensaje;
-	op_code codigo_operacion;
+	log_debug(logger_GC, "Valor del codigo despues de entrar a responder_mensaje: %d", codigo_operacion);
 
-	memcpy(&socket_cliente, stream, sizeof(int32_t));
-	memcpy(&codigo_operacion, stream + sizeof(int32_t), sizeof(int32_t));
-	memcpy(&id_mensaje, stream + 2 * sizeof(int32_t), sizeof(int32_t));
-
-	free(stream);
+	pthread_t respuesta_solicitud;
 
 	switch (codigo_operacion) {
 
 		case NEW_POKEMON:
 			;
 			t_New* new = NULL;
-			new = deserializar_paquete_new (&socket_cliente);
-			enviar_ACK(0, socket_cliente);
+			new = deserializar_paquete_new (&socket);
+			enviar_ACK(0, socket);
 			log_info(logger_GC, "ID de Mensaje recibido: %d", id_mensaje);
 
 			void* stream_new = malloc(sizeof(t_New*) + sizeof(id_mensaje));
@@ -220,19 +205,16 @@ void responder_mensaje(void* stream) {
 
 			log_info (logger_GC, "Pokemon: %s, Posicion: (%d, %d), Cantidad: %d", new->pokemon.nombre, new->posicion.X, new->posicion.Y, new->cant);
 
-			funcion_new_pokemon (stream_new);
-
-			free(new->pokemon.nombre);
-			free(new);
-			free(stream_new);
+			pthread_create(&respuesta_solicitud, NULL, (void*) &funcion_new_pokemon, stream_new);
+			pthread_detach(respuesta_solicitud);
 
 			break;
 
 		case CATCH_POKEMON:
 			;
 			t_Catch* catch = NULL;
-			catch = deserializar_paquete_catch (&socket_cliente);
-			enviar_ACK(0, socket_cliente);
+			catch = deserializar_paquete_catch (&socket);
+			enviar_ACK(0, socket);
 			log_info(logger_GC, "ID de Mensaje recibido: %d", id_mensaje);
 
 			void* stream_catch = malloc(sizeof(t_Catch*) + sizeof(id_mensaje));
@@ -241,19 +223,16 @@ void responder_mensaje(void* stream) {
 
 			log_debug(logger_GC, "Nombre: %s, Posicion: (%d, %d)", catch->pokemon.nombre, catch->posicion.X, catch->posicion.Y);
 
-			funcion_catch_pokemon (stream_catch);
-
-			free(catch->pokemon.nombre);
-			free(catch);
-			free(stream_catch);
+			pthread_create(&respuesta_solicitud, NULL, (void*) &funcion_catch_pokemon, stream_catch);
+			pthread_detach(respuesta_solicitud);
 
 			break;
 
 		case GET_POKEMON:
 			;
 			t_Get* get = NULL;
-			get = deserializar_paquete_get (&socket_cliente);
-			enviar_ACK(0, socket_cliente);
+			get = deserializar_paquete_get (&socket);
+			enviar_ACK(0, socket);
 			log_info(logger_GC, "ID de Mensaje recibido: %d", id_mensaje);
 
 			void* stream_get = malloc(sizeof(t_Get*) + sizeof(id_mensaje));
@@ -262,16 +241,14 @@ void responder_mensaje(void* stream) {
 
 			log_debug(logger_GC, "Get %s", get->pokemon.nombre);
 
-			funcion_get_pokemon (stream_get);
-
-			free(get->pokemon.nombre);
-			free(get);
-			free(stream_get);
+			pthread_create(&respuesta_solicitud, NULL, (void*) &funcion_get_pokemon, stream_get);
+			pthread_detach(respuesta_solicitud);
 
 			break;
 
 		default:
 			log_error (logger_GC, "Codigo de operacion recibido incorrecto.");
+			enviar_ACK(0, socket);
 			break;
 	}
 }
@@ -282,10 +259,6 @@ void hilo_suscriptor(op_code* code){
 	int32_t id_mensaje=0;
 	int32_t socket_broker = crear_conexion(ip_broker,puerto_broker);
 	bool fin = false;
-
-	pthread_t nuevo_hilo;
-
-	void* stream;
 
 	while(1){
 		if(socket_broker != 0){
@@ -308,14 +281,9 @@ void hilo_suscriptor(op_code* code){
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 									//log_info(logger_GC, "ID de Mensaje: %d", id_mensaje);
 
-									stream = malloc(3 * sizeof(int32_t));
-									memcpy(stream, &socket_broker, sizeof(int32_t));
-									memcpy(stream + sizeof(int32_t), &operacion, sizeof(int32_t));
-									memcpy(stream + 2 * sizeof(int32_t), &id_mensaje, sizeof(int32_t));
+									log_debug(logger_GC, "Valor del codigo despues del recv: %d", operacion);
 
-									pthread_create(&nuevo_hilo, NULL, (void*) &responder_mensaje, stream);
-									pthread_detach(nuevo_hilo);
-									sleep(1);
+									responder_mensaje (socket_broker, operacion, id_mensaje);
 
 									} else {
 										log_info(logger_GC, "Se cayo la conexion");
