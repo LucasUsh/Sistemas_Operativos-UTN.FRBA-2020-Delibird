@@ -44,8 +44,6 @@ char* puerto_broker = NULL;
 t_dictionary* semaforos = NULL;
 
 //Datos globales:
-pthread_t hilo_global_cliente_GC;
-
 t_bitarray mapa_de_bloques;
 
 sem_t diccionario;
@@ -65,7 +63,7 @@ int32_t id_proceso = 0;
 void instalar_filesystem();
 void recuperar_datos();
 void crear_servidor_GC();
-void responder_mensaje(int32_t socket_cliente, op_code codigo_operacion, int32_t id_mensaje);
+void responder_mensaje(void* stream);
 void conexionBroker(int32_t *socket);
 void hilo_suscriptor(op_code* code);
 void suscribirse_broker();
