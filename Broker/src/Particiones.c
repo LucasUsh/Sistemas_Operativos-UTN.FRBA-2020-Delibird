@@ -395,7 +395,6 @@ void generarParticionBS(t_particion* particionInicial){
 	list_remove_and_destroy_element(tabla_particiones, posicion, free);
 	list_add_in_index(tabla_particiones,posicion, particionDerecha);
 	list_add_in_index(tabla_particiones,posicion, particionIzquierda);
-	free(particionInicial);
 }
 
 // En Buddy System una particion es candidata si su tamaño es el de la menor potencia de dos
