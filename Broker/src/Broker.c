@@ -455,6 +455,11 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	t_Localized * loc;
 	t_Catch * catch;
 	t_Caught * caught;
+	char* x;
+	char* y;
+	char* cant;
+	char* id;
+	char* atrapado;
 
 	if(esCorrelativo(mensaje->id_mensaje_correlativo)){
 		id_mensaje = mensaje->id_mensaje_correlativo;
@@ -463,21 +468,37 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 	switch(operacion){
 	case SUSCRIPCION_NEW:
 		new = mensaje->mensaje;
-		enviar_new_pokemon(new->pokemon.nombre,string_itoa(new->posicion.X),string_itoa(new->posicion.Y),string_itoa(new->cant),string_itoa(id_mensaje), socket_cliente);
+		x = string_itoa(new->posicion.X);
+		y = string_itoa(new->posicion.Y);
+		cant = string_itoa(new->cant);
+		id = string_itoa(id_mensaje);
+		enviar_new_pokemon(new->pokemon.nombre,x,y,cant,id, socket_cliente);
 		log_info(logger, "Se envio un mensaje NEW_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		free(x);
+		free(y);
+		free(cant);
+		free(id);
 		break;
 	case SUSCRIPCION_APPEARED:
 		app = mensaje->mensaje;
-		enviar_appeared_pokemon(app->pokemon.nombre, string_itoa(app->posicion.X), string_itoa(app->posicion.Y), string_itoa(id_mensaje), socket_cliente);
+		x = string_itoa(app->posicion.X);
+		y = string_itoa(app->posicion.Y);
+		id = string_itoa(id_mensaje);
+		enviar_appeared_pokemon(app->pokemon.nombre, x, y, id, socket_cliente);
 		log_info(logger, "Se envio un mensaje APPEARED_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		free(x);
+		free(y);
+		free(id);
 		break;
 	case SUSCRIPCION_GET:
 		get = mensaje->mensaje;
-		enviar_get_pokemon(get->pokemon.nombre,string_itoa(id_mensaje), socket_cliente);
+		id = string_itoa(id_mensaje);
+		enviar_get_pokemon(get->pokemon.nombre,id, socket_cliente);
 		log_info(logger, "Se envio un mensaje GET_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		free(id);
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		loc = mensaje->mensaje;
@@ -487,15 +508,25 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		break;
 	case SUSCRIPCION_CATCH:
 		catch = mensaje->mensaje;
-		enviar_catch_pokemon(catch->pokemon.nombre, string_itoa(catch->posicion.X), string_itoa(catch->posicion.Y), string_itoa(id_mensaje), socket_cliente);
+		x = string_itoa(catch->posicion.X);
+		y = string_itoa(catch->posicion.Y);
+		id = string_itoa(id_mensaje);
+		enviar_catch_pokemon(catch->pokemon.nombre, x, y, id, socket_cliente);
 		log_info(logger, "Se envio un mensaje CATCH_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		free(x);
+		free(y);
+		free(id);
 		break;
 	case SUSCRIPCION_CAUGHT:
 		caught = mensaje->mensaje;
-		enviar_caught_pokemon(string_itoa(id_mensaje), string_itoa(caught->fueAtrapado), socket_cliente);
+		id = string_itoa(id_mensaje);
+		atrapado = string_itoa(caught->fueAtrapado);
+		enviar_caught_pokemon(id, atrapado, socket_cliente);
 		log_info(logger, "Se envio un mensaje CAUGHT_POKEMON con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
+		free(id);
+		free(atrapado);
 		break;
 	default:
 		break;
