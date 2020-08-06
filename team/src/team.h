@@ -15,6 +15,7 @@
 #include <commons/collections/list.h>
 #include "../../OurLibraries/Sockets/sockets.h"
 #include "../../OurLibraries/UniversoPokemon/universo.h"
+#include "../../OurLibraries/Sockets/mensajes.h"
 #include <pthread.h>
 #include <math.h>
 #include <time.h>

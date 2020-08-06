@@ -1496,7 +1496,7 @@ void hilo_recibidor_mensajes_gameboy(){
 					if(respuesta_catch != NULL){
 
 						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-						args->mensaje = mensaje_localized;
+						args->mensaje = mensaje_caught;
 						args->respuesta = respuesta_catch;
 
 						pthread_t p_generador_mensajes_caught;
