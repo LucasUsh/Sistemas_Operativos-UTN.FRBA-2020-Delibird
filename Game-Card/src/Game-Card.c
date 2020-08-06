@@ -310,6 +310,7 @@ void hilo_suscriptor(op_code* code){
 		} else {
 			log_info(logger_GC, "Reintentando conexion cola...");
 			socket_broker = reconectar(socket_broker);
+			fin = false;
 		}
 	}
 }
