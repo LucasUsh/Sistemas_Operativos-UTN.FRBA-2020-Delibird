@@ -189,5 +189,7 @@ void liberar_elementos_lista_deadlock(t_list* lista){
 }
 
 
-
+void list_eliminar_repetidos(t_list* list){
+	//list_remove_by_condition(list, bool(*condition)(void*));
+}
 

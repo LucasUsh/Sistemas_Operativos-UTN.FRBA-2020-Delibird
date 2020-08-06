@@ -163,7 +163,7 @@ void enviar_localized_pokemon (t_pokemon* pokemon, t_list* lista_de_posiciones, 
 	localized.pokemon = *pokemon;
 	localized.listaPosiciones = lista_de_posiciones;
 
-	paquete->buffer->size = tamanio_localized (&localized);
+	paquete->buffer->size = tamanio_localized(&localized);
 	paquete->buffer->id_Mensaje = id_mensaje;
 	paquete->buffer->stream = &localized;
 

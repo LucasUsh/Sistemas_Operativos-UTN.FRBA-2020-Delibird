@@ -6,6 +6,12 @@
  */
 
 #include "sockets.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/time.h>
+
+struct sockaddr_in  direccionServidor;
 
 /****************************************************************************/
 /**********************************CONEXION**********************************/
@@ -69,6 +75,25 @@ int32_t crear_socket_escucha(char *ip_servidor, char* puerto_servidor){
     freeaddrinfo(servinfo);
 
     return socket_servidor;
+}
+
+int crear_servidor(int puerto){
+    /*== creamos el socket ==*/
+    direccionServidor.sin_family = AF_INET;
+    direccionServidor.sin_addr.s_addr = INADDR_ANY;
+    direccionServidor.sin_port = htons(puerto);
+    int _servidor = socket(AF_INET,SOCK_STREAM,0);
+    /*== socket reusable multiples conexiones==*/
+    uint32_t flag = 1;
+    setsockopt(_servidor, SOL_SOCKET,SO_REUSEPORT,&flag,sizeof(flag));
+    /*== inicializamos el socket ==*/
+    if(bind(_servidor, (void*) &direccionServidor, sizeof(direccionServidor)) != 0){
+        perror("Fallo el binde0 del servidor");
+        return 1;
+    }
+
+    listen(_servidor,SOMAXCONN);
+    return _servidor;
 }
 
 int32_t recibir_cliente(int32_t socket_servidor){
