@@ -49,5 +49,10 @@ t_pokemon_team* pokemon_que_sirve(t_entrenador* e1, t_entrenador* e2);
 t_pokemon_team* remove_pokemon_by_nombre(char* nombre_pokemon, t_list* pokemones);
 t_pokemon_team* pokemon_para_intercambio(t_entrenador* entrenador, t_pokemon_team* pokemon);
 int32_t reconectar(int32_t socket);
+t_list* sumarizar_pokemones(t_list* pokemones_sin_sumarizar);
+t_pokemon_team* get_pokemon(char* pokemon_name);
+t_list* get_pokemones(t_config* config, int32_t index);
+bool puede_capturar_pokemones(t_entrenador* entrenador);
+t_pokemon_team* pokemon_que_sirve_intercambio(t_entrenador* e1, t_entrenador* e2);
 
 #endif /* UTILS_H_ */

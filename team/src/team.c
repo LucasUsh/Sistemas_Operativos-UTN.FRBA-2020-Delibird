@@ -377,9 +377,9 @@ void detectar_deadlocks(){
 	deadlock_actual = malloc(sizeof(t_deadlock));
 	deadlock_actual->procesos_involucrados = list_create();
 
-	bool espera_circular = false;
-
 	void recorrer_fila_DL(int fila){
+
+		bool espera_circular = false;
 
 		for(int j = 0; j < entrenadores->elements_count; j++){
 			log_debug(logger, "recorriendo fila %d, columna %d", fila, j);
