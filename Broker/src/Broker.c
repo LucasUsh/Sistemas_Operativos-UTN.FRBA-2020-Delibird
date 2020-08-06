@@ -784,6 +784,7 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	info_mensaje * mensaje;
 	t_particion * mensajeCacheado;
 	t_list* mensajesAEnviar = NULL;
+	t_list* mensajesCacheados = NULL;
 	op_code tipoMensajeABuscar;
 	switch(operacion){
 	case SUSCRIPCION_NEW:
@@ -808,13 +809,13 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 		break;
 	}
 	pthread_mutex_lock(&mutex_guardar_en_memoria);
-	t_list* mensajesCacheados = getMensajesCacheadosDeOperacion(tipoMensajeABuscar); // mensajesCacheadoes es una lista de t_particion
+	mensajesCacheados = getMensajesCacheadosDeOperacion(tipoMensajeABuscar); // mensajesCacheadoes es una lista de t_particion
 
+	mensajesAEnviar=list_create();
 	for(int i=0; i<mensajesCacheados->elements_count; i++){
 		mensajeCacheado = list_get(mensajesCacheados, i);
 		if(!recibioMensaje(id_proceso, mensajeCacheado->id_mensaje)){
 			mensaje = obtenerMensaje(mensajeCacheado->id_mensaje);
-			mensajesAEnviar=list_create();
 			list_add(mensajesAEnviar, mensaje);
 		}
 	}
