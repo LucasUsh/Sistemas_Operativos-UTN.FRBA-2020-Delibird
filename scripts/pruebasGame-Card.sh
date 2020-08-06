@@ -1,5 +1,5 @@
 MONTAJE=/home/utnso/Escritorio/TallGrass
-FILES=/home/utnso/Escritorio/TallGrass/Files
+FILES=/home/utnso/workspace/TallGrass/Files
 
 if [ -d "$MONTAJE" ]; then
 	for Pokemon in "$FILES"/*
