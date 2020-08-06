@@ -628,9 +628,9 @@ int32_t getSizeMensajeLocalized(t_Localized msgLocalized){
 
 	int32_t sizeMsg = 0;
 	sizeMsg += getSizePokemon(msgLocalized.pokemon) + sizeof(typeof(msgLocalized.listaPosiciones->elements_count));
-	if(msgLocalized.listaPosiciones->head == 0){
-		sizeMsg += sizeof(msgLocalized.listaPosiciones->head);
-	}else sizeMsg += sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
+	if(msgLocalized.listaPosiciones->elements_count != 0){
+		sizeMsg += sizeof(typeof(t_posicion)) * msgLocalized.listaPosiciones->elements_count;
+	}
 
 	return sizeMsg;
 }

@@ -1727,12 +1727,6 @@ void hilo_suscriptor_localized(op_code* code){
 									mensaje_localized = deserializar_paquete_localized(&socket_broker);
 									enviar_ACK(0, socket_broker);
 
-									/*int32_t algo1;
-									int32_t algo2;
-									int32_t algo3;
-									recv(socket_broker,&algo1, sizeof(int32_t), MSG_WAITALL);
-									recv(socket_broker, &algo2, sizeof(int32_t), MSG_WAITALL);
-									recv(socket_broker, &algo3, sizeof(int32_t), MSG_WAITALL);*/
 									log_info(logger, "ID de Mensaje LOCALIZED recibido: %d", id_mensaje);
 
 
@@ -1744,18 +1738,18 @@ void hilo_suscriptor_localized(op_code* code){
 										printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
 									}
 
-									/*t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
+									t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
 									if(respuesta_get != NULL){
 										args->mensaje = mensaje_localized;
 										args->respuesta = respuesta_get;
-//
-//												 pthread_t p_generador_mensajes_localized;
-//												 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
-//												 pthread_detach(p_generador_mensajes);
+
+										pthread_t p_generador_mensajes_localized;
+										pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+										pthread_detach(p_generador_mensajes_localized);
 									} else {
 										log_debug(logger, "no es respuesta, lo voy a rechazar");
-									}*/
+									}
 
 									free(args);
 								} else {
@@ -1917,7 +1911,7 @@ int32_t main(int32_t argc, char** argv){
 
     objetivo_global = get_objetivo_global(entrenadores);
 
-	//generar_y_enviar_get();
+	generar_y_enviar_get();
 
 
     pthread_t p_suscribirse_appeared;

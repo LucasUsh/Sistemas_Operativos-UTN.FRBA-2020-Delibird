@@ -37,9 +37,9 @@ int32_t tamanio_localized (t_Localized* localized){
 
 	tamanio += tamanio_pokemon (&(localized->pokemon));
 	tamanio += sizeof(localized->listaPosiciones->elements_count);
-	if(localized->listaPosiciones->elements_count == 0){
-		tamanio += sizeof(localized->listaPosiciones->head);
-	}else tamanio += sizeof(t_posicion) * localized->listaPosiciones->elements_count;
+	if(localized->listaPosiciones->elements_count != 0){
+		tamanio += sizeof(t_posicion) * localized->listaPosiciones->elements_count;
+	}
 
 	return tamanio;
 }
