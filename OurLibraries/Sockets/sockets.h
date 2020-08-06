@@ -82,6 +82,7 @@ void* serializar_paquete_suscripcion(t_paquete* paquete, int32_t* bytes);
 
 void enviar_ACK(int32_t id_mensaje, int32_t socket_cliente);
 void * serializar_ACK(t_paquete* paquete, int32_t* bytes);
+int crear_servidor(int puerto);
 
 
 #endif /* SOCKETS_H_ */

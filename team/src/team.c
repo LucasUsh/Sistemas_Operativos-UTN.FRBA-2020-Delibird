@@ -1553,7 +1553,6 @@ void hilo_suscriptor_appeared(op_code *code){
 									log_debug(logger, "id mensaje appeared recibido %d", id_mensaje);
 									log_debug(logger, "operacion %d", operacion);
 
-									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
 									if(operacion == APPEARED_POKEMON){
 										t_Appeared* mensaje_appeared = NULL;
@@ -1561,6 +1560,7 @@ void hilo_suscriptor_appeared(op_code *code){
 										enviar_ACK(0, socket_broker);
 										log_info(logger, "ID de Mensaje APPEARED recibido: %d", id_mensaje);
 
+										t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 										args->mensaje = mensaje_appeared;
 										args->respuesta = NULL;
 
@@ -1569,7 +1569,6 @@ void hilo_suscriptor_appeared(op_code *code){
 										pthread_join(p_generador_mensajes_appeared,NULL);
 									} else printf("Mandaron algo que no era un Appeared \n");
 
-									free(args);
 
 								} else {
 									log_info(logger, "Se cayo la conexion");
@@ -1634,7 +1633,6 @@ void hilo_suscriptor_caught(op_code* code){
 									log_debug(logger, "id mensaje caught recibido %d", id_mensaje);
 									log_debug(logger, "operacion %d", operacion);
 
-									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
 									if(operacion == CAUGHT_POKEMON){
 										t_Caught* mensaje_caught = NULL;
@@ -1659,7 +1657,6 @@ void hilo_suscriptor_caught(op_code* code){
 										}
 									}else printf("Mandaron algo que no era un caught \n");
 
-									free(args);
 								} else {
 									log_info(logger, "Se cayo la conexion");
 									liberar_conexion(socket_broker);//logica reconectar
@@ -1720,7 +1717,6 @@ void hilo_suscriptor_localized(op_code* code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
 									t_Localized* mensaje_localized = NULL;
 
@@ -1741,6 +1737,7 @@ void hilo_suscriptor_localized(op_code* code){
 									t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
 									if(respuesta_get != NULL){
+										t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 										args->mensaje = mensaje_localized;
 										args->respuesta = respuesta_get;
 
@@ -1750,8 +1747,6 @@ void hilo_suscriptor_localized(op_code* code){
 									} else {
 										log_debug(logger, "no es respuesta, lo voy a rechazar");
 									}
-
-									free(args);
 								} else {
 									log_info(logger, "Se cayo la conexion");
 									liberar_conexion(socket_broker);//logica reconectar

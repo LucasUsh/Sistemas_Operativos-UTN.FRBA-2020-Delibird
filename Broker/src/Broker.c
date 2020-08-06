@@ -25,7 +25,7 @@ int32_t main(void) {
 
 	signal(SIGUSR1, rutina);
 
-	int32_t socketEscucha = crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
+	int32_t socketEscucha = crear_servidor(atoi(PUERTO_BROKER));//crear_socket_escucha(IP_BROKER, PUERTO_BROKER);
 	log_info(logger, "Creado socket de escucha");
 
 	while(socketEscucha != -1){
@@ -481,11 +481,7 @@ void enviarMensaje(op_code operacion, info_mensaje * mensaje, int32_t socket_cli
 		break;
 	case SUSCRIPCION_LOCALIZED:
 		loc = mensaje->mensaje;
-		if(loc->listaPosiciones->elements_count == 0){
-			t_list * listaNull = list_create();
-			enviar_localized_pokemon(&(loc->pokemon), listaNull, id_mensaje, socket_cliente);
-			list_destroy(listaNull);
-		}else enviar_localized_pokemon(&(loc->pokemon), loc->listaPosiciones, id_mensaje, socket_cliente);
+		enviar_localized_pokemon(&(loc->pokemon), loc->listaPosiciones, id_mensaje, socket_cliente);
 		log_info(logger, "Se envio un mensaje LOCALIZED con id: %d al proceso %d", id_mensaje, id_proceso);
 		if(algReemplazo==LRU) actualizarID(mensaje->id_mensaje);
 		break;
