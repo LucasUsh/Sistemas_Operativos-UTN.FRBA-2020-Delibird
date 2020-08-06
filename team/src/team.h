@@ -109,7 +109,7 @@ void hilo_suscriptor_caught(op_code *code);
 void hilo_suscriptor_localized(op_code *code);
 
 void recibidor_mensajes_appeared(t_Appeared* args);
-
+bool estan_unidos(t_entrenador* nodo_actual, t_entrenador* nodo_siguiente);
 //void recorrer_fila_DL(int fila, int** matriz);
 
 #endif /* TEAM_H_ */

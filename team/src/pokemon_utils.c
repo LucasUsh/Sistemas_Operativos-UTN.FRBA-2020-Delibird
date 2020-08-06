@@ -189,7 +189,30 @@ void liberar_elementos_lista_deadlock(t_list* lista){
 }
 
 
-void list_eliminar_repetidos(t_list* list){
-	//list_remove_by_condition(list, bool(*condition)(void*));
+bool int_in_list(int elem, t_list* list){
+
+	for(int i = 0; i < list->elements_count; i++){
+		int* e = list_get(list, i);
+
+		if(elem == *e) return true;
+
+	}
+
+	return false;
+}
+
+t_list* list_eliminar_int_repetidos(t_list* list){
+	t_list* new_list = list_create();
+
+	for(int i = 0; i < list->elements_count; i++){
+		int* elem = list_get(list, i);
+
+		if(!int_in_list(*elem, new_list)){
+			list_add(new_list, elem);
+		}
+
+	}
+
+	return new_list;
 }
 
