@@ -192,10 +192,10 @@ void resolver_deadlock(t_deadlock* deadlock){
 	pthread_mutex_unlock(&mutex_cola_ready);
 
 
-	free(e1);
-	free(e2);
-	entrenador_destroyer((void*)entrenadorDL1);
-	entrenador_destroyer((void*)entrenadorDL2);
+//	free(e1);
+//	free(e2);
+//	entrenador_destroyer((void*)entrenadorDL1);
+//	entrenador_destroyer((void*)entrenadorDL2);
 
 	sem_post(&s_cola_ready_con_items);
 
@@ -275,6 +275,8 @@ bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
 			int* proceso_involucrado = list_get(deadlock->procesos_involucrados, j);
 			int* proceso_dl_involucrado = list_get(dl->procesos_involucrados, j);
 
+			log_debug(logger, "%d ==? %d", *proceso_involucrado, *proceso_dl_involucrado);
+
 			if((*proceso_involucrado) == (*proceso_dl_involucrado)){
 				if(j == deadlock->procesos_involucrados->elements_count - 1){
 					return true;
@@ -290,36 +292,7 @@ bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
 
 }
 
-//void recorrer_fila_DL(int fila, int** matriz){
-//
-//	if(intentos < entrenadores->elements_count){
-//		log_debug(logger, "no hay deadlock");
-//	};
-//
-//	for(int i = fila; i < entrenadores->elements_count; i++){
-//		for(int j = 0; j < entrenadores->elements_count; j++){
-//			if(i==j)continue;
-//			if(matriz[i][j]){
-//				intentos++;
-//				int* p = malloc(sizeof(int));
-//				*p = i;
-//
-//				list_add(deadlock_actual->procesos_involucrados, p);
-//
-//				DL_nodo_final = j;
-//				if(DL_nodo_final == DL_nodo_inicial){
-//
-//					printf("hay deadlock");
-//
-//				} else {
-//					recorrer_fila_DL(j, matriz);
-//				}
-//
-//			}
-//
-//		}
-//	}
-//}
+
 
 void detectar_deadlocks(){
 	bool puede_haber_deadlock =false;
@@ -390,34 +363,113 @@ void detectar_deadlocks(){
 		}
 	}
 
-//	for(int i = 0; i < filas; i++){
-//		for(int j = 0; j < columnas; j++){
-//			printf("%d ", matriz[i][j]);
-//		}
-//		 printf("\n");
-//	}
-//
-//
-//
-//
-
+	for(int i = 0; i < filas; i++){
+		for(int j = 0; j < columnas; j++){
+			printf("%d ", matriz[i][j]);
+		}
+		 printf("\n");
+	}
 
 
 	t_list* deadlocks_detectados = list_create();
 
 
 	deadlock_actual = malloc(sizeof(t_deadlock));
+	deadlock_actual->procesos_involucrados = list_create();
+
+	bool espera_circular = false;
+
+	void recorrer_fila_DL(int fila){
+
+		for(int j = 0; j < entrenadores->elements_count; j++){
+			log_debug(logger, "recorriendo fila %d, columna %d", fila, j);
+			if(fila==j)continue;
+			if(matriz[fila][j]){
+				log_debug(logger, "encontré un 1!");
+				intentos++;
+				int* p = malloc(sizeof(int));
+				*p = fila;
+
+				printf("%d participa del deadlock!\n", *p);
+				list_add(deadlock_actual->procesos_involucrados, p);
+
+				DL_nodo_final = j;
+
+				printf("nodo inicial %d\n", DL_nodo_inicial);
+				printf("nodo final %d\n", DL_nodo_final);
+				printf("cantidad de intentos: %d\n", intentos);
+
+				if(DL_nodo_final == DL_nodo_inicial){
+
+					int* p2 = malloc(sizeof(int));
+					*p2 = j;
+
+					list_add(deadlock_actual->procesos_involucrados, p2);
+
+
+					log_debug(logger, "hay espera circular");
+					espera_circular = true;
+					intentos=0;
+
+					t_deadlock* deadlock_encontrado = malloc(sizeof(t_deadlock));
+					deadlock_encontrado->procesos_involucrados = list_create();
+					*deadlock_encontrado->procesos_involucrados = *deadlock_actual->procesos_involucrados;
+
+					printf("-------------------\nDEADLOCK ENCONTRADO: \n");
+					for(int x = 0; x < deadlock_encontrado->procesos_involucrados->elements_count; x++){
+						int* pi = list_get(deadlock_encontrado->procesos_involucrados, x);
+						printf("proceso involucrado: %d\n", *pi);
+
+					}
+
+					list_add(deadlocks_detectados, deadlock_encontrado);
+					list_clean(deadlock_actual->procesos_involucrados);
+
+					printf("-------------------\nDEADLOCK ENCONTRADO: \n");
+					for(int x = 0; x < deadlock_encontrado->procesos_involucrados->elements_count; x++){
+						int* pi = list_get(deadlock_encontrado->procesos_involucrados, x);
+						printf("proceso involucrado: %d\n", *pi);
+
+					}
+					printf("-------------------\n");
+
+					return;
+
+				} else if (intentos < entrenadores_DL->elements_count){
+					recorrer_fila_DL(j);
+					return;
+				} else {
+					log_debug(logger, "no hay espera circular");
+					espera_circular = false;
+					return;
+				}
+
+			}
+
+		}
+
+	}
 
 
 //
-//	for(int i = 0; i < filas; i++){
-//		log_debug(logger, "verificando DL");
-//		for(int j = 0; j < columnas; j++){
-//			recorrer_fila_DL(i, matriz);
-//		}
+//
+//for(int i = 0; i < filas; i++){
+//	log_debug(logger, "verificando DL");
+//	DL_nodo_inicial = i;
+//	sleep(5);
+//	recorrer_fila_DL(i);
+//}
+//
+//for(int i = 0; deadlocks_detectados->elements_count;i++){
+//	printf("deadlocks detectados:\n");
+//	t_deadlock* dl = list_get(deadlocks_detectados, i);
+//
+//	for(int j = 0; j < dl->procesos_involucrados->elements_count;j++){
+//		int* proceso_involucrado = list_get(dl->procesos_involucrados, j);
+//		printf(" * proceso involucrado: %d\n", *proceso_involucrado);
+//
 //	}
-//
-
+//}
 
 
 
@@ -499,9 +551,14 @@ void detectar_deadlocks(){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
 
 
+		log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
 		if(!deadlock_ya_detectado(total_deadlocks, dl)){
-			list_add(total_deadlocks, dl);
+			t_deadlock* deadl = malloc(sizeof(t_deadlock));
+			deadl->procesos_involucrados = list_create();
+			deadl->procesos_involucrados = dl->procesos_involucrados;
+			list_add(total_deadlocks, deadl);
 		}
+		log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
 
 		char* log_deadlock = string_new();
 
@@ -515,9 +572,9 @@ void detectar_deadlocks(){
 
 		string_append(&log_deadlock, "\n");
 
-		log_info(logger, log_deadlock);
+		log_debug(logger, log_deadlock);
 
-		free(log_deadlock);
+		//free(log_deadlock);
 	}
 	//show_entrenadores();
 
@@ -573,16 +630,18 @@ void ejecuta(t_entrenador* entrenador){
 
 void replanificar_entrenador(t_entrenador* entrenador){
 	printf("VOY A REPLANIFICAR AL ENTRENADOR %d\n", entrenador->id);
+
 	if(entrenador->pokemon_destino == NULL){
 		entrenador->pokemon_destino = get_pokemon_necesario_mas_cercano(pokemones_ubicados, entrenador->posicion);
-		entrenador->pokemon_destino->planificable=false;
 	}
 
 	if(entrenador->pokemon_destino == NULL){
 		printf("No hay pokemones ubicados, me bloqueo\n");
+		//show_estado();
 
 	} else {
 		printf("SU NUEVO POKEMON ES: %s\n", entrenador->pokemon_destino->nombre);
+		entrenador->pokemon_destino->planificable = false;
 		entrenador->estado = READY;
 		pthread_mutex_lock(&mutex_cola_ready);
 		list_add(cola_ready, entrenador);
@@ -795,10 +854,12 @@ void hilo_replanificar(){
 			t_entrenador* entrenador = list_get(entrenadores, i);
 			//pthread_mutex_unlock(&mutex_list_entrenadores);
 			if(puede_capturar_pokemones(entrenador) && entrenador->estado == BLOCKED && !entrenador->ocupado && entrenador->pokemon_destino == NULL){
-				entrenador_destroyer(replanificar);
+				log_debug(logger, "entrenador a replanificar %d", entrenador->id);
+				//entrenador_destroyer(replanificar);
 				replanificar = entrenador;
 			}
 		}
+
 		replanificar_entrenador(replanificar);
 	}
 
@@ -861,6 +922,7 @@ void hilo_detectar_deadlock(){
 }
 
 void capturar(t_entrenador* entrenador){
+
 	if(!generar_y_enviar_catch(entrenador)){//esto quiere decir que no se pudo conectar al broker
 
 		list_add(entrenador->pokemones, entrenador->pokemon_destino);
@@ -871,7 +933,7 @@ void capturar(t_entrenador* entrenador){
 		printf("POKEMON CAPTURADO!\n");
 		entrenador->ocupado = false;
 
-		/*Esta logica tendría que estar dentro del while ? SI*/
+
 		if(!cumplio_objetivo(entrenador)){
 			printf("el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
 
@@ -885,8 +947,18 @@ void capturar(t_entrenador* entrenador){
 		}
 	} else {
 		printf("ESPERANDO A VER SI LO CAPTURÉ!\n");
-		//acá creo que iría otro sem_wait(entrenador->semaforo) hasta que lo desbloquee el recibidor de mensajes caught
-		// para ver si lo capturó o no y en base a eso repreguntar.
+		sem_wait(entrenador->semaforo);
+		if(!cumplio_objetivo(entrenador)){
+			printf("el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
+
+			if(puede_capturar_pokemones(entrenador)){
+				printf("el entrenador puede capturar mas pokemones, llamando al replanificador...\n");
+				sem_post(&s_replanificar);//replanificar_entrenador(entrenador);
+			} else {
+				printf("el entrenador no puede capturar mas pokemones, queda bloqueado hasta intercambiar\n");
+				sem_post(&s_detectar_deadlock);
+			}
+		}
 	}
 }
 
@@ -1221,12 +1293,13 @@ void recibidor_mensajes_localized(void* args){
 		printf("A WILD %s WAS LOCALIZED!!!!\n", mensaje->pokemon.nombre);
 		list_add(pokemones_recibidos, mensaje->pokemon.nombre);
 
-
 		//tengo que planificar tantas posiciones como pokemon necesite.
 		//Ej, si me llegan 3 posiciones y necesito 2, solo planifico 2 pero las otras las guardo en memoria
 		//Si necesito 2 posiciones y llega 1, planifico 1.
 
 		int cantidad_pokemones_global = get_cantidad_by_nombre_pokemon(mensaje->pokemon.nombre, objetivo_global);
+		log_info(logger, "se recibio un mensaje con el pokemon %s y necesito %d",
+				mensaje->pokemon.nombre, cantidad_pokemones_global);
 
 		// me quedo con la menor de las cantidades
 		int cantidad_a_planificar = 0;
@@ -1235,6 +1308,8 @@ void recibidor_mensajes_localized(void* args){
 		} else {
 			cantidad_a_planificar = cantidad_pokemones_global;
 		}
+
+		log_debug(logger, "voy a ubicar %d pokemones %s", cantidad_a_planificar, mensaje->pokemon.nombre);
 
 		for(int i = 0; i < cantidad_a_planificar; i++){
 			t_posicion* posicion = list_get(mensaje->listaPosiciones, i);
@@ -1331,22 +1406,15 @@ void recibidor_mensajes_caught(void* args){
 		printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
 		list_add(entrenador->pokemones, entrenador->pokemon_destino);
 
-		if(cumplio_objetivo(entrenador)){
-			entrenador->estado = EXIT;
-		} else {
-			entrenador->estado = READY;
-			entrenador->ocupado = false;
-		}
 	} else {
 		printf("OH, NO! THE POKEMON %s BROKE FREE\n", entrenador->pokemon_destino->nombre);
-		entrenador->estado = READY;
-		entrenador->ocupado = false;
-		//cuando falla, tengo que ir a capturar otro pokemon de esa especie.
-		//mismo que antes, comparo entre todos los entrenadores disponibles y todas las posiciones de ese pokemon
-		//o voy por la primer posicion que encuentre?
+
 	}
 
-	entrenador->estado = BLOCKED;
+	entrenador->pokemon_destino = NULL;
+	entrenador->ocupado = false;
+	show_estado();
+	sem_post(entrenador->semaforo);
 
 	return;
 }
@@ -1433,7 +1501,7 @@ void hilo_recibidor_mensajes_gameboy(){
 
 						pthread_t p_generador_mensajes_caught;
 						pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
-
+						pthread_detach(p_generador_mensajes_caught);
 					}
 
 					break;
@@ -1481,7 +1549,7 @@ void hilo_suscriptor_appeared(op_code *code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-									log_debug(logger, "id mensaje recibido %d", id_mensaje);
+									log_debug(logger, "id mensaje appeared recibido %d", id_mensaje);
 									log_debug(logger, "operacion %d", operacion);
 
 									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
@@ -1501,6 +1569,7 @@ void hilo_suscriptor_appeared(op_code *code){
 									} else printf("Mandaron algo que no era un Appeared \n");
 
 									free(args);
+
 								} else {
 									log_info(logger, "Se cayo la conexion");
 									liberar_conexion(socket_broker);//logica reconectar
@@ -1561,7 +1630,7 @@ void hilo_suscriptor_caught(op_code* code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-									log_debug(logger, "id mensaje recibido %d", id_mensaje);
+									log_debug(logger, "id mensaje caught recibido %d", id_mensaje);
 									log_debug(logger, "operacion %d", operacion);
 
 									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
@@ -1572,12 +1641,21 @@ void hilo_suscriptor_caught(op_code* code){
 										enviar_ACK(0, socket_broker);
 										log_info(logger, "ID de Mensaje CAUGHT recibido: %d", id_mensaje);
 
-										args->mensaje = mensaje_caught;
-										args->respuesta = NULL;
+										t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
-										pthread_t p_generador_mensajes_caught;
-										pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
-										pthread_detach(p_generador_mensajes_caught);
+										//debería ser un hilo
+										if(respuesta_catch != NULL){
+
+											t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+											args->mensaje = mensaje_caught;
+											args->respuesta = respuesta_catch;
+
+											pthread_t p_generador_mensajes_caught;
+											pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
+											pthread_detach(p_generador_mensajes_caught);
+										} else {
+											printf("No me interesa, lo descarto\n");
+										}
 									}else printf("Mandaron algo que no era un caught \n");
 
 									free(args);
