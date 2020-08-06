@@ -275,7 +275,7 @@ bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
 			int* proceso_involucrado = list_get(deadlock->procesos_involucrados, j);
 			int* proceso_dl_involucrado = list_get(dl->procesos_involucrados, j);
 
-			log_debug(logger, "%d ==? %d", *proceso_involucrado, *proceso_dl_involucrado);
+			//log_debug(logger, "%d ==? %d", *proceso_involucrado, *proceso_dl_involucrado);
 
 			if((*proceso_involucrado) == (*proceso_dl_involucrado)){
 				if(j == deadlock->procesos_involucrados->elements_count - 1){
@@ -422,16 +422,18 @@ void detectar_deadlocks(){
 
 					}
 
-					list_add(deadlocks_detectados, deadlock_encontrado);
-					list_clean(deadlock_actual->procesos_involucrados);
+					//elimino repetidos y ordeno
+					list_eliminar_repetidos(deadlock_encontrado->procesos_involucrados);
+					list_sort(deadlock_encontrado->procesos_involucrados, ordenar_DL);
+					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock_encontrado))
+						list_add(deadlocks_detectados, deadlock_encontrado);
 
-					printf("-------------------\nDEADLOCK ENCONTRADO: \n");
-					for(int x = 0; x < deadlock_encontrado->procesos_involucrados->elements_count; x++){
-						int* pi = list_get(deadlock_encontrado->procesos_involucrados, x);
-						printf("proceso involucrado: %d\n", *pi);
 
-					}
-					printf("-------------------\n");
+
+					//list_clean(deadlock_actual->procesos_involucrados);
+					deadlock_actual->procesos_involucrados=list_create();
+
+
 
 					return;
 
@@ -453,12 +455,11 @@ void detectar_deadlocks(){
 
 //
 //
-//for(int i = 0; i < filas; i++){
-//	log_debug(logger, "verificando DL");
-//	DL_nodo_inicial = i;
-//	sleep(5);
-//	recorrer_fila_DL(i);
-//}
+for(int i = 0; i < filas; i++){
+	log_debug(logger, "verificando DL");
+	DL_nodo_inicial = i;
+	recorrer_fila_DL(i);
+}
 //
 //for(int i = 0; deadlocks_detectados->elements_count;i++){
 //	printf("deadlocks detectados:\n");
@@ -473,68 +474,68 @@ void detectar_deadlocks(){
 
 
 
-	for(int i = 0; i < filas; i++){
-		for(int j = 0; j < columnas; j++){
-			if(i==j) continue;
-			if(matriz[i][j]){
-
-				if(matriz[j][i]){
-					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
-					deadlock->procesos_involucrados = list_create();
-					int* p1 = malloc(sizeof(int));
-					int* p2 = malloc(sizeof(int));
-					*p1 = i;
-					*p2 = j;
-
-					list_add(deadlock->procesos_involucrados, p1);
-					list_add(deadlock->procesos_involucrados, p2);
-					list_sort(deadlock->procesos_involucrados, ordenar_DL);
-					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
-						list_add(deadlocks_detectados, deadlock);
-
-				} else { // hay que armar el caminito
-					//recorro la fila 'j' en busca de otro 1
-					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
-					deadlock->procesos_involucrados = list_create();
-
-					int* p1 = malloc(sizeof(int));
-					*p1 = i;
-
-					int* p2 = malloc(sizeof(int));
-					*p2 = j;
-
-					for(int x = 0; x < columnas; x++){
-						if(matriz[j][x]){
-							for(int y = 0; y < columnas; y++){
-								if(matriz[x][y]){
-									if(y==i){
-										int* p3 = malloc(sizeof(int));
-										*p3 = x;
-										list_add(deadlock->procesos_involucrados, p1);
-										list_add(deadlock->procesos_involucrados, p2);
-										list_add(deadlock->procesos_involucrados, p3);
-										list_sort(deadlock->procesos_involucrados, ordenar_DL);
-										break;
-									}
-
-								}
-							}
-							break;
-						}
-					}
-
-					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
-						list_add(deadlocks_detectados, deadlock);
-
-					break;
-				}
-			}
-		}
-	}
-
-
-
-
+//	for(int i = 0; i < filas; i++){
+//		for(int j = 0; j < columnas; j++){
+//			if(i==j) continue;
+//			if(matriz[i][j]){
+//
+//				if(matriz[j][i]){
+//					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
+//					deadlock->procesos_involucrados = list_create();
+//					int* p1 = malloc(sizeof(int));
+//					int* p2 = malloc(sizeof(int));
+//					*p1 = i;
+//					*p2 = j;
+//
+//					list_add(deadlock->procesos_involucrados, p1);
+//					list_add(deadlock->procesos_involucrados, p2);
+//					list_sort(deadlock->procesos_involucrados, ordenar_DL);
+//					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
+//						list_add(deadlocks_detectados, deadlock);
+//
+//				} else { // hay que armar el caminito
+//					//recorro la fila 'j' en busca de otro 1
+//					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
+//					deadlock->procesos_involucrados = list_create();
+//
+//					int* p1 = malloc(sizeof(int));
+//					*p1 = i;
+//
+//					int* p2 = malloc(sizeof(int));
+//					*p2 = j;
+//
+//					for(int x = 0; x < columnas; x++){
+//						if(matriz[j][x]){
+//							for(int y = 0; y < columnas; y++){
+//								if(matriz[x][y]){
+//									if(y==i){
+//										int* p3 = malloc(sizeof(int));
+//										*p3 = x;
+//										list_add(deadlock->procesos_involucrados, p1);
+//										list_add(deadlock->procesos_involucrados, p2);
+//										list_add(deadlock->procesos_involucrados, p3);
+//										list_sort(deadlock->procesos_involucrados, ordenar_DL);
+//										break;
+//									}
+//
+//								}
+//							}
+//							break;
+//						}
+//					}
+//
+//					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
+//						list_add(deadlocks_detectados, deadlock);
+//
+//					break;
+//				}
+//			}
+//		}
+//	}
+//
+//
+//
+//
 
 
 
@@ -551,14 +552,14 @@ void detectar_deadlocks(){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
 
 
-		log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
+		//log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
 		if(!deadlock_ya_detectado(total_deadlocks, dl)){
 			t_deadlock* deadl = malloc(sizeof(t_deadlock));
 			deadl->procesos_involucrados = list_create();
 			deadl->procesos_involucrados = dl->procesos_involucrados;
 			list_add(total_deadlocks, deadl);
 		}
-		log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
+		//log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
 
 		char* log_deadlock = string_new();
 
@@ -1062,7 +1063,7 @@ void intercambio(t_entrenador* entrenador){
 
 void capturar_pokemon(t_entrenador* entrenador){
 
-	printf("LLEGUÉ A DESTINO!! X: %d, Y: %d, \n", entrenador->posicion.X, entrenador->posicion.Y);
+	log_debug(logger, "EL ENTRENADOR %d LLEGÓ A DESTINO!! X: %d, Y: %d, \n",entrenador->id, entrenador->posicion.X, entrenador->posicion.Y);
 	entrenador->estado=BLOCKED;
 	entrenador->ocupado=true;
 	sem_post(&s_procesos_en_exec); // salgo de exec
@@ -1380,7 +1381,7 @@ void recibidor_mensajes_appeared(t_Appeared* args){
 			//pthread_mutex_unlock(&mutex_pokemones_ubicados);
 		}
 	} else {
-		log_debug(logger, "se recibió un appeared pero no me interesa!");
+		printf("se recibió un appeared pero no me interesa!");
 	}
 
 	free(mensaje);
@@ -1719,9 +1720,6 @@ void hilo_suscriptor_localized(op_code* code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-									log_debug(logger, "id mensaje recibido %d", id_mensaje);
-									log_debug(logger, "operacion %d", operacion);
-
 									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 
 									t_Localized* mensaje_localized = NULL;
@@ -1849,7 +1847,7 @@ void entrenador(void* index){
 	while(!cumplio_objetivo(entrenador)){
 
 		sem_wait(entrenador->semaforo); //READY, todavia no tengo ningun pokemon asignado
-		printf("soy el entrenador %d y estoy ejecutando\n", entrenador->id);
+		log_debug(logger, "soy el entrenador %d y estoy ejecutando\n", entrenador->id);
 		if(proceso_ejecutando != entrenador->id){
 			cambios_contexto++;
 			proceso_ejecutando = entrenador->id;
