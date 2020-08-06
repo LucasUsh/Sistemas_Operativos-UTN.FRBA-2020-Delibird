@@ -31,4 +31,5 @@ void liberar_elementos_lista_pokemon(t_list* lista);
 void liberar_elementos_lista_entrenador(t_list* lista);
 void liberar_elementos_lista_deadlock(t_list* lista);
 void entrenador_destroyer(void* elem);
+t_list* list_eliminar_int_repetidos(t_list* list);
 #endif /* POKEMON_UTILS_H_ */

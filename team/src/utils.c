@@ -488,12 +488,21 @@ bool appeared_valido(t_Appeared* mensaje, t_list* entrenadores, t_list* objetivo
 
 bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_list* pokemones_recibidos, t_list* objetivo_global){
 
-	//en realidad el filtro de id ya se hizo antes, lo dejo pa probar
-	t_respuesta* respuesta = get_respuesta(id, gets_enviados);
 	bool en_objetivo = esta_en_objetivos_globales(mensaje->pokemon.nombre, objetivo_global);
 	bool recibido = fue_recibido(mensaje->pokemon.nombre, pokemones_recibidos);
 
-	return (respuesta != NULL) && en_objetivo && !recibido;
+	if(en_objetivo){
+		log_debug(logger, "en objetivos");
+	} else {
+		log_debug(logger, "NO en objetivos");
+	}
+	if(recibido){
+		log_debug(logger, "recibido");
+	} else {
+		log_debug(logger, "NO recibido");
+	}
+
+	return en_objetivo && !recibido;
 }
 
 int32_t conexion_broker()
