@@ -16,10 +16,10 @@ int32_t cantidad_entrenadores = 0;
 int32_t socket_escucha_team;
 int RETARDO_CICLO_CPU = 0;
 
-int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por moverse
+int ciclos_totales = 0; //ciclos de intercambios + ciclos de cada entrenador por moverse + mensajes a broker
 int deadlocks_resueltos_totales = 0; // deadlocks resueltos
 int cambios_contexto = -1; //el primer proceso que se carga no cuenta como cambio de contexto
-int total_deadlock_resueltos;
+int total_deadlock_resueltos = 0;
 int proceso_ejecutando = -1;
 
 int DL_nodo_inicial = -1;
@@ -46,6 +46,7 @@ sem_t s_entrenador_exit;
 sem_t s_replanificar_sjfcd;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_ciclos_totales;
+pthread_mutex_t mutex_cambios_contexto;
 pthread_mutex_t mutex_deadlocks_totales;
 pthread_mutex_t mutex_deadlocks_resueltos_totales;
 
@@ -70,9 +71,9 @@ void show_estado(){
 
 
 	    for(int32_t i = 0; i < entrenadores->elements_count; i++){
-	    	//pthread_mutex_lock(&mutex_list_entrenadores);
+
 	    	t_entrenador* entrenador_actual = list_get(entrenadores, i);
-	    	//pthread_mutex_unlock(&mutex_list_entrenadores);
+
 	    	printf("|ENTRENADOR: %d\n|----------------\n|POSICION: (%d,%d)\n",
 	    			i,
 					entrenador_actual->posicion.X,
@@ -110,9 +111,9 @@ char* get_metricas_string(){
 	string_append(&metricas, "CANTIDAD DE CICLOS DE CPU POR ENTRENADOR:\n");
 
 	for(int i =0; i < entrenadores->elements_count; i++){
-		//pthread_mutex_lock(&mutex_list_entrenadores);
+
 		t_entrenador* entrenador = list_get(entrenadores, i);
-		//pthread_mutex_unlock(&mutex_list_entrenadores);
+
 		string_append_with_format(&metricas, " * ENTRENADOR %d: %d\n",entrenador->id, entrenador->ciclos);
 	}
 
@@ -132,9 +133,9 @@ void hilo_exit(){
 	printf("Todos los entrenadores cumplieron sus objetivos\n");
 
 	for(int i =0; i<entrenadores->elements_count;i++){
-		//pthread_mutex_lock(&mutex_list_entrenadores);
+
 		t_entrenador* e = list_get(entrenadores, i);
-		//pthread_mutex_unlock(&mutex_list_entrenadores);
+
 		ciclos_totales += e->ciclos;
 	}
 
@@ -208,12 +209,6 @@ void resolver_deadlock(t_deadlock* deadlock){
 	cambio_cola_ready = true;
 	pthread_mutex_unlock(&mutex_cola_ready);
 
-
-//	free(e1);
-//	free(e2);
-//	entrenador_destroyer((void*)entrenadorDL1);
-//	entrenador_destroyer((void*)entrenadorDL2);
-
 	sem_post(&s_cola_ready_con_items);
 
 	return;
@@ -240,9 +235,9 @@ bool esta_en_deadlock(void* entrenador){
 
 
 t_list* entrenadores_en_deadlock(){
-	//pthread_mutex_lock(&mutex_list_entrenadores);
+
 	t_list* en_DL = list_filter(entrenadores, esta_en_deadlock);
-	//pthread_mutex_unlock(&mutex_list_entrenadores);
+
 
 	t_list* entrenadores_en_DL = list_create();
 	for(int i = 0; i < en_DL->elements_count; i++){
@@ -263,13 +258,6 @@ bool estan_unidos(t_entrenador* nodo_actual, t_entrenador* nodo_siguiente){
 	//estan unidos si el nodo actual necesita algo que tiene el nodo_siguiente
 	//nodo_actual.objetivo tiene los objetivos pendientes de satisfacer
 	//nodo_siguiente.pokemones tiene los pokemones que tiene de mas
-//	for(int i = 0; i < nodo_actual->objetivo->elements_count; i++){
-//		t_pokemon_team* objetivo_actual = list_get(nodo_actual->objetivo, i);
-//
-//		int capturados_siguiente = get_cantidad_by_nombre_pokemon(objetivo_actual->nombre, nodo_siguiente->pokemones);
-//		if (capturados_siguiente > 0) return true;
-//
-//	}
 
 	if(pokemon_que_sirve(nodo_actual, nodo_siguiente) != NULL) return true;
 
@@ -291,8 +279,6 @@ bool deadlock_ya_detectado(t_list* deadlock_detectados, t_deadlock* deadlock){
 		for(int j=0; j < deadlock->procesos_involucrados->elements_count ; j++){
 			int* proceso_involucrado = list_get(deadlock->procesos_involucrados, j);
 			int* proceso_dl_involucrado = list_get(dl->procesos_involucrados, j);
-
-			//log_debug(logger, "%d ==? %d", *proceso_involucrado, *proceso_dl_involucrado);
 
 			if((*proceso_involucrado) == (*proceso_dl_involucrado)){
 				if(j == deadlock->procesos_involucrados->elements_count - 1){
@@ -316,9 +302,7 @@ void detectar_deadlocks(){
 
 
 	for(int i = 0; i< entrenadores->elements_count; i++){
-		//pthread_mutex_lock(&mutex_list_entrenadores);
 		t_entrenador* e = list_get(entrenadores,i);
-		//pthread_mutex_unlock(&mutex_list_entrenadores);
 		if(!esta_en_deadlock(e) && !(e->estado == EXIT)){
 			continue; // no hay deadlock
 		} else {
@@ -329,7 +313,6 @@ void detectar_deadlocks(){
 	if(!puede_haber_deadlock) return;
 
 	printf("puede haber deadlock, analizando...\n");
-	//show_entrenadores();
 
 	entrenadores_DL = entrenadores_en_deadlock();
 
@@ -366,7 +349,7 @@ void detectar_deadlocks(){
 
 
 	int matriz[filas][columnas];
-	//lleno la matriz
+
 	for(int i = 0; i < filas; i++){
 		t_entrenador* e1 = list_get(entrenadores_DL, i);
 
@@ -394,12 +377,12 @@ void detectar_deadlocks(){
 	deadlock_actual = malloc(sizeof(t_deadlock));
 	deadlock_actual->procesos_involucrados = list_create();
 
+	bool espera_circular = false;
 	void recorrer_fila_DL(int fila){
 
-		bool espera_circular = false;
 
 		for(int j = 0; j < entrenadores->elements_count; j++){
-			//log_debug(logger, "recorriendo fila %d, columna %d", fila, j);
+
 			if(fila==j)continue;
 			if(matriz[fila][j]){
 			//	log_debug(logger, "encontré un 1!");
@@ -407,14 +390,9 @@ void detectar_deadlocks(){
 				int* p = malloc(sizeof(int));
 				*p = fila;
 
-				//printf("%d participa del deadlock!\n", *p);
 				list_add(deadlock_actual->procesos_involucrados, p);
 
 				DL_nodo_final = j;
-//
-//				printf("nodo inicial %d\n", DL_nodo_inicial);
-//				printf("nodo final %d\n", DL_nodo_final);
-//				printf("cantidad de intentos: %d\n", intentos);
 
 				if(DL_nodo_final == DL_nodo_inicial){
 
@@ -440,15 +418,11 @@ void detectar_deadlocks(){
 					}
 					printf("\n");
 
-					//elimino repetidos y ordeno
 					list_sort(deadlock_encontrado->procesos_involucrados, ordenar_DL);
 					deadlock_encontrado->procesos_involucrados = list_eliminar_int_repetidos(deadlock_encontrado->procesos_involucrados);
 					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock_encontrado))
 						list_add(deadlocks_detectados, deadlock_encontrado);
 
-
-
-					//list_clean(deadlock_actual->procesos_involucrados);
 					deadlock_actual->procesos_involucrados=list_create();
 
 
@@ -471,113 +445,23 @@ void detectar_deadlocks(){
 	}
 
 
-//
-//
-for(int i = 0; i < filas; i++){
-	//log_debug(logger, "verificando DL");
-	DL_nodo_inicial = i;
-	recorrer_fila_DL(i);
-}
-//
-//for(int i = 0; deadlocks_detectados->elements_count;i++){
-//	printf("deadlocks detectados:\n");
-//	t_deadlock* dl = list_get(deadlocks_detectados, i);
-//
-//	for(int j = 0; j < dl->procesos_involucrados->elements_count;j++){
-//		int* proceso_involucrado = list_get(dl->procesos_involucrados, j);
-//		printf(" * proceso involucrado: %d\n", *proceso_involucrado);
-//
-//	}
-//}
 
+	for(int i = 0; i < filas; i++){
 
-
-//	for(int i = 0; i < filas; i++){
-//		for(int j = 0; j < columnas; j++){
-//			if(i==j) continue;
-//			if(matriz[i][j]){
-//
-//				if(matriz[j][i]){
-//					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
-//					deadlock->procesos_involucrados = list_create();
-//					int* p1 = malloc(sizeof(int));
-//					int* p2 = malloc(sizeof(int));
-//					*p1 = i;
-//					*p2 = j;
-//
-//					list_add(deadlock->procesos_involucrados, p1);
-//					list_add(deadlock->procesos_involucrados, p2);
-//					list_sort(deadlock->procesos_involucrados, ordenar_DL);
-//					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
-//						list_add(deadlocks_detectados, deadlock);
-//
-//				} else { // hay que armar el caminito
-//					//recorro la fila 'j' en busca de otro 1
-//					t_deadlock* deadlock = malloc(sizeof(t_deadlock));
-//					deadlock->procesos_involucrados = list_create();
-//
-//					int* p1 = malloc(sizeof(int));
-//					*p1 = i;
-//
-//					int* p2 = malloc(sizeof(int));
-//					*p2 = j;
-//
-//					for(int x = 0; x < columnas; x++){
-//						if(matriz[j][x]){
-//							for(int y = 0; y < columnas; y++){
-//								if(matriz[x][y]){
-//									if(y==i){
-//										int* p3 = malloc(sizeof(int));
-//										*p3 = x;
-//										list_add(deadlock->procesos_involucrados, p1);
-//										list_add(deadlock->procesos_involucrados, p2);
-//										list_add(deadlock->procesos_involucrados, p3);
-//										list_sort(deadlock->procesos_involucrados, ordenar_DL);
-//										break;
-//									}
-//
-//								}
-//							}
-//							break;
-//						}
-//					}
-//
-//					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock))
-//						list_add(deadlocks_detectados, deadlock);
-//
-//					break;
-//				}
-//			}
-//		}
-//	}
-//
-//
-//
-//
-
-
-
-
-
-
-
-
-
-
-
+		DL_nodo_inicial = i;
+		recorrer_fila_DL(i);
+	}
 
 	for(int m = 0; m < deadlocks_detectados->elements_count; m++){
 		t_deadlock* dl = list_get(deadlocks_detectados, m);
 
 
-		//log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
 		if(!deadlock_ya_detectado(total_deadlocks, dl)){
 			t_deadlock* deadl = malloc(sizeof(t_deadlock));
 			deadl->procesos_involucrados = list_create();
 			deadl->procesos_involucrados = dl->procesos_involucrados;
 			list_add(total_deadlocks, deadl);
 		}
-		//log_debug(logger, "deadlocks totales detectados: %d", total_deadlocks->elements_count);
 
 		char* log_deadlock = string_new();
 
@@ -593,10 +477,7 @@ for(int i = 0; i < filas; i++){
 
 		log_debug(logger, log_deadlock);
 
-		//free(log_deadlock);
 	}
-	//show_entrenadores();
-
 
 	resolver_deadlocks(deadlocks_detectados);
 
@@ -605,12 +486,6 @@ for(int i = 0; i < filas; i++){
 
 
 void ejecuta(t_entrenador* entrenador){
-
-//	entrenador->estado = EXEC;
-//	entrenador->ocupado= true;
-//	printf("soy el entrenador %d y voy a EXEC a capturar a: %s\n", entrenador->id, entrenador->pokemon_destino->nombre);
-//	printf("me voy a mover desde %d, %d\n", entrenador->posicion.X, entrenador->posicion.Y);
-//	printf("me voy a mover hasta %d, %d\n", entrenador->pokemon_destino->posicion.X, entrenador->pokemon_destino->posicion.Y);
 
 	int32_t posicion_final_X = entrenador->pokemon_destino->posicion.X - entrenador->posicion.X;
 	int32_t posicion_final_Y = entrenador->pokemon_destino->posicion.Y - entrenador->posicion.Y;
@@ -656,7 +531,6 @@ void replanificar_entrenador(t_entrenador* entrenador){
 
 	if(entrenador->pokemon_destino == NULL){
 		printf("No hay pokemones ubicados, me bloqueo\n");
-		//show_estado();
 
 	} else {
 		printf("SU NUEVO POKEMON ES: %s\n", entrenador->pokemon_destino->nombre);
@@ -1228,8 +1102,12 @@ void hilo_enviar_get(int i){
 
 	printf("hilo creado para enviar get...\n");
 
+
+	t_pokemon_team* pokemon = list_get(objetivo_global, i);
+
 	if(socket == 0){
 		log_error(logger,"Error al conectar al Broker para enviar GET...");
+		list_add(pokemones_recibidos, pokemon->nombre); // simulo que recibí un localized sin posiciones
 		return;
 	}
 
@@ -1238,7 +1116,7 @@ void hilo_enviar_get(int i){
 	int32_t operacion = 0;
 	int32_t id_mensaje = 0;
 	int32_t tamanio_estructura = 0;
-	t_pokemon_team* pokemon = list_get(objetivo_global, i);
+
 
 	enviar_handshake(PROCESS_ID, socket);
 
@@ -1262,7 +1140,7 @@ void hilo_enviar_get(int i){
 					ciclos_totales++;
 					pthread_mutex_unlock(&mutex_ciclos_totales);
 
-					wait(RETARDO_CICLO_CPU);
+					sleep(RETARDO_CICLO_CPU);
 //					log_debug(logger, "el id redicibo es: %d", id_mensaje);
 
 					t_respuesta* respuesta = malloc(sizeof(t_respuesta));
@@ -1394,16 +1272,13 @@ void recibidor_mensajes_localized(void* args){
 }
 
 void recibidor_mensajes_appeared(t_Appeared* args){
-	//t_args_mensajes* arg = (t_args_mensajes*)args;
 	t_Appeared* mensaje = NULL;
 	memcpy(&mensaje, args, sizeof(t_Appeared*));
 
 	if(appeared_valido(mensaje, entrenadores, objetivo_global)){
 		printf("A WILD %s APPEARED!!!!\n", mensaje->pokemon.nombre);
 
-		//pthread_mutex_lock(&mutex_pokemones_ubicados);
 		list_add(pokemones_recibidos, mensaje->pokemon.nombre);
-		//pthread_mutex_unlock(&mutex_pokemones_ubicados);
 
 		t_entrenador* entrenador_mas_cercano = get_entrenador_planificable_mas_cercano(entrenadores, mensaje->posicion);
 
@@ -1423,13 +1298,12 @@ void recibidor_mensajes_appeared(t_Appeared* args){
 
 			printf("el entrenador %d fue agregado a la cola READY\n", entrenador_mas_cercano->id);
 			sem_post(&s_cola_ready_con_items);
-			//sem_post(entrenador_mas_cercano->semaforo);
+
 		} else {
 			t_pokemon_team* pokemon_ubicado = get_pokemon_team(mensaje->pokemon.nombre, mensaje->posicion);
 			pokemon_ubicado->planificable = true;
-			//pthread_mutex_lock(&mutex_pokemones_ubicados);
 			list_add(pokemones_ubicados, pokemon_ubicado);
-			//pthread_mutex_unlock(&mutex_pokemones_ubicados);
+
 		}
 	} else {
 		printf("se recibió un appeared pero no me interesa!");
@@ -1853,12 +1727,11 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_replanificar, 0, 0);
 	sem_init(&s_entrenador_exit, 0, 0);
 	sem_init(&s_replanificar_sjfcd, 0,0);
+	pthread_mutex_init(&mutex_cola_ready, NULL);
 	pthread_mutex_init(&mutex_ciclos_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_resueltos_totales, NULL);
-	pthread_mutex_init(&mutex_cola_ready, NULL);
-	pthread_mutex_init(&mutex_cola_ready, NULL);
-	pthread_mutex_init(&mutex_pokemones_ubicados, NULL);
+	pthread_mutex_init(&mutex_cambios_contexto, NULL);
 
 
 	srand(time(NULL));
@@ -1873,8 +1746,6 @@ int inicializar_team(char* entrenador){
 	RETARDO_CICLO_CPU = atoi(config_get_string_value(config, "RETARDO_CICLO_CPU"));
 	algoritmo = get_algoritmo(config);
 	TIEMPO_RECONEXION = atoi(config_get_string_value(config,"TIEMPO_RECONEXION"));
-
-	//sem_init(&s_control_planificador_rr, 0, algoritmo.quantum);
 
 	return 1;
 }
