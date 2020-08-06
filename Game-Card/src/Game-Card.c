@@ -178,15 +178,11 @@ void crear_servidor_GC() {
 		recv(socket_cliente_entrante, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 		recv(socket_cliente_entrante, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-		log_debug(logger_GC, "Valor del codigo despues del recv SERVER: %d", operacion);
-
 		responder_mensaje (socket_cliente_entrante, operacion, id_mensaje);
     }
 }
 
 void responder_mensaje(int32_t socket, op_code codigo_operacion, int32_t id_mensaje) {
-
-	log_debug(logger_GC, "Valor del codigo despues de entrar a responder_mensaje: %d", codigo_operacion);
 
 	pthread_t respuesta_solicitud;
 
@@ -279,9 +275,6 @@ void hilo_suscriptor(op_code* code){
 								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-									//log_info(logger_GC, "ID de Mensaje: %d", id_mensaje);
-
-									log_debug(logger_GC, "Valor del codigo despues del recv: %d", operacion);
 
 									responder_mensaje (socket_broker, operacion, id_mensaje);
 
