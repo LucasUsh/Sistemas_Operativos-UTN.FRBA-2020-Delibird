@@ -254,7 +254,7 @@ void algoritmoCompactacion(){
 	t_list * particionesOcupadas = list_create();
 	t_list * particionesLibres = list_create();
 	t_particion * particionActual;
-	int32_t posicion = inicioMemoria;
+	int32_t posicion = 0; //inicioMemoria;
 
 	for(i=0; i<tabla_particiones->elements_count; i++){
 		particionActual = list_get(tabla_particiones, i);
