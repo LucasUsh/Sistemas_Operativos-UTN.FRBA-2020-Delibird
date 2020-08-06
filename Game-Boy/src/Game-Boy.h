@@ -29,9 +29,6 @@ int32_t existe (char* nombre_pokemon);
 
 int32_t sigue_corriendo = 1;
 
-sem_t* envio_GC;
-sem_t* envio_Broker;
-sem_t* envio_Team;
 sem_t cronometro;
 
 #endif
