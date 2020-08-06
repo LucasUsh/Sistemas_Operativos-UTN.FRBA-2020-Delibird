@@ -350,18 +350,16 @@ t_Localized* deserializar_paquete_localized (int32_t* socket_cliente) {
 
 	localized->listaPosiciones = list_create();
 	int32_t cantARecibir;
-	recv(*socket_cliente, &(cantARecibir), sizeof(localized->listaPosiciones->elements_count), MSG_WAITALL);
+	recv(*socket_cliente, &(cantARecibir), sizeof(cantARecibir), MSG_WAITALL);
 
-	t_posicion posicion;
-	for(int i=0; i < cantARecibir; i++){
+	if (cantARecibir != 0) {
+		t_posicion* posicion = malloc(sizeof(t_posicion));
+		for(int i=0; i < cantARecibir; i++){
 
-		recv(*socket_cliente, &(posicion.X), sizeof(posicion.X), MSG_WAITALL);
-		recv(*socket_cliente, &(posicion.Y), sizeof(posicion.Y), MSG_WAITALL);
-		list_add(localized->listaPosiciones, &posicion);
-	}
-	if(cantARecibir == 0){
-		localized->listaPosiciones->elements_count = 0;
-		localized->listaPosiciones->head = NULL;
+			recv(*socket_cliente, &(posicion->X), sizeof(posicion->X), MSG_WAITALL);
+			recv(*socket_cliente, &(posicion->Y), sizeof(posicion->Y), MSG_WAITALL);
+			list_add(localized->listaPosiciones, posicion);
+		}
 	}
 
 	return localized;
