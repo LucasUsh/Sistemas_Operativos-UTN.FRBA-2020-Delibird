@@ -99,10 +99,9 @@ void generarParticionDinamica(t_particion* particionOriginal, int32_t sizeMsg){
 	t_particion* segundaParticion = crearParticion(inicioDerecha, particionOriginal->size-primeraParticion->size, false);
 
 	posicion = obtenerPosicion(particionOriginal);
-	list_remove(tabla_particiones, posicion);
+	list_remove_and_destroy_element(tabla_particiones, posicion, free);
 	list_add_in_index(tabla_particiones,posicion, segundaParticion);
 	list_add_in_index(tabla_particiones,posicion, primeraParticion);
-	free(particionOriginal);
 
 }
 
@@ -393,7 +392,7 @@ void generarParticionBS(t_particion* particionInicial){
 	particionDerecha->id = get_id_particion();
 
 	int posicion = obtenerPosicion(particionInicial);
-	list_remove(tabla_particiones, posicion);
+	list_remove_and_destroy_element(tabla_particiones, posicion, free);
 	list_add_in_index(tabla_particiones,posicion, particionDerecha);
 	list_add_in_index(tabla_particiones,posicion, particionIzquierda);
 	free(particionInicial);
