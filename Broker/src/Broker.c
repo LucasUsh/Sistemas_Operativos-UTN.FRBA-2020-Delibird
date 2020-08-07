@@ -22,11 +22,18 @@ pthread_mutex_t mutex_estructura_mensajes;
 int reader = 0;
 sem_t writer;
 sem_t nuevoMensajeNew;
+sem_t primerNew;
 sem_t nuevoMensajeApp;
+sem_t primerApp;
 sem_t nuevoMensajeGet;
+sem_t primerGet;
 sem_t nuevoMensajeLoc;
+sem_t primerLoc;
 sem_t nuevoMensajeCaught;
+sem_t primerCaught;
 sem_t nuevoMensajeCatch;
+sem_t primerCatch;
+
 
 int32_t main(void) {
 	iniciarBroker();
@@ -42,6 +49,12 @@ int32_t main(void) {
 	sem_init(&nuevoMensajeLoc,0,0);
 	sem_init(&nuevoMensajeCaught,0,0);
 	sem_init(&nuevoMensajeCatch,0,0);
+	sem_init(&primerNew,0,0);
+	sem_init(&primerApp,0,0);
+	sem_init(&primerGet,0,0);
+	sem_init(&primerLoc,0,0);
+	sem_init(&primerCaught,0,0);
+	sem_init(&primerCatch,0,0);
 
 	signal(SIGUSR1, rutina);
 
@@ -244,8 +257,8 @@ void manejoSuscripcionNew(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	int32_t id_proceso = estructura_suscriptor->id_proceso;
 	int32_t suscripcion = estructura_suscriptor->operacion;
 
-	t_suscriptor * suscriptor;
-	info_mensaje * mensaje;
+	t_suscriptor * suscriptor= NULL;
+	info_mensaje * mensaje= NULL;
 	t_list * mensajesAEnviar = NULL;
 	int32_t tamanio_estructura = 0;
 	int32_t id_mensaje;
@@ -270,6 +283,7 @@ void manejoSuscripcionNew(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
+		sem_wait(&primerNew);
 		sem_wait(&nuevoMensajeNew);
 
 		reader++;
@@ -281,12 +295,10 @@ void manejoSuscripcionNew(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
-		//pthread_mutex_lock(&mutex_guardar_en_memoria);
 		reader--;
 		if(reader == 0){
 			sem_post(&writer);
 		}
-		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
 		for(int i=0; i<mensajesAEnviar->elements_count; i++){
 				mensaje = list_get(mensajesAEnviar, i);
@@ -349,8 +361,8 @@ void manejoSuscripcionAppeared(t_estructura_hilo_suscriptor * estructura_suscrip
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
+		sem_wait(&primerApp);
 		sem_wait(&nuevoMensajeApp);
-
 
 		reader++;
 		if(reader == 1){
@@ -361,12 +373,10 @@ void manejoSuscripcionAppeared(t_estructura_hilo_suscriptor * estructura_suscrip
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
-		//pthread_mutex_lock(&mutex_guardar_en_memoria);
 		reader--;
 		if(reader == 0){
 			sem_post(&writer);
 		}
-		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
 		for(int i=0; i<mensajesAEnviar->elements_count; i++){
 				mensaje = list_get(mensajesAEnviar, i);
@@ -429,8 +439,8 @@ void manejoSuscripcionGet(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
+		sem_wait(&primerGet);
 		sem_wait(&nuevoMensajeGet);
-
 
 		reader++;
 		if(reader == 1){
@@ -441,12 +451,10 @@ void manejoSuscripcionGet(t_estructura_hilo_suscriptor * estructura_suscriptor){
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
-		//pthread_mutex_lock(&mutex_guardar_en_memoria);
 		reader--;
 		if(reader == 0){
 			sem_post(&writer);
 		}
-		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
 		for(int i=0; i<mensajesAEnviar->elements_count; i++){
 				mensaje = list_get(mensajesAEnviar, i);
@@ -508,8 +516,8 @@ void manejoSuscripcionLocalized(t_estructura_hilo_suscriptor * estructura_suscri
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
+		sem_wait(&primerLoc);
 		sem_wait(&nuevoMensajeLoc);
-
 
 		reader++;
 		if(reader == 1){
@@ -520,12 +528,10 @@ void manejoSuscripcionLocalized(t_estructura_hilo_suscriptor * estructura_suscri
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
-		//pthread_mutex_lock(&mutex_guardar_en_memoria);
 		reader--;
 		if(reader == 0){
 			sem_post(&writer);
 		}
-		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
 		for(int i=0; i<mensajesAEnviar->elements_count; i++){
 				mensaje = list_get(mensajesAEnviar, i);
@@ -588,8 +594,8 @@ void manejoSuscripcionCatch(t_estructura_hilo_suscriptor * estructura_suscriptor
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
+		sem_wait(&primerCatch);
 		sem_wait(&nuevoMensajeCatch);
-
 
 		reader++;
 		if(reader == 1){
@@ -600,12 +606,10 @@ void manejoSuscripcionCatch(t_estructura_hilo_suscriptor * estructura_suscriptor
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
-		//pthread_mutex_lock(&mutex_guardar_en_memoria);
 		reader--;
 		if(reader == 0){
 			sem_post(&writer);
 		}
-		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
 		for(int i=0; i<mensajesAEnviar->elements_count; i++){
 				mensaje = list_get(mensajesAEnviar, i);
@@ -668,8 +672,8 @@ void manejoSuscripcionCaught(t_estructura_hilo_suscriptor * estructura_suscripto
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
+		sem_wait(&primerCaught);
 		sem_wait(&nuevoMensajeCaught);
-
 
 		reader++;
 		if(reader == 1){
@@ -680,12 +684,10 @@ void manejoSuscripcionCaught(t_estructura_hilo_suscriptor * estructura_suscripto
 		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
-		//pthread_mutex_lock(&mutex_guardar_en_memoria);
 		reader--;
 		if(reader == 0){
 			sem_post(&writer);
 		}
-		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
 
 		for(int i=0; i<mensajesAEnviar->elements_count; i++){
 				mensaje = list_get(mensajesAEnviar, i);
@@ -728,37 +730,91 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 	switch(operacion){
 	case NEW_POKEMON:
 		mensaje = recibirMensajeNew(socket_cliente);
+		if(esCorrelativo(id_mensaje)){
+			mensaje->id_mensaje_correlativo = id_mensaje;
+		}
+		sem_wait(&writer);
+		//mostrarEstadoMemoria();
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		guardarMensajeEnCache(mensaje);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+		//mostrarEstadoMemoria();
+		sem_post(&primerNew);
+		sem_post(&writer);
 		break;
 	case APPEARED_POKEMON:
 		mensaje = recibirMensajeAppeared(socket_cliente);
+		if(esCorrelativo(id_mensaje)){
+			mensaje->id_mensaje_correlativo = id_mensaje;
+		}
+		sem_wait(&writer);
+		//mostrarEstadoMemoria();
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		guardarMensajeEnCache(mensaje);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+		//mostrarEstadoMemoria();
+		sem_post(&primerApp);
+		sem_post(&writer);
 		break;
 	case GET_POKEMON:
 		mensaje = recibirMensajeGet(socket_cliente);
+		if(esCorrelativo(id_mensaje)){
+			mensaje->id_mensaje_correlativo = id_mensaje;
+		}
+		sem_wait(&writer);
+		//mostrarEstadoMemoria();
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		guardarMensajeEnCache(mensaje);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+		//mostrarEstadoMemoria();
+		sem_post(&primerGet);
+		sem_post(&writer);
 		break;
 	case LOCALIZED_POKEMON:
 		mensaje = recibirMensajeLocalized(socket_cliente);
+		if(esCorrelativo(id_mensaje)){
+			mensaje->id_mensaje_correlativo = id_mensaje;
+		}
+		sem_wait(&writer);
+		//mostrarEstadoMemoria();
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		guardarMensajeEnCache(mensaje);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+		//mostrarEstadoMemoria();
+		sem_post(&primerLoc);
+		sem_post(&writer);
 		break;
 	case CATCH_POKEMON:
 		mensaje = recibirMensajeCatch(socket_cliente);
+		if(esCorrelativo(id_mensaje)){
+			mensaje->id_mensaje_correlativo = id_mensaje;
+		}
+		sem_wait(&writer);
+		//mostrarEstadoMemoria();
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		guardarMensajeEnCache(mensaje);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+		//mostrarEstadoMemoria();
+		sem_post(&primerCatch);
+		sem_post(&writer);
 		break;
 	case CAUGHT_POKEMON:
 		mensaje = recibirMensajeCaught(socket_cliente);
+		if(esCorrelativo(id_mensaje)){
+			mensaje->id_mensaje_correlativo = id_mensaje;
+		}
+		sem_wait(&writer);
+		//mostrarEstadoMemoria();
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		guardarMensajeEnCache(mensaje);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+		//mostrarEstadoMemoria();
+		sem_post(&primerCaught);
+		sem_post(&writer);
 		break;
 	default:
 		break;
 	}
-
-	if(esCorrelativo(id_mensaje)){
-		mensaje->id_mensaje_correlativo = id_mensaje;
-	}
-
-	sem_wait(&writer);
-	//mostrarEstadoMemoria();
-	pthread_mutex_lock(&mutex_guardar_en_memoria);
-	guardarMensajeEnCache(mensaje);
-	pthread_mutex_unlock(&mutex_guardar_en_memoria);
-	//mostrarEstadoMemoria();
-	sem_post(&writer);
 
 	mensaje->process_id=id_proceso;
 	enviar_ACK(mensaje->id_mensaje, socket_cliente);
@@ -1393,8 +1449,9 @@ bool procesoSuscriptoACola(op_code operacion, int32_t id_proceso){
 	}
 
 	t_list * suscripciones = list_filter(list_suscriptores, _esElSuscriptor);
-	for(int i; i<suscripciones->elements_count; i++){
-		t_suscriptor * suscriptor = list_get(suscripciones, i);
+	t_suscriptor * suscriptor = NULL;
+	for(int i = 0; i<suscripciones->elements_count; i++){
+		suscriptor = list_get(suscripciones, i);
 		if(suscriptor->op_code == operacion){
 			list_destroy(suscripciones);
 			return true;
@@ -1410,7 +1467,7 @@ t_suscriptor * obtenerSuscriptor(int32_t id_proceso, op_code operacion){
 	}
 
 	t_list * suscripciones = list_filter(list_suscriptores, _esElSuscriptor);
-	for(int i; i<suscripciones->elements_count; i++){
+	for(int i = 0 ; i<suscripciones->elements_count; i++){
 		t_suscriptor * suscriptor = list_get(suscripciones, i);
 		if(suscriptor->op_code == operacion){
 			list_destroy(suscripciones);
