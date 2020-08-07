@@ -85,7 +85,13 @@ sem_t* recibir_mensaje;
 
 
 int32_t get_id();
-void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor);
+void manejoSuscripcionNew(t_estructura_hilo_suscriptor * estructura_suscriptor);
+void manejoSuscripcionAppeared(t_estructura_hilo_suscriptor * estructura_suscriptor);
+void manejoSuscripcionLocalized(t_estructura_hilo_suscriptor * estructura_suscriptor);
+void manejoSuscripcionGet(t_estructura_hilo_suscriptor * estructura_suscriptor);
+void manejoSuscripcionCatch(t_estructura_hilo_suscriptor * estructura_suscriptor);
+void manejoSuscripcionCaught(t_estructura_hilo_suscriptor * estructura_suscriptor);
+
 void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje);
 void guardarMensajeEnCache(info_mensaje* mensaje);
 
@@ -122,6 +128,6 @@ t_list* getMensajesCacheadosDeOperacion(op_code operacion);
 
 info_mensaje * obtenerMensaje(int32_t id_mensaje);
 bool procesoSuscriptoACola(op_code operacion, int32_t id_proceso);
-t_suscriptor * obtenerSuscriptor(int32_t id_proceso);
+t_suscriptor * obtenerSuscriptor(int32_t id_proceso, op_code operacion);
 
 #endif /* BROKER_H_ */
