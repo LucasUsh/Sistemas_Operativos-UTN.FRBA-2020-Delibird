@@ -445,7 +445,6 @@ void detectar_deadlocks(){
 	}
 
 
-
 	for(int i = 0; i < filas; i++){
 
 		DL_nodo_inicial = i;
@@ -973,11 +972,6 @@ void capturar_pokemon(t_entrenador* entrenador){
 	entrenador->estado=BLOCKED;
 	entrenador->ocupado=true;
 
-	pthread_mutex_lock(&mutex_ciclos_totales);
-	cambios_contexto++;//cambio de contexto para hacer la I/O
-	pthread_mutex_unlock(&mutex_ciclos_totales);
-
-
 	sem_post(&s_procesos_en_exec); // salgo de exec
 
 	if(puede_capturar_pokemones(entrenador)){
@@ -1018,10 +1012,6 @@ void ejecutar_rr(t_entrenador* entrenador){
 	cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
 	if(cantidad_a_moverse > 0 ){
 		printf("se terminó el quantum y todavía falta que se mueva, lo mando a la cola de READY\n");
-
-		pthread_mutex_lock(&mutex_ciclos_totales);
-		cambios_contexto++;//cambio de contexto ya que se desaloja por clock
-		pthread_mutex_unlock(&mutex_ciclos_totales);
 
 		entrenador->estado = READY;
 
@@ -1141,13 +1131,11 @@ void hilo_enviar_get(int i){
 					pthread_mutex_unlock(&mutex_ciclos_totales);
 
 					sleep(RETARDO_CICLO_CPU);
-//					log_debug(logger, "el id redicibo es: %d", id_mensaje);
 
 					t_respuesta* respuesta = malloc(sizeof(t_respuesta));
 					respuesta->id_respuesta = id_mensaje;
 					respuesta->id_entrenador = 0;
 
-					//mutex
 					list_add(mensajes_get_esperando_respuesta, respuesta);
 
 				}
@@ -1185,14 +1173,10 @@ void show_cola_ready(){
 
 void hilo_planificador(){
 
-	while(1){ // while no haya otro en EXEC (semaforo?)
-		//printf("esperando que llegue algo a la cola de ready....\n");
+	while(1){
 		sem_wait(&s_cola_ready_con_items);//inicializado en 0
-
 		printf("llegó algo a la cola de READY\n");
 		sem_wait(&s_procesos_en_exec); //inicializado en 1, o sea que solo puede haber uno a la vez;
-
-		//printf("nadie en EXEC, voy a planificar tranquilo..\n");
 		planificar();
 	}
 }
@@ -1260,7 +1244,7 @@ void recibidor_mensajes_localized(void* args){
 				pthread_mutex_unlock(&mutex_cola_ready);
 
 				sem_post(&s_cola_ready_con_items);
-				sem_post(entrenador_mas_cercano->semaforo);
+				//sem_post(entrenador_mas_cercano->semaforo);
 			} else {
 				ubicar_pokemones_localized(mensaje);
 			}
@@ -1320,9 +1304,7 @@ void recibidor_mensajes_caught(void* args){
 	t_Caught* mensaje = (t_Caught*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
-	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
-	//pthread_mutex_unlock(&mutex_list_entrenadores);
 
 	printf("TRYING TO CATCH A %s \nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, entrenador->id);
 	printf("3...\n2... \n1... \n");
@@ -1365,12 +1347,6 @@ void hilo_recibidor_mensajes_gameboy(){
 					printf("Llego un mensaje APPEARED desde el GAME BOY\n");
 					t_Appeared* mensaje_appeared = deserializar_paquete_appeared(&socket_cliente);
 
-//					printf("Llego un mensaje Appeared Pokemon con los siguientes datos: %d  %s  %d  %d\n",
-//							mensaje_appeared->pokemon.size_Nombre,
-//							mensaje_appeared->pokemon.nombre,
-//							mensaje_appeared->posicion.X,
-//							mensaje_appeared->posicion.Y);
-
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 					args->mensaje = mensaje_appeared;
 					args->respuesta = NULL;
@@ -1388,10 +1364,10 @@ void hilo_recibidor_mensajes_gameboy(){
 					printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
 							mensaje_localized->pokemon.nombre);
 
-//					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
-//						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-//						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
-//					}
+					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
+						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
+						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
+					}
 
 					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
@@ -1418,7 +1394,6 @@ void hilo_recibidor_mensajes_gameboy(){
 
 					t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
-					//debería ser un hilo
 					if(respuesta_catch != NULL){
 
 						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
@@ -1475,10 +1450,6 @@ void hilo_suscriptor_appeared(op_code *code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-									log_debug(logger, "id mensaje appeared recibido %d", id_mensaje);
-									log_debug(logger, "operacion %d", operacion);
-
-
 									if(operacion == APPEARED_POKEMON){
 										t_Appeared* mensaje_appeared = NULL;
 										mensaje_appeared = deserializar_paquete_appeared(&socket_broker);
@@ -1497,7 +1468,7 @@ void hilo_suscriptor_appeared(op_code *code){
 
 								} else {
 									log_info(logger, "Se cayo la conexion");
-									liberar_conexion(socket_broker);//logica reconectar
+									liberar_conexion(socket_broker);
 									socket_broker = 0;
 									fin = true;
 								}
@@ -1556,9 +1527,7 @@ void hilo_suscriptor_caught(op_code* code){
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-									log_debug(logger, "id mensaje caught recibido %d", id_mensaje);
-									log_debug(logger, "operacion %d", operacion);
-
+									printf("id mensaje caught recibido %d", id_mensaje);
 
 									if(operacion == CAUGHT_POKEMON){
 										t_Caught* mensaje_caught = NULL;
@@ -1672,7 +1641,7 @@ void hilo_suscriptor_localized(op_code* code){
 										pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
 										pthread_detach(p_generador_mensajes_localized);
 									} else {
-										log_debug(logger, "no es respuesta, lo voy a rechazar");
+										printf("no es respuesta, lo voy a rechazar");
 									}
 								} else {
 									log_info(logger, "Se cayo la conexion");
@@ -1753,9 +1722,7 @@ int inicializar_team(char* entrenador){
 
 
 void entrenador(void* index){
-	//pthread_mutex_lock(&mutex_list_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, (int)index);
-	//pthread_mutex_unlock(&mutex_list_entrenadores);
 	//NEW
 	printf("este hilo maneja al entrenador %d\n", entrenador->id);
 	while(!cumplio_objetivo(entrenador)){
@@ -1772,7 +1739,7 @@ void entrenador(void* index){
 			proceso_ejecutando = entrenador->id;
 		}
 		printf("----------------------------\n");
-		if(entrenador->pokemon_destino != NULL){ // agora sim
+		if(entrenador->pokemon_destino != NULL){
 
 		log_info(logger, "El entrenador %d se mueve a atrapar a %s en posición %d-%d.\n",
 				entrenador->id, entrenador->pokemon_destino->nombre,
