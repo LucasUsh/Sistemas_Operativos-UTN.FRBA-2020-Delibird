@@ -557,13 +557,13 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 	int32_t id_mensaje = 0; // esto creo que habria que cambiarlo
 	int32_t tamanio_estructura = 0;
 
-	printf("Conectado al Broker para enviar CATCH");
+	//printf("Conectado al Broker para enviar CATCH");
 	enviar_handshake(PROCESS_ID, socket);
 	if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 		if(operacion == ACK){ // Confirmacion de que la identificacion (handshake) fue recibida
 			recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 			recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-			printf("El broker me reconocio\n");
+			//printf("El broker me reconocio\n");
 
 			char* pokemon = entrenador->pokemon_destino->nombre;
 			char* posX = string_itoa(entrenador->pokemon_destino->posicion.X);
@@ -585,6 +585,7 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 					t_respuesta* respuesta = malloc(sizeof(respuesta));
 					respuesta->id_entrenador = entrenador->id;
 					respuesta->id_respuesta = id_mensaje;
+					log_debug(logger, "espero el id %d", id_mensaje);
 					list_add(mensajes_catch_esperando_respuesta, respuesta);
 				}
 			}
@@ -1135,6 +1136,7 @@ void hilo_enviar_get(int i){
 					t_respuesta* respuesta = malloc(sizeof(t_respuesta));
 					respuesta->id_respuesta = id_mensaje;
 					respuesta->id_entrenador = 0;
+					log_debug(logger, "espero el ID: %d", id_mensaje);
 
 					list_add(mensajes_get_esperando_respuesta, respuesta);
 
@@ -1308,7 +1310,6 @@ void recibidor_mensajes_caught(void* args){
 
 	printf("TRYING TO CATCH A %s \nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, entrenador->id);
 	printf("3...\n2... \n1... \n");
-	sleep(3);
 
 	if(mensaje->fueAtrapado){
 		printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
@@ -1641,10 +1642,10 @@ void hilo_suscriptor_localized(op_code* code){
 										pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
 										pthread_detach(p_generador_mensajes_localized);
 									} else {
-										printf("no es respuesta, lo voy a rechazar");
+										printf("no es respuesta, lo voy a rechazar\n");
 									}
 								} else {
-									log_info(logger, "Se cayo la conexion");
+									log_info(logger, "Se cayo la conexion\n");
 									liberar_conexion(socket_broker);//logica reconectar
 									socket_broker = 0;
 									fin = true;
