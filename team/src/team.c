@@ -24,8 +24,8 @@ int proceso_ejecutando = -1;
 
 int DL_nodo_inicial = -1;
 int DL_nodo_final = -1;
-t_deadlock* deadlock_actual;
 int intentos = 0;
+t_deadlock* deadlock_actual;
 
 t_list* total_deadlocks;
 
@@ -576,9 +576,9 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
 
-					pthread_mutex_lock(&mutex_ciclos_totales);
-					ciclos_totales++;
-					pthread_mutex_unlock(&mutex_ciclos_totales);
+//					pthread_mutex_lock(&mutex_ciclos_totales);
+//					ciclos_totales++;
+//					pthread_mutex_unlock(&mutex_ciclos_totales);
 
 					sleep(RETARDO_CICLO_CPU);
 
@@ -591,6 +591,8 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 			}
 		}
 	}
+
+	liberar_conexion(socket);
 
 	return true;
 }
@@ -928,9 +930,9 @@ void intercambio(t_entrenador* entrenador){
 
 			for(int i =0; i < 5; i++){
 				printf("%d ciclo de cpu\n", i + 1);
-				//	pthread_mutex_lock(&mutex_ciclos_totales);
+				pthread_mutex_lock(&mutex_ciclos_totales);
 				ciclos_totales++;
-				//	pthread_mutex_unlock(&mutex_ciclos_totales);
+				pthread_mutex_unlock(&mutex_ciclos_totales);
 				sleep(RETARDO_CICLO_CPU);
 			}
 
@@ -1118,18 +1120,18 @@ void hilo_enviar_get(int i){
 
 			enviar_get_pokemon(pokemon->nombre, "0", socket);
 
-			pthread_mutex_lock(&mutex_ciclos_totales);
-			ciclos_totales++;
-			pthread_mutex_unlock(&mutex_ciclos_totales);
+//			pthread_mutex_lock(&mutex_ciclos_totales);
+//			ciclos_totales++;
+//			pthread_mutex_unlock(&mutex_ciclos_totales);
 
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
-					pthread_mutex_lock(&mutex_ciclos_totales);
-					ciclos_totales++;
-					pthread_mutex_unlock(&mutex_ciclos_totales);
+//					pthread_mutex_lock(&mutex_ciclos_totales);
+//					ciclos_totales++;
+//					pthread_mutex_unlock(&mutex_ciclos_totales);
 
 					sleep(RETARDO_CICLO_CPU);
 
@@ -1198,6 +1200,13 @@ void ubicar_pokemones_localized(t_Localized* pokemones_a_ubicar){
 
 void recibidor_mensajes_localized(void* args){
 	t_args_mensajes* arg = (t_args_mensajes*)args;
+
+	log_debug(logger, "asdasd!\n");
+	if(arg->respuesta->id_entrenador == -1){
+		log_debug(logger, "No me interesa el msj lo descarto!\n");
+		return;
+	}
+
 	t_Localized* mensaje = (t_Localized*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
@@ -1306,6 +1315,15 @@ void recibidor_mensajes_caught(void* args){
 	t_Caught* mensaje = (t_Caught*)arg->mensaje;
 	t_respuesta* respuesta = arg->respuesta;
 
+
+	log_debug(logger, "asdasd!\n");
+	if(arg->respuesta->id_entrenador == -1){
+		log_debug(logger, "No me interesa el msj lo descarto!\n");
+		return;
+	}
+
+
+
 	t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
 
 	printf("TRYING TO CATCH A %s \nTRAINER %d USED A ULTRA BALL\n",entrenador->pokemon_destino->nombre, entrenador->id);
@@ -1358,33 +1376,7 @@ void hilo_recibidor_mensajes_gameboy(){
 
 					break;
 
-				case LOCALIZED_POKEMON:
-					printf("Recibí un mensaje LOCALIZED desde el GAME BOY\n");
-					t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_cliente);
 
-					printf("Llego un mensaje Localized Pokemon con los siguientes datos: %s\n",
-							mensaje_localized->pokemon.nombre);
-
-					for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
-						t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-						printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
-					}
-
-					t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
-
-					if(respuesta_get != NULL){
-						t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-						args->mensaje = mensaje_localized;
-						args->respuesta = respuesta_get;
-
-
-
-						 pthread_t p_generador_mensajes_localized;
-						 pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
-						 pthread_detach(p_generador_mensajes_appeared);
-					}
-
-					break;
 
 				case CAUGHT_POKEMON:
 					printf("Recibí un mensaje CAUGHT desde el GAME BOY\n");
@@ -1531,26 +1523,24 @@ void hilo_suscriptor_caught(op_code* code){
 									printf("id mensaje caught recibido %d", id_mensaje);
 
 									if(operacion == CAUGHT_POKEMON){
-										t_Caught* mensaje_caught = NULL;
-										mensaje_caught = deserializar_paquete_caught(&socket_broker);
+										t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_broker);
 										enviar_ACK(0, socket_broker);
 										log_info(logger, "ID de Mensaje CAUGHT recibido: %d", id_mensaje);
 
 										t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
-										//debería ser un hilo
-										if(respuesta_catch != NULL){
+										t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+										args->mensaje = mensaje_caught;
+										args->respuesta = respuesta_catch;
 
-											t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-											args->mensaje = mensaje_caught;
-											args->respuesta = respuesta_catch;
+										pthread_t p_generador_mensajes_caught;
+										pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
+										pthread_detach(p_generador_mensajes_caught);
 
-											pthread_t p_generador_mensajes_caught;
-											pthread_create(&p_generador_mensajes_caught, NULL, (void*)recibidor_mensajes_caught, (void*)args);
-											pthread_detach(p_generador_mensajes_caught);
-										} else {
-											printf("No me interesa, lo descarto\n");
-										}
+
+
+
+
 									}else printf("Mandaron algo que no era un caught \n");
 
 								} else {
@@ -1615,9 +1605,9 @@ void hilo_suscriptor_localized(op_code* code){
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
-									t_Localized* mensaje_localized = NULL;
+									t_Localized* mensaje_localized = deserializar_paquete_localized(&socket_broker);
 
-									mensaje_localized = deserializar_paquete_localized(&socket_broker);
+
 									enviar_ACK(0, socket_broker);
 
 									log_info(logger, "ID de Mensaje LOCALIZED recibido: %d", id_mensaje);
@@ -1633,17 +1623,15 @@ void hilo_suscriptor_localized(op_code* code){
 
 									t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
-									if(respuesta_get != NULL){
-										t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
-										args->mensaje = mensaje_localized;
-										args->respuesta = respuesta_get;
 
-										pthread_t p_generador_mensajes_localized;
-										pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
-										pthread_detach(p_generador_mensajes_localized);
-									} else {
-										printf("no es respuesta, lo voy a rechazar\n");
-									}
+									t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
+									args->mensaje = mensaje_localized;
+									args->respuesta = respuesta_get;
+
+									pthread_t p_generador_mensajes_localized;
+									pthread_create(&p_generador_mensajes_localized, NULL, (void*)recibidor_mensajes_localized, (void*)args);
+									pthread_detach(p_generador_mensajes_localized);
+
 								} else {
 									log_info(logger, "Se cayo la conexion\n");
 									liberar_conexion(socket_broker);//logica reconectar
@@ -1706,10 +1694,13 @@ int inicializar_team(char* entrenador){
 
 	srand(time(NULL));
 
-	config = config_create(get_config_path(entrenador));
+	char* config_path = get_config_path(entrenador);
+
+	config = config_create(config_path);
 	printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
 	char* log_path = config_get_string_value(config, "LOG_FILE");
 	logger = log_create(log_path, "Team", 1, LOG_LEVEL_DEBUG);
+
 	IP_BROKER = config_get_string_value(config, "IP_BROKER");
 	PUERTO_BROKER = config_get_string_value(config, "PUERTO_BROKER");
 	PROCESS_ID = atoi(config_get_string_value(config, "PROCESS_ID"));
@@ -1717,6 +1708,8 @@ int inicializar_team(char* entrenador){
 	algoritmo = get_algoritmo(config);
 	TIEMPO_RECONEXION = atoi(config_get_string_value(config,"TIEMPO_RECONEXION"));
 
+	free(log_path);
+	free(config_path);
 	return 1;
 }
 
@@ -1732,9 +1725,9 @@ void entrenador(void* index){
 		log_debug(logger, "soy el entrenador %d y estoy ejecutando\n", entrenador->id);
 		if(proceso_ejecutando != entrenador->id){
 
-			pthread_mutex_lock(&mutex_ciclos_totales);
+			pthread_mutex_lock(&mutex_cambios_contexto);
 			cambios_contexto++;//cambio de contexto ya que empieza a ejecutar el proceso
-			pthread_mutex_unlock(&mutex_ciclos_totales);
+			pthread_mutex_unlock(&mutex_cambios_contexto);
 
 
 			proceso_ejecutando = entrenador->id;
@@ -1763,15 +1756,17 @@ void entrenador(void* index){
 
 void liberar_memoria(){
 	liberar_elementos_lista_pokemon(objetivo_global);
-	liberar_elementos_lista_entrenador(entrenadores);
 	liberar_elementos_lista_pokemon(pokemones_recibidos);
 	liberar_elementos_lista_pokemon(pokemones_ubicados);
 	//liberar_elementos_lista_deadlock(total_deadlocks);
-	free(total_deadlocks);;
+	free(total_deadlocks);; // eliminar los t_deadlocks
 	liberar_elementos_lista_entrenador(entrenadores_DL);
-	free(mensajes_get_esperando_respuesta);
-	free(mensajes_catch_esperando_respuesta);
-	free(cola_ready);
+	liberar_elementos_lista_entrenador(entrenadores);
+	liberar_elementos_lista_entrenador(cola_ready);
+
+	liberar_elementos_lista_respuesta(mensajes_get_esperando_respuesta);
+	liberar_elementos_lista_respuesta(mensajes_catch_esperando_respuesta);
+
 	sem_destroy(&s_cola_ready_con_items);
 	sem_destroy(&s_procesos_en_exec);
 	sem_destroy(&s_posiciones_a_mover);
@@ -1779,13 +1774,24 @@ void liberar_memoria(){
 	sem_destroy(&s_detectar_deadlock);
 	sem_destroy(&s_replanificar);
 	sem_destroy(&s_entrenador_exit);
+	sem_destroy(&s_replanificar_sjfcd);
 	pthread_mutex_destroy(&mutex_cola_ready);
 	pthread_mutex_destroy(&mutex_ciclos_totales);
 	pthread_mutex_destroy(&mutex_deadlocks_totales);
 	pthread_mutex_destroy(&mutex_deadlocks_resueltos_totales);
-	config_destroy(config);
+	pthread_mutex_destroy(&mutex_cambios_contexto);
+	//config_destroy(config);
 	log_destroy(logger);
 
+}
+
+void liberar_strings(char** cadenas) {
+	int i = 0;
+	while(cadenas[i] != NULL) {
+	        free(cadenas[i]);
+	        i++;
+	}
+	free(cadenas);
 }
 
 
@@ -1796,7 +1802,10 @@ int32_t main(int32_t argc, char** argv){
 	}
 
 	inicializar_team(argv[1]);
-    cantidad_entrenadores = array_length(config_get_array_value(config, "POSICIONES_ENTRENADORES"));
+	char** array = config_get_array_value(config, "POSICIONES_ENTRENADORES");
+    cantidad_entrenadores = array_length(array);
+    liberar_strings(array);
+
 	printf("Inicializacion finalizada.\nCantidad dentrenadores: %d\nAlgoritmo:%s\n",
 			cantidad_entrenadores, algoritmo.algoritmo_string);
 
