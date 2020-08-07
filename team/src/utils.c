@@ -1,5 +1,6 @@
 #include "utils.h"
 
+
 char** get_array_by_index(char** array_from_config, int32_t index){
 
 	 /* EJEMPLO CON POKEMONES
@@ -24,9 +25,12 @@ char** get_array_by_index(char** array_from_config, int32_t index){
 	  *  1 -> Squirtle
 	  *  2 -> Pidgey
 	  */
-	char** value_array = string_split(value_string, "|");
 
+
+	char** value_array = string_split(value_string, "|");
+	//free(value_string);
 	return value_array;
+
 }
 
 int32_t array_length(char** value_array){
@@ -35,6 +39,8 @@ int32_t array_length(char** value_array){
 	while(value_array[i] != NULL){
 		i++;
 	}
+
+	//free(value_array);
 
 	return i;
 }
@@ -89,7 +95,7 @@ t_list* get_objetivos(t_config* config, int32_t index){
 	t_list* objetivos = list_create();
 
 	char** pokemon_entrenadores = config_get_array_value(config, "OBJETIVOS_ENTRENADORES");
-	char** pokemones = get_array_by_index(pokemon_entrenadores,index);
+	char** pokemones = get_array_by_index(pokemon_entrenadores, index);
 
 	int32_t i = 0;
 
@@ -99,19 +105,24 @@ t_list* get_objetivos(t_config* config, int32_t index){
 		i++;
 	}
 
+	//liberar_strings(pokemones);
+	//liberar_strings(pokemon_entrenadores);
+
+
 	return objetivos;
 }
 
 t_posicion get_posicion(t_config* config, int32_t index){
 	t_posicion posicion;
 
-	char** posiciones = get_array_by_index(config_get_array_value(config, "POSICIONES_ENTRENADORES"),
-			index);
+	char** array = config_get_array_value(config, "POSICIONES_ENTRENADORES");
+	char** posiciones = get_array_by_index(array, index);
 
 	posicion.X = atoi(posiciones[0]);
 	posicion.Y = atoi(posiciones[1]);
 
-
+	//liberar_strings(posiciones);
+	//liberar_strings(array);
 	return posicion;
 }
 
@@ -395,7 +406,11 @@ t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 		}
 	}
 
-	return NULL;
+	t_respuesta* re = malloc(sizeof(t_respuesta));
+	re->id_entrenador = -1;
+	re->id_respuesta = -1;
+
+	return re;
 }
 
 int get_cantidad_by_nombre_pokemon(char* pokemon, t_list* pokemones){
@@ -617,71 +632,11 @@ t_pokemon_team* pokemon_que_sirve_intercambio(t_entrenador* e1, t_entrenador* e2
 	return NULL;
 }
 
-/*
-
-
-
-
-
-
-t_Localized* generar_localized(char* pokemon, int cant_posiciones){
-	t_list* listaPosiciones = list_create();
-	t_Localized* mensaje = malloc(sizeof(t_Localized)); // reemplazar por funcion get size Localized de broker
-
-	for(int i = 0; i < cant_posiciones; i++){
-		t_posicion* posicion = malloc(sizeof(t_posicion));
-		posicion->X = (rand() % (10)) + 1; // numero random entre 1 y 10
-		posicion->Y = (rand() % (10)) + 1;
-
-		list_add(listaPosiciones, posicion);
-	}
-
-	mensaje->listaPosiciones = listaPosiciones;
-	mensaje->pokemon.nombre = pokemon;
-	mensaje->pokemon.size_Nombre = string_length(pokemon); // creo que hay que sumar 1
-
-	return mensaje;
-}
-
-t_Caught* generar_caught(){
-	t_Caught* mensaje = malloc(sizeof(t_Caught)); // reemplazar por funcion get size caught de broker
-
-	mensaje->fueAtrapado = (rand() % (1)) + 1; // numero random entre 1 y 0
-
-	return mensaje;
-}
-
-t_list* simular_list_localized(int cant_mensajes){
-
-	srand(time(NULL));
-	t_list* mensajes_localized = list_create();
-	t_list* nombre_pokemones = get_nombres_pokemon();
-
-
-	for(int i = 0; i < cant_mensajes; i++){
-		//el nombre lo obtengo de forma aleatoria
-		char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
-		printf("%s\n", nombre_pokemon);
-		//con el nombre, genero tambien X cantidad de posiciones aleatorias
-		t_Localized* mensaje_localized = generar_localized(nombre_pokemon, 1);
-
-		list_add(mensajes_localized, mensaje_localized);
-	}
-
-	return mensajes_localized;
-
-}
-
-t_Localized* simular_localized(int cantidad_posiciones){
-
-	srand(time(NULL));
-
-	t_list* nombre_pokemones = get_nombres_pokemon();
-	char* nombre_pokemon = get_nombre_aleatorio(nombre_pokemones);
-	t_Localized* mensaje = generar_localized(nombre_pokemon, cantidad_posiciones);
-
-	return mensaje;
-
-}
-
-*/
+//void liberar_strings(char** cadenas) {
+//	int i = 0;
+//	while(cadenas[i] != NULL) {
+//	        free(cadenas[i]);
+//	        i++;
+//	}
+//	free(cadenas);
+//}

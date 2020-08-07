@@ -37,6 +37,9 @@ t_list* get_pokemones(t_config* config, int32_t index){
 		i++;
 	}
 
+	//liberar_strings(pokemones);
+	liberar_strings(pokemon_entrenadores);
+
 	return pokemones_list;
 }
 
@@ -144,8 +147,22 @@ t_pokemon_team* get_pokemon_team(char* nombre, t_posicion posicion){
 }
 
 
+
+void respuesta_destroyer(void* elem){
+	t_respuesta* respuesta = (t_respuesta*) elem;
+	free(respuesta);
+}
+
+void liberar_elementos_lista_respuesta(t_list* lista){
+	list_clean_and_destroy_elements(lista, respuesta_destroyer);
+	free(lista);
+}
+
+
+
 void pokemon_destroyer(void* elem){
 	t_pokemon_team* pokemon = (t_pokemon_team*) elem;
+	free(pokemon->nombre);
 	free(pokemon);
 }
 
@@ -157,6 +174,7 @@ void liberar_elementos_lista_pokemon(t_list* lista){
 
 void entrenador_destroyer(void* elem){
 	t_entrenador* entrenador = (t_entrenador*) elem;
+	sem_destroy(entrenador->semaforo);
 	free(entrenador);
 }
 
