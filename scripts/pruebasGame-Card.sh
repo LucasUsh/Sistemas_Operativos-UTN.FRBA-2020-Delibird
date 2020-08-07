@@ -1,4 +1,4 @@
-MONTAJE=/home/utnso/Escritorio/TallGrass
+MONTAJE=/home/utnso/workspace/TallGrass
 FILES=/home/utnso/workspace/TallGrass/Files
 
 if [ -d "$MONTAJE" ]; then
