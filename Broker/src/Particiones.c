@@ -187,6 +187,8 @@ void consolidarParticion(t_particion * particion, int posicion){
 		if(!particionAMirar->ocupada){//si la particion anterior esta libre
 			particion->posicion_inicial = particionAMirar->posicion_inicial;
 			particion->size += particionAMirar->size;
+			list_remove(tabla_particiones, posicion-1);
+			posicion--;
 		}
 	}
 	if(posicion != (tabla_particiones->elements_count)-1){//si tiene una particion despues
@@ -194,6 +196,7 @@ void consolidarParticion(t_particion * particion, int posicion){
 		if(!particionAMirar->ocupada){//si la particion siguiente esta libre
 			particion->posicion_final = particionAMirar->posicion_final;
 			particion->size += particionAMirar->size;
+			list_remove(tabla_particiones, posicion+1);
 		}
 	}
 }
@@ -523,6 +526,14 @@ void algoritmoParticionDinamica(info_mensaje * mensaje, int32_t frecuenciaCompac
 	}
 }
 
+void mostrarEstadoMemoria(){
+	for(int i = 0; i<tabla_particiones->elements_count;i++){
+		t_particion * particion = list_get(tabla_particiones, i);
+		char estado[] = "L";
+		if(particion->ocupada == 1) estado[0] = 'X';
+		printf("Inicio: %d. Final: %d. Estado: [%s]\n", particion->posicion_inicial, particion->posicion_final, estado);
+	}
+}
 
 
 

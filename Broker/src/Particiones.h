@@ -54,6 +54,7 @@ void algoritmoLiberacion(int32_t algoritmoReemplazo);
 void algoritmoCompactacion();
 
 void guardarMensaje(info_mensaje * mensaje, t_particion * particion);
+void mostrarEstadoMemoria();
 
 
 

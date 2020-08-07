@@ -291,9 +291,11 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		mensaje->id_mensaje_correlativo = id_mensaje;
 	}
 
+	//mostrarEstadoMemoria();
 	pthread_mutex_lock(&mutex_guardar_en_memoria);
 	guardarMensajeEnCache(mensaje);
 	pthread_mutex_unlock(&mutex_guardar_en_memoria);
+	//mostrarEstadoMemoria();
 
 	mensaje->process_id=id_proceso;
 	enviar_ACK(mensaje->id_mensaje, socket_cliente);
