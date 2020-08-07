@@ -19,9 +19,29 @@ pthread_mutex_t mutex_list_suscriptores;
 pthread_mutex_t mutex_guardar_en_memoria;
 pthread_mutex_t mutex_estructura_mensajes;
 
+int reader = 0;
+sem_t writer;
+sem_t nuevoMensajeNew;
+sem_t nuevoMensajeApp;
+sem_t nuevoMensajeGet;
+sem_t nuevoMensajeLoc;
+sem_t nuevoMensajeCaught;
+sem_t nuevoMensajeCatch;
+
 int32_t main(void) {
 	iniciarBroker();
+	pthread_mutex_init(&mutex_id_mensaje, NULL);
+	pthread_mutex_init(&mutex_list_mensaje, NULL);
+	pthread_mutex_init(&mutex_list_suscriptores, NULL);
 	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
+	pthread_mutex_init(&mutex_estructura_mensajes, NULL);
+	sem_init(&writer,0,1);
+	sem_init(&nuevoMensajeNew,0,0);
+	sem_init(&nuevoMensajeApp,0,0);
+	sem_init(&nuevoMensajeGet,0,0);
+	sem_init(&nuevoMensajeLoc,0,0);
+	sem_init(&nuevoMensajeCaught,0,0);
+	sem_init(&nuevoMensajeCatch,0,0);
 
 	signal(SIGUSR1, rutina);
 
@@ -39,6 +59,7 @@ int32_t main(void) {
 			pthread_t hilo;
 			int32_t id_proceso =0;
 			t_estructura_hilo_mensaje estructura_mensaje;
+			t_estructura_hilo_suscriptor estructura_suscriptor;
 
 			//HANDSHAKE
 			if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
@@ -51,21 +72,70 @@ int32_t main(void) {
 					//ESPERA EL MENSAJE
 					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 						switch(operacion){
-						case SUSCRIPCION_APPEARED:
-						case SUSCRIPCION_GET:
-						case SUSCRIPCION_LOCALIZED:
-						case SUSCRIPCION_CATCH:
-						case SUSCRIPCION_CAUGHT:
 						case SUSCRIPCION_NEW:
 							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 							pthread_mutex_lock(&mutex_list_suscriptores);
-							t_estructura_hilo_suscriptor estructura_suscriptor;
 							estructura_suscriptor.socket_cliente = socket_cliente;
-							estructura_suscriptor.operacion = operacion;
+							estructura_suscriptor.operacion = SUSCRIPCION_NEW;
 							estructura_suscriptor.id_proceso = id_proceso;
-							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcion, &estructura_suscriptor) == 0){
-							}else return -1;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcionNew, &estructura_suscriptor) == 0){
+							}else printf("Fallo al crear el hilo que maneja la suscripcion New\n");
+							pthread_detach(hilo);
+						break;
+						case SUSCRIPCION_APPEARED:
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_list_suscriptores);
+							estructura_suscriptor.socket_cliente = socket_cliente;
+							estructura_suscriptor.operacion = SUSCRIPCION_APPEARED;
+							estructura_suscriptor.id_proceso = id_proceso;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcionAppeared, &estructura_suscriptor) == 0){
+							}else printf("Fallo al crear el hilo que maneja la suscripcion Appeared\n");
+							pthread_detach(hilo);
+						break;
+						case SUSCRIPCION_GET:
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_list_suscriptores);
+							estructura_suscriptor.socket_cliente = socket_cliente;
+							estructura_suscriptor.operacion = SUSCRIPCION_GET;
+							estructura_suscriptor.id_proceso = id_proceso;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcionGet, &estructura_suscriptor) == 0){
+							}else printf("Fallo al crear el hilo que maneja la suscripcion Get\n");
+							pthread_detach(hilo);
+						break;
+						case SUSCRIPCION_LOCALIZED:
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_list_suscriptores);
+							estructura_suscriptor.socket_cliente = socket_cliente;
+							estructura_suscriptor.operacion = SUSCRIPCION_LOCALIZED;
+							estructura_suscriptor.id_proceso = id_proceso;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcionLocalized, &estructura_suscriptor) == 0){
+							}else printf("Fallo al crear el hilo que maneja la suscripcion Localized\n");
+							pthread_detach(hilo);
+						break;
+						case SUSCRIPCION_CATCH:
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_list_suscriptores);
+							estructura_suscriptor.socket_cliente = socket_cliente;
+							estructura_suscriptor.operacion = SUSCRIPCION_CATCH;
+							estructura_suscriptor.id_proceso = id_proceso;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcionCatch, &estructura_suscriptor) == 0){
+							}else printf("Fallo al crear el hilo que maneja la suscripcion Catch\n");
+							pthread_detach(hilo);
+						break;
+						case SUSCRIPCION_CAUGHT:
+							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+							pthread_mutex_lock(&mutex_list_suscriptores);
+							estructura_suscriptor.socket_cliente = socket_cliente;
+							estructura_suscriptor.operacion = SUSCRIPCION_CAUGHT;
+							estructura_suscriptor.id_proceso = id_proceso;
+							if (pthread_create(&hilo, NULL, (void*)manejoSuscripcionCaught, &estructura_suscriptor) == 0){
+							}else printf("Fallo al crear el hilo que maneja la suscripcion Caught\n");
 							pthread_detach(hilo);
 						break;
 						case NEW_POKEMON:
@@ -169,7 +239,7 @@ int32_t get_id(){
 	return id_mensaje_global;
 }
 
-void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
+void manejoSuscripcionNew(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
 	int32_t id_proceso = estructura_suscriptor->id_proceso;
 	int32_t suscripcion = estructura_suscriptor->operacion;
@@ -184,7 +254,7 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	int32_t id_msg_log;
 
 	if(procesoSuscriptoACola(suscripcion, id_proceso)){
-		suscriptor = obtenerSuscriptor(id_proceso);
+		suscriptor = obtenerSuscriptor(id_proceso, suscripcion);
 	} else{
 		suscriptor = malloc(sizeof(t_suscriptor));
 		suscriptor->id = id_proceso;
@@ -195,65 +265,456 @@ void manejoSuscripcion(t_estructura_hilo_suscriptor * estructura_suscriptor){
 	pthread_mutex_unlock(&mutex_list_suscriptores);
 
 	char cola[9];
-	switch(suscripcion){
-	case SUSCRIPCION_NEW:
-		strcpy(cola, "NEW");
-		break;
-	case SUSCRIPCION_APPEARED:
-		strcpy(cola, "APPEARED");
-		break;
-	case SUSCRIPCION_GET:
-		strcpy(cola, "GET");
-		break;
-	case SUSCRIPCION_LOCALIZED:
-		strcpy(cola, "LOCALIZED");
-		break;
-	case SUSCRIPCION_CATCH:
-		strcpy(cola, "CATCH");
-		break;
-	case SUSCRIPCION_CAUGHT:
-		strcpy(cola, "CAUGHT");
-		break;
-	default:
-		strcpy(cola, "VACIA");
-		break;
-	}
+	strcpy(cola, "NEW");
 	log_info(logger, "Proceso suscripto a cola %s", cola);
 	enviar_ACK(0, socket_cliente);
 
 	while(fin == false){
-		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
-		if(mensajesAEnviar != NULL){
-			for(int i=0; i<mensajesAEnviar->elements_count; i++){
-					mensaje = list_get(mensajesAEnviar, i);
-					enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
-					if(esCorrelativo(mensaje->id_mensaje_correlativo)){
-						id_msg_log = mensaje->id_mensaje_correlativo;
-					}else id_msg_log = mensaje->id_mensaje;
-					pthread_mutex_lock(&mutex_list_mensaje);
-					list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
-					pthread_mutex_unlock(&mutex_list_mensaje);
-					//esperar ACK:
-					if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
-						if(operacion == ACK){
-							recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
-							recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-							log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
-							pthread_mutex_lock(&mutex_list_mensaje);
-							list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
-							pthread_mutex_unlock(&mutex_list_mensaje);
-						} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
-					} else {
-						log_info(logger, "El proceso id: %d se desconecto", id_proceso);
-						liberar_conexion(socket_cliente);
-						fin = true;
-						break;
-					}
-			}
-		list_destroy(mensajesAEnviar);
+		sem_wait(&nuevoMensajeNew);
+
+		reader++;
+		if(reader == 1){
+			sem_wait(&writer);
 		}
-	//free(mensajesAEnviar);
+
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		//pthread_mutex_lock(&mutex_guardar_en_memoria);
+		reader--;
+		if(reader == 0){
+			sem_post(&writer);
+		}
+		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		for(int i=0; i<mensajesAEnviar->elements_count; i++){
+				mensaje = list_get(mensajesAEnviar, i);
+				enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+				if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+					id_msg_log = mensaje->id_mensaje_correlativo;
+				}else id_msg_log = mensaje->id_mensaje;
+				pthread_mutex_lock(&mutex_list_mensaje);
+				list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+				pthread_mutex_unlock(&mutex_list_mensaje);
+				//esperar ACK:
+				if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
+						pthread_mutex_lock(&mutex_list_mensaje);
+						list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						pthread_mutex_unlock(&mutex_list_mensaje);
+					} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+				} else {
+					log_info(logger, "El proceso id: %d se desconecto", id_proceso);
+					liberar_conexion(socket_cliente);
+					fin = true;
+					break;
+				}
+		}
 	}
+	list_destroy(mensajesAEnviar);
+}
+
+void manejoSuscripcionAppeared(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t suscripcion = estructura_suscriptor->operacion;
+
+	t_suscriptor * suscriptor;
+	info_mensaje * mensaje;
+	t_list * mensajesAEnviar = NULL;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje;
+	int32_t operacion;
+	bool fin = false;
+	int32_t id_msg_log;
+
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
+		suscriptor = obtenerSuscriptor(id_proceso, suscripcion);
+	} else{
+		suscriptor = malloc(sizeof(t_suscriptor));
+		suscriptor->id = id_proceso;
+		suscriptor->op_code = suscripcion;
+		list_add(list_suscriptores, suscriptor);
+
+	}
+	pthread_mutex_unlock(&mutex_list_suscriptores);
+
+	char cola[9];
+	strcpy(cola, "APPEARED");
+	log_info(logger, "Proceso suscripto a cola %s", cola);
+	enviar_ACK(0, socket_cliente);
+
+	while(fin == false){
+		sem_wait(&nuevoMensajeApp);
+
+
+		reader++;
+		if(reader == 1){
+			sem_wait(&writer);
+		}
+
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		//pthread_mutex_lock(&mutex_guardar_en_memoria);
+		reader--;
+		if(reader == 0){
+			sem_post(&writer);
+		}
+		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		for(int i=0; i<mensajesAEnviar->elements_count; i++){
+				mensaje = list_get(mensajesAEnviar, i);
+				enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+				if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+					id_msg_log = mensaje->id_mensaje_correlativo;
+				}else id_msg_log = mensaje->id_mensaje;
+				pthread_mutex_lock(&mutex_list_mensaje);
+				list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+				pthread_mutex_unlock(&mutex_list_mensaje);
+				//esperar ACK:
+				if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
+						pthread_mutex_lock(&mutex_list_mensaje);
+						list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						pthread_mutex_unlock(&mutex_list_mensaje);
+					} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+				} else {
+					log_info(logger, "El proceso id: %d se desconecto", id_proceso);
+					liberar_conexion(socket_cliente);
+					fin = true;
+					break;
+				}
+		}
+	}
+	list_destroy(mensajesAEnviar);
+}
+
+void manejoSuscripcionGet(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t suscripcion = estructura_suscriptor->operacion;
+
+	t_suscriptor * suscriptor;
+	info_mensaje * mensaje;
+	t_list * mensajesAEnviar = NULL;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje;
+	int32_t operacion;
+	bool fin = false;
+	int32_t id_msg_log;
+
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
+		suscriptor = obtenerSuscriptor(id_proceso, suscripcion);
+	} else{
+		suscriptor = malloc(sizeof(t_suscriptor));
+		suscriptor->id = id_proceso;
+		suscriptor->op_code = suscripcion;
+		list_add(list_suscriptores, suscriptor);
+
+	}
+	pthread_mutex_unlock(&mutex_list_suscriptores);
+
+	char cola[9];
+	strcpy(cola, "GET");
+	log_info(logger, "Proceso suscripto a cola %s", cola);
+	enviar_ACK(0, socket_cliente);
+
+	while(fin == false){
+		sem_wait(&nuevoMensajeGet);
+
+
+		reader++;
+		if(reader == 1){
+			sem_wait(&writer);
+		}
+
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		//pthread_mutex_lock(&mutex_guardar_en_memoria);
+		reader--;
+		if(reader == 0){
+			sem_post(&writer);
+		}
+		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		for(int i=0; i<mensajesAEnviar->elements_count; i++){
+				mensaje = list_get(mensajesAEnviar, i);
+				enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+				if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+					id_msg_log = mensaje->id_mensaje_correlativo;
+				}else id_msg_log = mensaje->id_mensaje;
+				pthread_mutex_lock(&mutex_list_mensaje);
+				list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+				pthread_mutex_unlock(&mutex_list_mensaje);
+				//esperar ACK:
+				if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
+						pthread_mutex_lock(&mutex_list_mensaje);
+						list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						pthread_mutex_unlock(&mutex_list_mensaje);
+					} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+				} else {
+					log_info(logger, "El proceso id: %d se desconecto", id_proceso);
+					liberar_conexion(socket_cliente);
+					fin = true;
+					break;
+				}
+		}
+	}
+	list_destroy(mensajesAEnviar);
+}
+void manejoSuscripcionLocalized(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t suscripcion = estructura_suscriptor->operacion;
+
+	t_suscriptor * suscriptor;
+	info_mensaje * mensaje;
+	t_list * mensajesAEnviar = NULL;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje;
+	int32_t operacion;
+	bool fin = false;
+	int32_t id_msg_log;
+
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
+		suscriptor = obtenerSuscriptor(id_proceso, suscripcion);
+	} else{
+		suscriptor = malloc(sizeof(t_suscriptor));
+		suscriptor->id = id_proceso;
+		suscriptor->op_code = suscripcion;
+		list_add(list_suscriptores, suscriptor);
+
+	}
+	pthread_mutex_unlock(&mutex_list_suscriptores);
+
+	char cola[9];
+	strcpy(cola, "LOCALIZED");
+	log_info(logger, "Proceso suscripto a cola %s", cola);
+	enviar_ACK(0, socket_cliente);
+
+	while(fin == false){
+		sem_wait(&nuevoMensajeLoc);
+
+
+		reader++;
+		if(reader == 1){
+			sem_wait(&writer);
+		}
+
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		//pthread_mutex_lock(&mutex_guardar_en_memoria);
+		reader--;
+		if(reader == 0){
+			sem_post(&writer);
+		}
+		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		for(int i=0; i<mensajesAEnviar->elements_count; i++){
+				mensaje = list_get(mensajesAEnviar, i);
+				enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+				if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+					id_msg_log = mensaje->id_mensaje_correlativo;
+				}else id_msg_log = mensaje->id_mensaje;
+				pthread_mutex_lock(&mutex_list_mensaje);
+				list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+				pthread_mutex_unlock(&mutex_list_mensaje);
+				//esperar ACK:
+				if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
+						pthread_mutex_lock(&mutex_list_mensaje);
+						list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						pthread_mutex_unlock(&mutex_list_mensaje);
+					} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+				} else {
+					log_info(logger, "El proceso id: %d se desconecto", id_proceso);
+					liberar_conexion(socket_cliente);
+					fin = true;
+					break;
+				}
+		}
+	}
+	list_destroy(mensajesAEnviar);
+}
+
+void manejoSuscripcionCatch(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t suscripcion = estructura_suscriptor->operacion;
+
+	t_suscriptor * suscriptor;
+	info_mensaje * mensaje;
+	t_list * mensajesAEnviar = NULL;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje;
+	int32_t operacion;
+	bool fin = false;
+	int32_t id_msg_log;
+
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
+		suscriptor = obtenerSuscriptor(id_proceso, suscripcion);
+	} else{
+		suscriptor = malloc(sizeof(t_suscriptor));
+		suscriptor->id = id_proceso;
+		suscriptor->op_code = suscripcion;
+		list_add(list_suscriptores, suscriptor);
+
+	}
+	pthread_mutex_unlock(&mutex_list_suscriptores);
+
+	char cola[9];
+	strcpy(cola, "CATCH");
+	log_info(logger, "Proceso suscripto a cola %s", cola);
+	enviar_ACK(0, socket_cliente);
+
+	while(fin == false){
+		sem_wait(&nuevoMensajeCatch);
+
+
+		reader++;
+		if(reader == 1){
+			sem_wait(&writer);
+		}
+
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		//pthread_mutex_lock(&mutex_guardar_en_memoria);
+		reader--;
+		if(reader == 0){
+			sem_post(&writer);
+		}
+		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		for(int i=0; i<mensajesAEnviar->elements_count; i++){
+				mensaje = list_get(mensajesAEnviar, i);
+				enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+				if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+					id_msg_log = mensaje->id_mensaje_correlativo;
+				}else id_msg_log = mensaje->id_mensaje;
+				pthread_mutex_lock(&mutex_list_mensaje);
+				list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+				pthread_mutex_unlock(&mutex_list_mensaje);
+				//esperar ACK:
+				if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
+						pthread_mutex_lock(&mutex_list_mensaje);
+						list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						pthread_mutex_unlock(&mutex_list_mensaje);
+					} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+				} else {
+					log_info(logger, "El proceso id: %d se desconecto", id_proceso);
+					liberar_conexion(socket_cliente);
+					fin = true;
+					break;
+				}
+		}
+	}
+	list_destroy(mensajesAEnviar);
+}
+
+void manejoSuscripcionCaught(t_estructura_hilo_suscriptor * estructura_suscriptor){
+	int32_t socket_cliente = estructura_suscriptor->socket_cliente;
+	int32_t id_proceso = estructura_suscriptor->id_proceso;
+	int32_t suscripcion = estructura_suscriptor->operacion;
+
+	t_suscriptor * suscriptor;
+	info_mensaje * mensaje;
+	t_list * mensajesAEnviar = NULL;
+	int32_t tamanio_estructura = 0;
+	int32_t id_mensaje;
+	int32_t operacion;
+	bool fin = false;
+	int32_t id_msg_log;
+
+	if(procesoSuscriptoACola(suscripcion, id_proceso)){
+		suscriptor = obtenerSuscriptor(id_proceso, suscripcion);
+	} else{
+		suscriptor = malloc(sizeof(t_suscriptor));
+		suscriptor->id = id_proceso;
+		suscriptor->op_code = suscripcion;
+		list_add(list_suscriptores, suscriptor);
+
+	}
+	pthread_mutex_unlock(&mutex_list_suscriptores);
+
+	char cola[9];
+	strcpy(cola, "CAUGHT");
+	log_info(logger, "Proceso suscripto a cola %s", cola);
+	enviar_ACK(0, socket_cliente);
+
+	while(fin == false){
+		sem_wait(&nuevoMensajeCaught);
+
+
+		reader++;
+		if(reader == 1){
+			sem_wait(&writer);
+		}
+
+		pthread_mutex_lock(&mutex_guardar_en_memoria);
+		mensajesAEnviar = getMensajesAEnviar(suscripcion, id_proceso);
+		pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		//pthread_mutex_lock(&mutex_guardar_en_memoria);
+		reader--;
+		if(reader == 0){
+			sem_post(&writer);
+		}
+		//pthread_mutex_unlock(&mutex_guardar_en_memoria);
+
+		for(int i=0; i<mensajesAEnviar->elements_count; i++){
+				mensaje = list_get(mensajesAEnviar, i);
+				enviarMensaje(suscripcion, mensaje, socket_cliente, id_proceso);
+				if(esCorrelativo(mensaje->id_mensaje_correlativo)){
+					id_msg_log = mensaje->id_mensaje_correlativo;
+				}else id_msg_log = mensaje->id_mensaje;
+				pthread_mutex_lock(&mutex_list_mensaje);
+				list_add(mensaje->suscriptoresALosQueSeEnvio, suscriptor);
+				pthread_mutex_unlock(&mutex_list_mensaje);
+				//esperar ACK:
+				if(recv(socket_cliente, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
+					if(operacion == ACK){
+						recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
+						recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
+						log_info(logger, "Se recibio el ACK del mensaje id: %d", id_msg_log);
+						pthread_mutex_lock(&mutex_list_mensaje);
+						list_add(mensaje->suscriptoresQueRecibieron, suscriptor);
+						pthread_mutex_unlock(&mutex_list_mensaje);
+					} else printf("Luego de enviar el mensaje devolvieron una operacion que no era ACK\n");
+				} else {
+					log_info(logger, "El proceso id: %d se desconecto", id_proceso);
+					liberar_conexion(socket_cliente);
+					fin = true;
+					break;
+				}
+		}
+	}
+	list_destroy(mensajesAEnviar);
 }
 
 void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
@@ -291,11 +752,13 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		mensaje->id_mensaje_correlativo = id_mensaje;
 	}
 
+	sem_wait(&writer);
 	//mostrarEstadoMemoria();
 	pthread_mutex_lock(&mutex_guardar_en_memoria);
 	guardarMensajeEnCache(mensaje);
 	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	//mostrarEstadoMemoria();
+	sem_post(&writer);
 
 	mensaje->process_id=id_proceso;
 	enviar_ACK(mensaje->id_mensaje, socket_cliente);
@@ -330,9 +793,18 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 	mensajeNew->suscriptoresALosQueSeEnvio->elements_count=0;
 	mensajeNew->suscriptoresQueRecibieron = list_create();
 	mensajeNew->suscriptoresQueRecibieron->elements_count=0;
+
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeNew);
+	for(int i = 0; i< list_suscriptores->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+		if(suscriptor->op_code == SUSCRIPCION_NEW){
+		sem_post(&nuevoMensajeNew);
+		}
+	}
 	pthread_mutex_unlock(&mutex_list_mensaje);
+
+
 	return mensajeNew;
 }
 
@@ -356,6 +828,12 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	mensajeAppeared->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeAppeared);
+	for(int i = 0; i< list_suscriptores->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+		if(suscriptor->op_code == SUSCRIPCION_APPEARED){
+		sem_post(&nuevoMensajeApp);
+		}
+	}
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeAppeared;
 }
@@ -378,6 +856,12 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	mensajeGet->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeGet);
+	for(int i = 0; i< list_suscriptores->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+		if(suscriptor->op_code == SUSCRIPCION_GET){
+		sem_post(&nuevoMensajeGet);
+		}
+	}
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeGet;
 }
@@ -400,6 +884,12 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	mensajeLocalized->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeLocalized);
+	for(int i = 0; i< list_suscriptores->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+		if(suscriptor->op_code == SUSCRIPCION_LOCALIZED){
+		sem_post(&nuevoMensajeLoc);
+		}
+	}
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeLocalized;
 }
@@ -423,6 +913,12 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	mensajeCatch->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeCatch);
+	for(int i = 0; i< list_suscriptores->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+		if(suscriptor->op_code == SUSCRIPCION_CATCH){
+		sem_post(&nuevoMensajeCatch);
+		}
+	}
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeCatch;
 }
@@ -445,6 +941,12 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	mensajeCaught->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeCaught);
+	for(int i = 0; i< list_suscriptores->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+		if(suscriptor->op_code == SUSCRIPCION_CAUGHT){
+		sem_post(&nuevoMensajeCaught);
+		}
+	}
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeCaught;
 }
@@ -810,7 +1312,7 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 	default:
 		break;
 	}
-	pthread_mutex_lock(&mutex_guardar_en_memoria);
+
 	mensajesCacheados = getMensajesCacheadosDeOperacion(tipoMensajeABuscar); // mensajesCacheadoes es una lista de t_particion
 
 	mensajesAEnviar=list_create();
@@ -822,7 +1324,6 @@ t_list * getMensajesAEnviar(op_code operacion, int32_t id_proceso){
 		}
 	}
 	list_destroy(mensajesCacheados);
-	pthread_mutex_unlock(&mutex_guardar_en_memoria);
 	return mensajesAEnviar;
 }
 
@@ -891,34 +1392,32 @@ bool procesoSuscriptoACola(op_code operacion, int32_t id_proceso){
 		return esElSuscriptor((t_suscriptor*)element, id_proceso);
 	}
 
-	t_list * suscriptor = list_filter(list_suscriptores, _esElSuscriptor);
-	if(suscriptor->elements_count >1){
-		list_destroy(suscriptor);
-		printf("Estaba suscripto mas de una vez a la misma cola \n");
-		return -1;
-	}else {
-		bool resultado = suscriptor->elements_count;
-		list_destroy(suscriptor);
-		return resultado;
+	t_list * suscripciones = list_filter(list_suscriptores, _esElSuscriptor);
+	for(int i; i<suscripciones->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(suscripciones, i);
+		if(suscriptor->op_code == operacion){
+			list_destroy(suscripciones);
+			return true;
+		}
 	}
+	list_destroy(suscripciones);
+	return false;
 }
 
-t_suscriptor * obtenerSuscriptor(int32_t id_proceso){
-	t_suscriptor * suscriptor = NULL;
+t_suscriptor * obtenerSuscriptor(int32_t id_proceso, op_code operacion){
 	bool _esElSuscriptor(void* element){
 		return esElSuscriptor((t_suscriptor*)element, id_proceso);
 	}
 
-	t_list * suscriptores = list_filter(list_suscriptores, _esElSuscriptor);
-	if(suscriptores->elements_count >1){
-		printf("Estaba suscripto mas de una vez a la misma cola \n");
-		list_destroy(suscriptores);
-		return suscriptor;
-	}else {
-		suscriptor = list_get(suscriptores, 0);
-		list_destroy(suscriptores);
-		return suscriptor;
+	t_list * suscripciones = list_filter(list_suscriptores, _esElSuscriptor);
+	for(int i; i<suscripciones->elements_count; i++){
+		t_suscriptor * suscriptor = list_get(suscripciones, i);
+		if(suscriptor->op_code == operacion){
+			list_destroy(suscripciones);
+			return suscriptor;
+		}
 	}
+	return NULL;
 }
 
 
