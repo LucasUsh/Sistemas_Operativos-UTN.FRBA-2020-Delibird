@@ -211,6 +211,9 @@ void resolver_deadlock(t_deadlock* deadlock){
 
 	sem_post(&s_cola_ready_con_items);
 
+
+	entrenador_destroyer(entrenadorDL2);
+
 	return;
 }
 
@@ -249,6 +252,7 @@ t_list* entrenadores_en_deadlock(){
 		list_add(entrenadores_en_DL, nuevo);
 	}
 
+	list_destroy(en_DL);
 	return entrenadores_en_DL;
 
 }
@@ -479,6 +483,7 @@ void detectar_deadlocks(){
 	}
 
 	resolver_deadlocks(deadlocks_detectados);
+	list_destroy(deadlocks_detectados);
 
 }
 
