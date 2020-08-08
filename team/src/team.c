@@ -44,6 +44,7 @@ sem_t s_detectar_deadlock;
 sem_t s_replanificar;
 sem_t s_entrenador_exit;
 sem_t s_replanificar_sjfcd;
+sem_t s_suscripcion_localized;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_ciclos_totales;
 pthread_mutex_t mutex_cambios_contexto;
@@ -142,8 +143,7 @@ void hilo_exit(){
 	//show_estado();
 	char* metricas = get_metricas_string();
 	log_info(logger, metricas);
-	//printf("asdasdasd");
-	//printf("Terminando el programa...\n");
+	free(metricas);
 
 	return;
 }
@@ -421,6 +421,8 @@ void detectar_deadlocks(){
 						}
 
 						log_info(logger, dl_string);
+
+						free(dl_string);
 					}
 
 
@@ -474,7 +476,9 @@ void detectar_deadlocks(){
 			string_append_with_format(&log_deadlock, "%d ", entrenador_involucrado->id);
 		}
 
-		string_append(&log_deadlock, "\n");
+		free(log_deadlock);
+
+		//string_append(&log_deadlock, "\n");
 
 		//log_debug(logger, log_deadlock);
 
@@ -1297,24 +1301,21 @@ void recibidor_mensajes_caught(void* args){
 	t_entrenador* entrenador = list_get(entrenadores, respuesta->id_entrenador);
 
 	if(mensaje->fueAtrapado){
-		//printf("GOTCHA! %s WAS CAUGHT!\n", entrenador->pokemon_destino->nombre);
 		list_add(entrenador->pokemones, entrenador->pokemon_destino);
-		log_info(logger, "El entrenador %d capturó el pokémon");
+		log_info(logger, "El entrenador %d capturó el pokémon", entrenador->id);
 
 	} else {
-		log_info(logger, "El entrenador %d no capturó el pokémon");
+		log_info(logger, "El entrenador %d no capturó el pokémon", entrenador->id);
 	}
 
 	entrenador->pokemon_destino = NULL;
 	entrenador->ocupado = false;
-	//show_estado();
 	sem_post(entrenador->semaforo);
 
 	return;
 }
 
 void hilo_recibidor_mensajes_gameboy(){
-//	printf("Esperando que el Game Boy se conecte...\n");
 	while(1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
 
@@ -1483,6 +1484,8 @@ void hilo_suscriptor_caught(op_code* code){
 										string_append(&str_respuesta, mensaje_caught->fueAtrapado ? "OK" : "FAIL");
 										log_info(logger, "Recibí un mensaje CAUGHT con el id %d y la respuesta es %s", id_mensaje, str_respuesta);
 
+										free(str_respuesta);
+
 										t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
 										t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
@@ -1539,9 +1542,11 @@ void hilo_suscriptor_localized(op_code* code){
 	while(1){
 
 		if(socket_broker != 0){
+
 			enviar_handshake(PROCESS_ID, socket_broker);
 			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
+					sem_post(&s_suscripcion_localized);
 					recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
@@ -1581,6 +1586,8 @@ void hilo_suscriptor_localized(op_code* code){
 
 									log_info(logger, mensaje_log);
 
+									free(mensaje_log);
+
 									t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
 
@@ -1619,7 +1626,7 @@ void hilo_suscriptor_localized(op_code* code){
 			}
 
 		} else {
-			//log_info(logger, "Reintentando conexion cola...");
+			sem_post(&s_suscripcion_localized);
 			socket_broker = reconectar(socket_broker);
 			fin = false;
 		}
@@ -1645,6 +1652,8 @@ int inicializar_team(char* entrenador){
 	sem_init(&s_replanificar, 0, 0);
 	sem_init(&s_entrenador_exit, 0, 0);
 	sem_init(&s_replanificar_sjfcd, 0,0);
+	sem_init(&s_suscripcion_localized, 0,0);
+
 	pthread_mutex_init(&mutex_cola_ready, NULL);
 	pthread_mutex_init(&mutex_ciclos_totales, NULL);
 	pthread_mutex_init(&mutex_deadlocks_totales, NULL);
@@ -1655,9 +1664,8 @@ int inicializar_team(char* entrenador){
 	srand(time(NULL));
 
 	char* config_path = get_config_path(entrenador);
-
 	config = config_create(config_path);
-	//printf("el entrenador que se va a cargar es el de la config: %s\n", entrenador);
+
 	char* log_path = config_get_string_value(config, "LOG_FILE");
 	logger = log_create(log_path, "Team", 1, LOG_LEVEL_DEBUG);
 
@@ -1796,7 +1804,8 @@ int32_t main(int32_t argc, char** argv){
 	pthread_create(&p_suscribirse_localized, NULL, (void*)&hilo_suscriptor_localized, &op_localized);
 	pthread_detach(p_suscribirse_localized);
 
-	//sleep(10);
+	sem_wait(&s_suscripcion_localized);
+
 	generar_y_enviar_get();
 
 
