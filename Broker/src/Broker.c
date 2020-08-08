@@ -739,8 +739,15 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		guardarMensajeEnCache(mensaje);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 		//mostrarEstadoMemoria();
-		sem_post(&primerNew);
 		sem_post(&writer);
+		pthread_mutex_lock(&mutex_list_mensaje);
+		for(int i = 0; i< list_suscriptores->elements_count; i++){
+			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+			if(suscriptor->op_code == SUSCRIPCION_NEW){
+				sem_post(&primerNew);
+			}
+		}
+		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case APPEARED_POKEMON:
 		mensaje = recibirMensajeAppeared(socket_cliente);
@@ -753,8 +760,15 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		guardarMensajeEnCache(mensaje);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 		//mostrarEstadoMemoria();
-		sem_post(&primerApp);
 		sem_post(&writer);
+		pthread_mutex_lock(&mutex_list_mensaje);
+		for(int i = 0; i< list_suscriptores->elements_count; i++){
+			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+			if(suscriptor->op_code == SUSCRIPCION_APPEARED){
+				sem_post(&primerApp);
+			}
+		}
+		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case GET_POKEMON:
 		mensaje = recibirMensajeGet(socket_cliente);
@@ -767,8 +781,15 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		guardarMensajeEnCache(mensaje);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 		//mostrarEstadoMemoria();
-		sem_post(&primerGet);
 		sem_post(&writer);
+		pthread_mutex_lock(&mutex_list_mensaje);
+		for(int i = 0; i< list_suscriptores->elements_count; i++){
+			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+			if(suscriptor->op_code == SUSCRIPCION_GET){
+				sem_post(&primerGet);
+			}
+		}
+		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case LOCALIZED_POKEMON:
 		mensaje = recibirMensajeLocalized(socket_cliente);
@@ -781,8 +802,15 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		guardarMensajeEnCache(mensaje);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 		//mostrarEstadoMemoria();
-		sem_post(&primerLoc);
 		sem_post(&writer);
+		pthread_mutex_lock(&mutex_list_mensaje);
+		for(int i = 0; i< list_suscriptores->elements_count; i++){
+			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+			if(suscriptor->op_code == SUSCRIPCION_LOCALIZED){
+				sem_post(&primerLoc);
+			}
+		}
+		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case CATCH_POKEMON:
 		mensaje = recibirMensajeCatch(socket_cliente);
@@ -795,8 +823,15 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		guardarMensajeEnCache(mensaje);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 		//mostrarEstadoMemoria();
-		sem_post(&primerCatch);
 		sem_post(&writer);
+		pthread_mutex_lock(&mutex_list_mensaje);
+		for(int i = 0; i< list_suscriptores->elements_count; i++){
+			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+			if(suscriptor->op_code == SUSCRIPCION_CATCH){
+				sem_post(&primerCatch);
+			}
+		}
+		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case CAUGHT_POKEMON:
 		mensaje = recibirMensajeCaught(socket_cliente);
@@ -809,8 +844,15 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		guardarMensajeEnCache(mensaje);
 		pthread_mutex_unlock(&mutex_guardar_en_memoria);
 		//mostrarEstadoMemoria();
-		sem_post(&primerCaught);
 		sem_post(&writer);
+		pthread_mutex_lock(&mutex_list_mensaje);
+		for(int i = 0; i< list_suscriptores->elements_count; i++){
+			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
+			if(suscriptor->op_code == SUSCRIPCION_CAUGHT){
+				sem_post(&primerCaught);
+			}
+		}
+		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	default:
 		break;
