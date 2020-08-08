@@ -141,6 +141,7 @@ t_entrenador* get_entrenador(t_config* config, int32_t index){
 	entrenador->estimacion =  atoi(config_get_string_value(config,"ESTIMACION_INICIAL"));
 	entrenador->ciclos = 0;
 	entrenador->cantidad_ejecutada = 0;
+	entrenador->pokemon_destino = NULL;
 
 	sem_init(entrenador->semaforo, 0, 0);
 	return entrenador;
@@ -302,7 +303,7 @@ int get_cantidad_entrenadores_yendo(char* pokemon){
 	t_list* filtrados = list_filter(entrenadores, _yendo);
 	pthread_mutex_unlock(&mutex_list_entrenadores);
 
-	list_destroy(filtrados);
+	//list_destroy(filtrados);
 
 	return filtrados->elements_count;
 }
@@ -583,7 +584,7 @@ t_list* pokemones_de_mas(t_entrenador* entrenador){
 		if(de_mas > 0) list_add(pokemons_de_mas, pokemon);
 	}
 
-	list_destroy(pokemons_de_mas);
+	//list_destroy(pokemons_de_mas);
 
 	return pokemons_de_mas;
 }
@@ -600,7 +601,7 @@ t_list* objetivos_pendientes(t_entrenador* entrenador){
 		if(pendientes > 0) list_add(objetivos_pendiente, objetivo);
 	}
 
-	list_destroy(objetivos_pendiente);
+	//list_destroy(objetivos_pendiente);
 
 	return objetivos_pendiente;
 }

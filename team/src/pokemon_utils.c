@@ -154,7 +154,10 @@ void respuesta_destroyer(void* elem){
 }
 
 void liberar_elementos_lista_respuesta(t_list* lista){
-	list_clean_and_destroy_elements(lista, respuesta_destroyer);
+	if(lista->elements_count > 0){
+		list_clean_and_destroy_elements(lista, respuesta_destroyer);
+	}
+
 	free(lista);
 }
 
@@ -167,20 +170,30 @@ void pokemon_destroyer(void* elem){
 }
 
 void liberar_elementos_lista_pokemon(t_list* lista){
-	list_clean_and_destroy_elements(lista, pokemon_destroyer);
-	free(lista);
+	if(lista->elements_count > 0){
+		list_clean_and_destroy_elements(lista, pokemon_destroyer);
+	}
+	list_destroy(lista);
 }
 
 
 void entrenador_destroyer(void* elem){
 	t_entrenador* entrenador = (t_entrenador*) elem;
+	liberar_elementos_lista_pokemon(entrenador->objetivo);
+	liberar_elementos_lista_pokemon(entrenador->pokemones);
+	if(entrenador->pokemon_destino != NULL){
+		pokemon_destroyer(entrenador->pokemon_destino);
+	}
 	sem_destroy(entrenador->semaforo);
 	free(entrenador);
 }
 
 void liberar_elementos_lista_entrenador(t_list* lista){
-	list_clean_and_destroy_elements(lista, entrenador_destroyer);
-	free(lista);
+	if(lista->elements_count > 0){
+		list_clean_and_destroy_elements(lista, entrenador_destroyer);
+	}
+
+	list_destroy(lista);
 }
 
 
