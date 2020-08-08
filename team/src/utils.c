@@ -107,8 +107,8 @@ t_list* get_objetivos(t_config* config, int32_t index){
 
 	//liberar_strings(pokemones);
 	//liberar_strings(pokemon_entrenadores);
-	string_iterate_lines(pokemon_entrenadores, (void*) free);
-	free(pokemon_entrenadores);
+	//string_iterate_lines(pokemon_entrenadores, (void*) free);
+	//free(pokemon_entrenadores);
 
 	return objetivos;
 }
