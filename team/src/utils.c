@@ -526,7 +526,7 @@ int32_t reconectar(int32_t socket){
 	if(socket > 0){
 		log_info(logger, "Se reconectó exitosamente al Broker");
 	} else {
-		log_info(logger, "Fallo al reconectar al Broker");
+		log_error(logger, "Fallo al reconectar al Broker");
 	}
 
 	return socket;
