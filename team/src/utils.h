@@ -54,5 +54,4 @@ t_pokemon_team* get_pokemon(char* pokemon_name);
 t_list* get_pokemones(t_config* config, int32_t index);
 bool puede_capturar_pokemones(t_entrenador* entrenador);
 t_pokemon_team* pokemon_que_sirve_intercambio(t_entrenador* e1, t_entrenador* e2);
-//void liberar_strings(char** cadenas);
 #endif /* UTILS_H_ */

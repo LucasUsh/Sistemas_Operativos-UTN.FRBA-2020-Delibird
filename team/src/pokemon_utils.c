@@ -100,6 +100,8 @@ t_list* sumarizar_pokemones(t_list* lista_pokemones_sin_sumarizar){
 		}
 	}
 
+	liberar_elementos_lista_pokemon(lista_pokemones_sin_sumarizar);
+
 	return lista_sumarizada;
 
 }

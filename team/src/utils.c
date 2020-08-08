@@ -107,7 +107,8 @@ t_list* get_objetivos(t_config* config, int32_t index){
 
 	//liberar_strings(pokemones);
 	//liberar_strings(pokemon_entrenadores);
-
+	string_iterate_lines(pokemon_entrenadores, (void*) free);
+	free(pokemon_entrenadores);
 
 	return objetivos;
 }
@@ -593,8 +594,6 @@ t_list* objetivos_pendientes(t_entrenador* entrenador){
 	return objetivos_pendiente;
 }
 
-
-
 /*
  * e2 tiene un pokemon que le sirve a e1
  * */
@@ -626,11 +625,3 @@ t_pokemon_team* pokemon_que_sirve_intercambio(t_entrenador* e1, t_entrenador* e2
 	return NULL;
 }
 
-//void liberar_strings(char** cadenas) {
-//	int i = 0;
-//	while(cadenas[i] != NULL) {
-//	        free(cadenas[i]);
-//	        i++;
-//	}
-//	free(cadenas);
-//}
