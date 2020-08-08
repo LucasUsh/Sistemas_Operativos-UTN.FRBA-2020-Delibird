@@ -814,7 +814,7 @@ void capturar(t_entrenador* entrenador){
 
 		entrenador->ocupado = false;
 
-		log_info(logger, "El entrenador %d capturó el pokémon");
+		log_info(logger, "El entrenador %d capturó el pokémon", entrenador->id);
 
 		if(!cumplio_objetivo(entrenador)){
 			//printf("el entrenador %d aún no cumplio sus objetivos, pasandolo a BLOCKED\n", entrenador->id);
