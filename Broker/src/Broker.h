@@ -81,7 +81,26 @@ t_list* list_suscriptores;
 char *IP_BROKER;
 char *PUERTO_BROKER;
 char * LOG_FILE;
-sem_t* recibir_mensaje;
+
+pthread_mutex_t mutex_id_mensaje;
+pthread_mutex_t mutex_list_mensaje;
+pthread_mutex_t mutex_list_suscriptores;
+pthread_mutex_t mutex_guardar_en_memoria;
+pthread_mutex_t mutex_estructura_mensajes;
+
+sem_t writer;
+sem_t nuevoMensajeNew;
+sem_t primerNew;
+sem_t nuevoMensajeApp;
+sem_t primerApp;
+sem_t nuevoMensajeGet;
+sem_t primerGet;
+sem_t nuevoMensajeLoc;
+sem_t primerLoc;
+sem_t nuevoMensajeCaught;
+sem_t primerCaught;
+sem_t nuevoMensajeCatch;
+sem_t primerCatch;
 
 
 int32_t get_id();

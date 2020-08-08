@@ -13,48 +13,10 @@
 #include "../../OurLibraries/Sockets/mensajes.h"
 
 int32_t id_mensaje_global = 0;
-pthread_mutex_t mutex_id_mensaje;
-pthread_mutex_t mutex_list_mensaje;
-pthread_mutex_t mutex_list_suscriptores;
-pthread_mutex_t mutex_guardar_en_memoria;
-pthread_mutex_t mutex_estructura_mensajes;
-
 int reader = 0;
-sem_t writer;
-sem_t nuevoMensajeNew;
-sem_t primerNew;
-sem_t nuevoMensajeApp;
-sem_t primerApp;
-sem_t nuevoMensajeGet;
-sem_t primerGet;
-sem_t nuevoMensajeLoc;
-sem_t primerLoc;
-sem_t nuevoMensajeCaught;
-sem_t primerCaught;
-sem_t nuevoMensajeCatch;
-sem_t primerCatch;
-
 
 int32_t main(void) {
 	iniciarBroker();
-	pthread_mutex_init(&mutex_id_mensaje, NULL);
-	pthread_mutex_init(&mutex_list_mensaje, NULL);
-	pthread_mutex_init(&mutex_list_suscriptores, NULL);
-	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
-	pthread_mutex_init(&mutex_estructura_mensajes, NULL);
-	sem_init(&writer,0,1);
-	sem_init(&nuevoMensajeNew,0,0);
-	sem_init(&nuevoMensajeApp,0,0);
-	sem_init(&nuevoMensajeGet,0,0);
-	sem_init(&nuevoMensajeLoc,0,0);
-	sem_init(&nuevoMensajeCaught,0,0);
-	sem_init(&nuevoMensajeCatch,0,0);
-	sem_init(&primerNew,0,0);
-	sem_init(&primerApp,0,0);
-	sem_init(&primerGet,0,0);
-	sem_init(&primerLoc,0,0);
-	sem_init(&primerCaught,0,0);
-	sem_init(&primerCatch,0,0);
 
 	signal(SIGUSR1, rutina);
 
@@ -1232,6 +1194,25 @@ void iniciarBroker(){
 	//Crear lista de suscriptores y mensajes
 	list_suscriptores = list_create();
 	list_mensajes = list_create();
+
+	pthread_mutex_init(&mutex_id_mensaje, NULL);
+	pthread_mutex_init(&mutex_list_mensaje, NULL);
+	pthread_mutex_init(&mutex_list_suscriptores, NULL);
+	pthread_mutex_init(&mutex_guardar_en_memoria, NULL);
+	pthread_mutex_init(&mutex_estructura_mensajes, NULL);
+	sem_init(&writer,0,1);
+	sem_init(&nuevoMensajeNew,0,0);
+	sem_init(&nuevoMensajeApp,0,0);
+	sem_init(&nuevoMensajeGet,0,0);
+	sem_init(&nuevoMensajeLoc,0,0);
+	sem_init(&nuevoMensajeCaught,0,0);
+	sem_init(&nuevoMensajeCatch,0,0);
+	sem_init(&primerNew,0,0);
+	sem_init(&primerApp,0,0);
+	sem_init(&primerGet,0,0);
+	sem_init(&primerLoc,0,0);
+	sem_init(&primerCaught,0,0);
+	sem_init(&primerCatch,0,0);
 
 }
 
