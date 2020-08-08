@@ -402,7 +402,6 @@ t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* ob
 t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 	for(int i = 0; i < respuestas->elements_count; i++){
 		t_respuesta* respuesta = list_get(respuestas, i);
-		printf("%d == %d ? \n", id, respuesta->id_respuesta);
 		if(id == respuesta->id_respuesta){
 			list_get(respuestas, i);
 			return respuesta;
@@ -468,7 +467,7 @@ bool esta_en_objetivos_globales(char* pokemon, t_list* objetivo_global){
 			return true;
 		}
 	}
-	printf("No está en objetivos globales, lo voy a rechazar\n");
+//	printf("No está en objetivos globales, lo voy a rechazar\n");
 	return false;
 };
 
@@ -477,7 +476,7 @@ bool fue_recibido(char* pokemon, t_list* pokemones_recibidos){
 	for(int i = 0; i < pokemones_recibidos->elements_count; i++){
 		char* pokemon_actual = list_get(pokemones_recibidos, i);
 		if(string_equals_ignore_case(pokemon, pokemon_actual)){
-			printf("ya recibí un mensaje con el pokemon %s, lo voy a rechazar\n", pokemon);
+		//	printf("ya recibí un mensaje con el pokemon %s, lo voy a rechazar\n", pokemon);
 			return true;
 		}
 	}
@@ -550,14 +549,6 @@ t_posicion avanzar(t_posicion posicion, int32_t posX, int32_t posY){
 	posicion.Y = nuevaPosicionY;
 
 	return posicion;
-}
-
-
-void show_semaforo(sem_t* semaforo){
-	int i = 0;
-	sem_getvalue(semaforo, &i);
-	printf("El valor del semaforo es : %d\n", i);
-	return;
 }
 
 

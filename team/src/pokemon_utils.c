@@ -44,9 +44,9 @@ t_list* get_pokemones(t_config* config, int32_t index){
 }
 
 void mostrar_pokemon(t_pokemon_team* pokemon_actual, t_list* objetivo_global){
-	printf("| 	nombre: %s, cantidad: %d\n",
-			pokemon_actual->nombre,
-			pokemon_actual->cantidad );
+//	printf("| 	nombre: %s, cantidad: %d\n",
+//			pokemon_actual->nombre,
+//			pokemon_actual->cantidad );
 }
 
 int32_t get_cantidad_pokemon(t_list* list_pokemones){
