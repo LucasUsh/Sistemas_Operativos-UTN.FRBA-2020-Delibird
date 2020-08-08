@@ -1750,6 +1750,7 @@ void liberar_memoria(){
 	sem_destroy(&s_replanificar);
 	sem_destroy(&s_entrenador_exit);
 	sem_destroy(&s_replanificar_sjfcd);
+	sem_destroy(&s_suscripcion_localized);
 	pthread_mutex_destroy(&mutex_cola_ready);
 	pthread_mutex_destroy(&mutex_ciclos_totales);
 	pthread_mutex_destroy(&mutex_deadlocks_totales);
