@@ -402,9 +402,9 @@ t_list* filtrar_localized_objetivo_global(t_list* mensajes_localized, t_list* ob
 t_respuesta* get_respuesta(int32_t id, t_list* respuestas){
 	for(int i = 0; i < respuestas->elements_count; i++){
 		t_respuesta* respuesta = list_get(respuestas, i);
-
+		printf("%d == %d ? \n", id, respuesta->id_respuesta);
 		if(id == respuesta->id_respuesta){
-			list_remove(respuestas, i);
+			list_get(respuestas, i);
 			return respuesta;
 		}
 	}
@@ -508,17 +508,6 @@ bool localized_valido(t_Localized* mensaje, int id, t_list* gets_enviados, t_lis
 
 	bool en_objetivo = esta_en_objetivos_globales(mensaje->pokemon.nombre, objetivo_global);
 	bool recibido = fue_recibido(mensaje->pokemon.nombre, pokemones_recibidos);
-
-	if(en_objetivo){
-		log_debug(logger, "en objetivos");
-	} else {
-		log_debug(logger, "NO en objetivos");
-	}
-	if(recibido){
-		log_debug(logger, "recibido");
-	} else {
-		log_debug(logger, "NO recibido");
-	}
 
 	return en_objetivo && !recibido;
 }
