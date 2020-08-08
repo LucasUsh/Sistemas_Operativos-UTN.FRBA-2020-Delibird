@@ -603,10 +603,9 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 
 
 
-
-					t_respuesta* respuesta = malloc(sizeof(respuesta));
-					respuesta->id_entrenador = entrenador->id;
+					t_respuesta* respuesta = malloc(sizeof(t_respuesta));
 					respuesta->id_respuesta = id_mensaje;
+					respuesta->id_entrenador = entrenador->id;
 					list_add(mensajes_catch_esperando_respuesta, respuesta);
 
 					pthread_mutex_lock(&mutex_ciclos_totales);
