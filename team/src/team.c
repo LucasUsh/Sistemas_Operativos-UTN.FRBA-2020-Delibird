@@ -142,6 +142,7 @@ void hilo_exit(){
 	show_estado();
 	char* metricas = get_metricas_string();
 	log_info(logger, metricas);
+	printf("asdasdasd");
 	printf("Terminando el programa...\n");
 
 	return;
@@ -212,7 +213,7 @@ void resolver_deadlock(t_deadlock* deadlock){
 	sem_post(&s_cola_ready_con_items);
 
 
-	entrenador_destroyer(entrenadorDL2);
+	//entrenador_destroyer(entrenadorDL2);
 
 	return;
 }
@@ -252,7 +253,7 @@ t_list* entrenadores_en_deadlock(){
 		list_add(entrenadores_en_DL, nuevo);
 	}
 
-	list_destroy(en_DL);
+	//list_destroy(en_DL);
 	return entrenadores_en_DL;
 
 }
@@ -483,7 +484,7 @@ void detectar_deadlocks(){
 	}
 
 	resolver_deadlocks(deadlocks_detectados);
-	list_destroy(deadlocks_detectados);
+	//list_destroy(deadlocks_detectados);
 
 }
 
@@ -581,17 +582,20 @@ bool generar_y_enviar_catch(t_entrenador* entrenador){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL); //recibo el paquete, aca llega el id_mensaje asignado por Broker
 
-//					pthread_mutex_lock(&mutex_ciclos_totales);
-//					ciclos_totales++;
-//					pthread_mutex_unlock(&mutex_ciclos_totales);
 
-					sleep(RETARDO_CICLO_CPU);
+
+
 
 					t_respuesta* respuesta = malloc(sizeof(respuesta));
 					respuesta->id_entrenador = entrenador->id;
 					respuesta->id_respuesta = id_mensaje;
-					log_debug(logger, "espero el id %d", id_mensaje);
 					list_add(mensajes_catch_esperando_respuesta, respuesta);
+
+					pthread_mutex_lock(&mutex_ciclos_totales);
+					ciclos_totales++;
+					pthread_mutex_unlock(&mutex_ciclos_totales);
+
+					sleep(RETARDO_CICLO_CPU);
 				}
 			}
 		}
@@ -1029,7 +1033,7 @@ void ejecutar_rr(t_entrenador* entrenador){
 		pthread_mutex_unlock(&mutex_cola_ready);
 
 		sem_post(&s_cola_ready_con_items);
-		sem_post(&s_procesos_en_exec);
+		//sem_post(&s_procesos_en_exec);
 	} else {
 		capturar_pokemon(entrenador);
 	}
@@ -1043,7 +1047,6 @@ void ejecutar_sjfcd(t_entrenador* entrenador){
 
 	while(entrenador->posicion.X != entrenador->pokemon_destino->posicion.X ||
 			entrenador->posicion.Y != entrenador->pokemon_destino->posicion.Y){
-
 		if(cambio_cola_ready && cola_ready->elements_count > 0){
 			printf("llegó algo a la cola de ready mientras ejecutaba");
 			sem_post(&s_replanificar_sjfcd);
@@ -1125,20 +1128,12 @@ void hilo_enviar_get(int i){
 
 			enviar_get_pokemon(pokemon->nombre, "0", socket);
 
-//			pthread_mutex_lock(&mutex_ciclos_totales);
-//			ciclos_totales++;
-//			pthread_mutex_unlock(&mutex_ciclos_totales);
+
 
 			if(recv(socket, &operacion, sizeof(int32_t), MSG_WAITALL) != -1){
 				if(operacion == ACK){
 					recv(socket, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
-//					pthread_mutex_lock(&mutex_ciclos_totales);
-//					ciclos_totales++;
-//					pthread_mutex_unlock(&mutex_ciclos_totales);
-
-					sleep(RETARDO_CICLO_CPU);
 
 					t_respuesta* respuesta = malloc(sizeof(t_respuesta));
 					respuesta->id_respuesta = id_mensaje;
@@ -1146,6 +1141,12 @@ void hilo_enviar_get(int i){
 					log_debug(logger, "espero el ID: %d", id_mensaje);
 
 					list_add(mensajes_get_esperando_respuesta, respuesta);
+
+					pthread_mutex_lock(&mutex_ciclos_totales);
+					ciclos_totales++;
+					pthread_mutex_unlock(&mutex_ciclos_totales);
+
+					sleep(RETARDO_CICLO_CPU);
 
 				}
 			}
@@ -1158,10 +1159,12 @@ void hilo_enviar_get(int i){
 void generar_y_enviar_get(){
 	for(int i = 0; i < objetivo_global->elements_count; i++){
 
-		/* HILO PLANIFICADOR */
-		pthread_t p_enviar_get;
-		pthread_create(&p_enviar_get, NULL, (void*)hilo_enviar_get, (void*)i);
-		pthread_detach(p_enviar_get);
+//		/* HILO PLANIFICADOR */
+//		pthread_t p_enviar_get;
+//		pthread_create(&p_enviar_get, NULL, (void*)hilo_enviar_get, (void*)i);
+//		pthread_detach(p_enviar_get);
+
+		hilo_enviar_get(i);
 
 	}
 
@@ -1206,7 +1209,6 @@ void ubicar_pokemones_localized(t_Localized* pokemones_a_ubicar){
 void recibidor_mensajes_localized(void* args){
 	t_args_mensajes* arg = (t_args_mensajes*)args;
 
-	log_debug(logger, "asdasd!\n");
 	if(arg->respuesta->id_entrenador == -1){
 		log_debug(logger, "No me interesa el msj lo descarto!\n");
 		return;
@@ -1445,6 +1447,7 @@ void hilo_suscriptor_appeared(op_code *code){
 
 							while(fin == false){
 								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
@@ -1506,6 +1509,7 @@ void hilo_suscriptor_caught(op_code* code){
 	bool fin = false;
 
 	while(1){
+
 		if(socket_broker != 0){
 			enviar_handshake(PROCESS_ID, socket_broker);
 			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
@@ -1521,7 +1525,9 @@ void hilo_suscriptor_caught(op_code* code){
 							recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 							while(fin == false){
+
 								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
@@ -1590,6 +1596,7 @@ void hilo_suscriptor_localized(op_code* code){
 	bool fin = false;
 
 	while(1){
+
 		if(socket_broker != 0){
 			enviar_handshake(PROCESS_ID, socket_broker);
 			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
@@ -1606,6 +1613,7 @@ void hilo_suscriptor_localized(op_code* code){
 
 							while(fin == false){
 								if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
+
 									recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 									recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
@@ -1760,18 +1768,26 @@ void entrenador(void* index){
 
 
 void liberar_memoria(){
+	printf("asd1");
 	liberar_elementos_lista_pokemon(objetivo_global);
+	printf("asd2");
 	liberar_elementos_lista_pokemon(pokemones_recibidos);
+	printf("asd3");
 	liberar_elementos_lista_pokemon(pokemones_ubicados);
 	//liberar_elementos_lista_deadlock(total_deadlocks);
+	printf("asd4");
 	free(total_deadlocks);; // eliminar los t_deadlocks
+	printf("asd5");
 	liberar_elementos_lista_entrenador(entrenadores_DL);
+	printf("asd");
 	liberar_elementos_lista_entrenador(entrenadores);
+	printf("asd");
 	liberar_elementos_lista_entrenador(cola_ready);
-
+	printf("asd");
 	liberar_elementos_lista_respuesta(mensajes_get_esperando_respuesta);
+	printf("asd");
 	liberar_elementos_lista_respuesta(mensajes_catch_esperando_respuesta);
-
+	printf("asd");
 	sem_destroy(&s_cola_ready_con_items);
 	sem_destroy(&s_procesos_en_exec);
 	sem_destroy(&s_posiciones_a_mover);
@@ -1837,7 +1853,7 @@ int32_t main(int32_t argc, char** argv){
 	pthread_detach(p_suscribirse_localized);
 
 
-	generar_y_enviar_get();
+	 generar_y_enviar_get();
 
 
     /* HILO PLANIFICADOR */
@@ -1892,11 +1908,13 @@ int32_t main(int32_t argc, char** argv){
 	pthread_create(&p_exit, NULL, (void*)hilo_exit, NULL);
 	pthread_join(p_exit, NULL);
 
-
+	printf("asdasdasd");
 	liberar_conexion(socket_escucha_team);
-	liberar_memoria();
+	printf("asdasdasd");
+	//liberar_memoria();
+	printf("asdasdasd");
 
-    printf("End\n");
+    printf("\nEnd\n");
 
     return EXIT_SUCCESS;
 }
