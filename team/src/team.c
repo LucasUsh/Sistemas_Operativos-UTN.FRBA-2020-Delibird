@@ -1777,6 +1777,7 @@ int32_t main(int32_t argc, char** argv){
 		return EXIT_FAILURE;
 	}
 
+	printf("Inicia team\n");
 	inicializar_team(argv[1]);
 	char** array = config_get_array_value(config, "POSICIONES_ENTRENADORES");
     cantidad_entrenadores = array_length(array);
