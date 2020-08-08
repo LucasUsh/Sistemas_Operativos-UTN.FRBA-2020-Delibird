@@ -323,6 +323,8 @@ void detectar_deadlocks(){
 
 	if(entrenadores_DL->elements_count <= 1) return;
 
+	log_info(logger, "Inicio algoritmo de detección de Deadlock");
+
 	int filas = entrenadores_DL->elements_count;
 	int columnas = filas;
 
@@ -425,8 +427,23 @@ void detectar_deadlocks(){
 
 					list_sort(deadlock_encontrado->procesos_involucrados, ordenar_DL);
 					deadlock_encontrado->procesos_involucrados = list_eliminar_int_repetidos(deadlock_encontrado->procesos_involucrados);
-					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock_encontrado))
+					if(!deadlock_ya_detectado(deadlocks_detectados, deadlock_encontrado)){
 						list_add(deadlocks_detectados, deadlock_encontrado);
+
+						char* dl_string = string_new();
+
+						string_append(&dl_string, "Deadlock encontrado entre los procesos: ");
+
+						for(int i =0; i < deadlock_encontrado->procesos_involucrados->elements_count; i++){
+
+							int* proceso_involucrado = list_get(deadlock_encontrado->procesos_involucrados, i);
+
+							string_append_with_format(&dl_string, " * %d ", *proceso_involucrado);
+						}
+
+						log_info(logger, dl_string);
+					}
+
 
 					deadlock_actual->procesos_involucrados=list_create();
 
@@ -438,7 +455,8 @@ void detectar_deadlocks(){
 					recorrer_fila_DL(j);
 					return;
 				} else {
-					//log_debug(logger, "no hay espera circular");
+
+					log_info(logger, "El algoritmo terminó y no detectó espera circular");
 					espera_circular = false;
 					return;
 				}
@@ -616,8 +634,9 @@ void planificar_fifo(){
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	pthread_mutex_unlock(&mutex_cola_ready);
 
-	//int cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
-	//printf("voy a ejecutar %d veces!\n", cantidad_a_moverse);
+	log_info(logger, "El próximo entrenador es %d porque es el primero en la cola de READY", entrenador->id);
+
+
 	entrenador->estado=EXEC;
 	entrenador->ocupado=true;
 	sem_post(entrenador->semaforo);
@@ -627,17 +646,12 @@ void planificar_fifo(){
 
 void planificar_rr(){
 
-	//printf("planificando RR...\n");
-
-	// en RR, el proximo entrenador es el que esté primero en la cola de ready
 	pthread_mutex_lock(&mutex_cola_ready);
 	t_entrenador* entrenador = list_remove(cola_ready, 0);
 	pthread_mutex_unlock(&mutex_cola_ready);
 
-	//printf("voy a planificar al entrenador %d\n", entrenador->id);
+	log_info(logger, "El próximo entrenador es %d porque es el primero en la cola", entrenador->id);
 
-	//int cantidad_a_moverse = get_distancia_entre_puntos(entrenador->posicion, entrenador->pokemon_destino->posicion);
-	//printf("voy a ejecutar %d veces!\n", cantidad_a_moverse);
 	sem_post(entrenador->semaforo); // por cada paso que tiene que dar
 
 	return;
@@ -651,13 +665,8 @@ int get_index_entrenador_estimacion_mas_corta(){
 	//EST: estimado de la rafaga actual
 
 	double estimacion_mas_corta = -1;
-	//t_entrenador* entrenador_mas_rapido=NULL;
 	int indice = 0;
 
-	// por archivo de cfg se obtiene el EST_siguiente inicial ya CALCULADO.
-	// => si el est_anterior es 0, vamos a decir que es la primera vez que va a ejecutar y no hay que hacer el calculo.
-
-	//printf("en cola ready: %d\n", cola_ready->elements_count);
 
 	for(int i = 0; i < cola_ready->elements_count; i++){
 
@@ -669,8 +678,6 @@ int get_index_entrenador_estimacion_mas_corta(){
 
 		double EST_siguiente = 0;
 
-		//printf("estimacion entrenador: %d\n", entrenador_actual->id);
-
 		if(entrenador_actual->estimacion_anterior == 0){
 			EST_siguiente = atoi(config_get_string_value(config, "ESTIMACION_INICIAL"));
 		} else {
@@ -678,36 +685,17 @@ int get_index_entrenador_estimacion_mas_corta(){
 			int TE = get_distancia_entre_puntos(entrenador_actual->posicion, entrenador_actual->pokemon_destino->posicion);
 			double EST = entrenador_actual->estimacion_anterior;
 
-			//printf("| Rafaga real: %d\n", TE);
-			//printf("| Estimacion anterior: %f\n", EST);
-
-
 			EST_siguiente =  algoritmo.alpha * TE + (1-algoritmo.alpha) * EST;
 			entrenador_actual->estimacion = EST_siguiente;
 		}
 
-		//printf("| estimacion: %f\n", EST_siguiente);
-		//printf("_______________\n");
-
 		if(estimacion_mas_corta == -1){
 			estimacion_mas_corta = EST_siguiente;
-			//entrenador_mas_rapido = entrenador_actual;
 		} else if(EST_siguiente < estimacion_mas_corta) {
 			estimacion_mas_corta = EST_siguiente;
-			//entrenador_mas_rapido= entrenador_actual;
 			indice = i;
 		}
 	}
-
-	//printf("el próximo va a ser el entrenador %d\n", entrenador_mas_rapido->id);
-
-	//pthread_mutex_lock(&mutex_list_entrenadores);
-	//t_entrenador* entrenador_actual = list_get(entrenadores, entrenador_mas_rapido->id);
-	//pthread_mutex_unlock(&mutex_list_entrenadores);
-
-	//entrenador_actual->estimacion_anterior = estimacion_mas_corta;
-
-
 
 	return indice;
 }
@@ -719,6 +707,8 @@ void planificar_sjfsd(){
 	t_entrenador* entrenador = list_remove(cola_ready, i);
 	pthread_mutex_unlock(&mutex_cola_ready);
 
+	log_info(logger, "El próximo entrenador es %d porque su estimación es la mas corta (%d)",
+						entrenador->id, entrenador->estimacion);
 
 	sem_post(entrenador->semaforo);
 	return;
@@ -760,12 +750,9 @@ void hilo_replanificar(){
 		//printf("llegó algo pa replanificar\n");
 		t_entrenador* replanificar = malloc(sizeof(t_entrenador));
 		for(int i = 0; i < entrenadores->elements_count; i++){
-			//pthread_mutex_lock(&mutex_list_entrenadores);
 			t_entrenador* entrenador = list_get(entrenadores, i);
-			//pthread_mutex_unlock(&mutex_list_entrenadores);
 			if(puede_capturar_pokemones(entrenador) && entrenador->estado == BLOCKED && !entrenador->ocupado && entrenador->pokemon_destino == NULL){
-				//log_debug(logger, "entrenador a replanificar %d", entrenador->id);
-				//entrenador_destroyer(replanificar);
+
 				replanificar = entrenador;
 			}
 		}
@@ -797,12 +784,6 @@ void hilo_replanificar_sjfcd(){
 		t_entrenador* entrenador = list_get(cola_ready, i);
 		pthread_mutex_unlock(&mutex_cola_ready);
 
-		//printf("entrenador ejecutando: %d y su estimacion es de: %d - %d = %d\n",
-//				proceso_ejecutando, entrenador_ejecutando->estimacion,
-//				entrenador_ejecutando->cantidad_ejecutada,
-//				entrenador_ejecutando->estimacion - entrenador_ejecutando->cantidad_ejecutada);
-		//printf("entrenador en cola con menor rafaga: %d y su estimacion es de: %d\n",
-				//entrenador->id, entrenador->estimacion);
 
 
 		if(entrenador_ejecutando->estimacion - entrenador_ejecutando->cantidad_ejecutada <= entrenador->estimacion){
@@ -810,6 +791,8 @@ void hilo_replanificar_sjfcd(){
 			entrenador_ejecutando->estado=EXEC;
 			sem_post(entrenador_ejecutando->semaforo);
 		} else {
+			log_info(logger, "El próximo entrenador es %d porque su estimación es la mas corta (%d)",
+					entrenador->id, entrenador->estimacion);
 			entrenador_ejecutando->estado = READY;
 			entrenador->estado = EXEC;
 			sem_post(entrenador_ejecutando->semaforo);
@@ -904,7 +887,7 @@ void intercambio(t_entrenador* entrenador){
 	//show_estado();
 	t_entrenador* entrenador_en_posicion = get_entrenador_intercambio(entrenador);
 
-	//log_debug(logger, "voy a intercambiar con el entrenador %d", entrenador_en_posicion->id);
+	log_info(logger, "El entrenador %d va a intercambiar con el entrenador %d", entrenador->id, entrenador_en_posicion->id);
 
 	t_pokemon_team* pokemon_queme_sirve = entrenador->pokemon_destino; // es el entrenador->pokemon_destino
 	t_pokemon_team* pokemon_quele_sirve = pokemon_que_sirve_intercambio(entrenador_en_posicion, entrenador);
@@ -1360,17 +1343,18 @@ void hilo_recibidor_mensajes_gameboy(){
 	//printf("Esperando que el Game Boy se conecte...\n");
 	while(1){
 		int32_t socket_cliente = (int32_t)recibir_cliente(socket_escucha_team);
+
 		if(socket_cliente != -1){
 
 			int32_t codigo_operacion = 0;
 			int32_t tamanio_estructura = 0;
 			int32_t id_mensaje = 0;
-
-			if(recv(socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) == -1)
+			printf("antes del if\n");
+			if(recv(socket_cliente, &codigo_operacion, sizeof(int32_t), MSG_WAITALL) > 0)
 					codigo_operacion = -1;
 			recv(socket_cliente, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 			recv(socket_cliente, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
-
+			printf("desp del if\n");
 			switch(codigo_operacion){
 				case APPEARED_POKEMON:
 					;
@@ -1379,6 +1363,10 @@ void hilo_recibidor_mensajes_gameboy(){
 					t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 					args->mensaje = mensaje_appeared;
 					args->respuesta = NULL;
+
+					log_info(logger, "Recibí un mensaje APPEARED con el id %d, pokémon %s, posición: (%d, %d)",
+								id_mensaje, mensaje_appeared->pokemon.nombre, mensaje_appeared->posicion.X, mensaje_appeared->posicion.Y);
+
 
 					pthread_t p_generador_mensajes_appeared;
 					pthread_create(&p_generador_mensajes_appeared, NULL, (void*)recibidor_mensajes_appeared, (void*)args);
@@ -1434,7 +1422,9 @@ void hilo_suscriptor_appeared(op_code *code){
 										t_Appeared* mensaje_appeared = NULL;
 										mensaje_appeared = deserializar_paquete_appeared(&socket_broker);
 										enviar_ACK(0, socket_broker);
-										log_info(logger, "ID de Mensaje APPEARED recibido: %d", id_mensaje);
+										log_info(logger, "Recibí un mensaje APPEARED con el id %d, pokémon %s, posición: (%d, %d)",
+													id_mensaje, mensaje_appeared->pokemon.nombre, mensaje_appeared->posicion.X, mensaje_appeared->posicion.Y);
+
 
 										t_args_mensajes* args = malloc(sizeof(t_args_mensajes));
 										args->mensaje = mensaje_appeared;
@@ -1473,7 +1463,7 @@ void hilo_suscriptor_appeared(op_code *code){
 			}
 
 		} else {
-			log_info(logger, "Reintentando conexion cola...");
+			//log_info(logger, "Reintentando conexion cola...");
 			socket_broker = reconectar(socket_broker);
 			fin = false;
 		}
@@ -1515,7 +1505,9 @@ void hilo_suscriptor_caught(op_code* code){
 									if(operacion == CAUGHT_POKEMON){
 										t_Caught* mensaje_caught = deserializar_paquete_caught(&socket_broker);
 										enviar_ACK(0, socket_broker);
-										log_info(logger, "ID de Mensaje CAUGHT recibido: %d", id_mensaje);
+										char * str_respuesta = string_new();
+										string_append(&str_respuesta, mensaje_caught->fueAtrapado ? "OK" : "FAIL");
+										log_info(logger, "Recibí un mensaje CAUGHT con el id %d y la respuesta es %s", id_mensaje, str_respuesta);
 
 										t_respuesta* respuesta_catch = get_respuesta(id_mensaje, mensajes_catch_esperando_respuesta);
 
@@ -1556,7 +1548,7 @@ void hilo_suscriptor_caught(op_code* code){
 			}
 
 		} else {
-			log_info(logger, "Reintentando conexion cola...");
+			//log_info(logger, "Reintentando conexion cola...");
 			socket_broker = reconectar(socket_broker);
 			fin = false;
 		}
@@ -1598,13 +1590,22 @@ void hilo_suscriptor_localized(op_code* code){
 
 									enviar_ACK(0, socket_broker);
 
-								//	log_info(logger, "ID de Mensaje LOCALIZED recibido: %d", id_mensaje);
+									char* mensaje_log = string_new();
+									string_append_with_format(&mensaje_log, "Recibí un mensaje LOCALIZED con el id %d y posiciones: ", id_mensaje);
 
+									if(mensaje_localized->listaPosiciones->elements_count == 0){
+										string_append(&mensaje_log, "no hay registros");
+									} else {
+										for(int i =0; i < mensaje_localized->listaPosiciones->elements_count; i++){
 
-//									for(int i = 0; i < mensaje_localized->listaPosiciones->elements_count; i++){
-//										t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
-//										//printf("Pos X: %d\nPos Y: %d\n", posicion->X, posicion->Y);
-//									}
+											t_posicion* posicion = list_get(mensaje_localized->listaPosiciones, i);
+
+											string_append_with_format(&mensaje_log, "(%d, %d),", posicion->X, posicion->Y);
+										}
+
+									}
+
+									log_info(logger, mensaje_log);
 
 									t_respuesta* respuesta_get = get_respuesta(id_mensaje, mensajes_get_esperando_respuesta);
 
@@ -1644,7 +1645,7 @@ void hilo_suscriptor_localized(op_code* code){
 			}
 
 		} else {
-			log_info(logger, "Reintentando conexion cola...");
+			//log_info(logger, "Reintentando conexion cola...");
 			socket_broker = reconectar(socket_broker);
 			fin = false;
 		}

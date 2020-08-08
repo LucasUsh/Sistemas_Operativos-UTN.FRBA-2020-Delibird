@@ -519,9 +519,16 @@ int32_t conexion_broker()
 
 
 int32_t reconectar(int32_t socket){
-	log_info(logger, "reintentado contectarse al Broker...");
+	log_info(logger, "Reintentado contectarse al Broker...");
 	sleep(TIEMPO_RECONEXION);
 	socket = crear_conexion(IP_BROKER,PUERTO_BROKER);
+
+	if(socket > 0){
+		log_info(logger, "Se reconectó exitosamente al Broker");
+	} else {
+		log_info(logger, "Fallo al reconectar al Broker");
+	}
+
 	return socket;
 }
 
