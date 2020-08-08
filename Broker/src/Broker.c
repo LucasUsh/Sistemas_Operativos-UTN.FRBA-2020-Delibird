@@ -741,12 +741,16 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		//mostrarEstadoMemoria();
 		sem_post(&writer);
 		pthread_mutex_lock(&mutex_list_mensaje);
-		for(int i = 0; i< list_suscriptores->elements_count; i++){
+		for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+			/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+			 * realizar al menos una busqueda
+			 */
 			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 			if(suscriptor->op_code == SUSCRIPCION_NEW){
 				sem_post(&primerNew);
 			}
 		}
+		sem_post(&primerNew);
 		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case APPEARED_POKEMON:
@@ -762,12 +766,16 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		//mostrarEstadoMemoria();
 		sem_post(&writer);
 		pthread_mutex_lock(&mutex_list_mensaje);
-		for(int i = 0; i< list_suscriptores->elements_count; i++){
+		for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+			/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+			 * realizar al menos una busqueda
+			 */
 			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 			if(suscriptor->op_code == SUSCRIPCION_APPEARED){
 				sem_post(&primerApp);
 			}
 		}
+		sem_post(&primerApp);
 		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case GET_POKEMON:
@@ -783,12 +791,16 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		//mostrarEstadoMemoria();
 		sem_post(&writer);
 		pthread_mutex_lock(&mutex_list_mensaje);
-		for(int i = 0; i< list_suscriptores->elements_count; i++){
+		for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+			/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+			 * realizar al menos una busqueda
+			 */
 			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 			if(suscriptor->op_code == SUSCRIPCION_GET){
 				sem_post(&primerGet);
 			}
 		}
+		sem_post(&primerGet);
 		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case LOCALIZED_POKEMON:
@@ -804,12 +816,16 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		//mostrarEstadoMemoria();
 		sem_post(&writer);
 		pthread_mutex_lock(&mutex_list_mensaje);
-		for(int i = 0; i< list_suscriptores->elements_count; i++){
+		for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+			/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+			 * realizar al menos una busqueda
+			 */
 			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 			if(suscriptor->op_code == SUSCRIPCION_LOCALIZED){
 				sem_post(&primerLoc);
 			}
 		}
+		sem_post(&primerLoc);
 		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case CATCH_POKEMON:
@@ -825,12 +841,16 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		//mostrarEstadoMemoria();
 		sem_post(&writer);
 		pthread_mutex_lock(&mutex_list_mensaje);
-		for(int i = 0; i< list_suscriptores->elements_count; i++){
+		for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+			/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+			 * realizar al menos una busqueda
+			 */
 			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 			if(suscriptor->op_code == SUSCRIPCION_CATCH){
 				sem_post(&primerCatch);
 			}
 		}
+		sem_post(&primerCatch);
 		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	case CAUGHT_POKEMON:
@@ -846,12 +866,16 @@ void manejoMensaje(t_estructura_hilo_mensaje * estructura_mensaje){
 		//mostrarEstadoMemoria();
 		sem_post(&writer);
 		pthread_mutex_lock(&mutex_list_mensaje);
-		for(int i = 0; i< list_suscriptores->elements_count; i++){
+		for(int i = 0; i< list_suscriptores->elements_count -1; i++){
+			/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+			 * realizar al menos una busqueda
+			 */
 			t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 			if(suscriptor->op_code == SUSCRIPCION_CAUGHT){
 				sem_post(&primerCaught);
 			}
 		}
+		sem_post(&primerCaught);
 		pthread_mutex_unlock(&mutex_list_mensaje);
 		break;
 	default:
@@ -894,12 +918,16 @@ info_mensaje * recibirMensajeNew(int32_t socket_cliente){
 
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeNew);
-	for(int i = 0; i< list_suscriptores->elements_count; i++){
+	for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+		/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+		 * realizar al menos una busqueda
+		 */
 		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 		if(suscriptor->op_code == SUSCRIPCION_NEW){
 		sem_post(&nuevoMensajeNew);
 		}
 	}
+	sem_post(&nuevoMensajeNew);
 	pthread_mutex_unlock(&mutex_list_mensaje);
 
 
@@ -926,12 +954,16 @@ info_mensaje * recibirMensajeAppeared(int32_t socket_cliente){
 	mensajeAppeared->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeAppeared);
-	for(int i = 0; i< list_suscriptores->elements_count; i++){
+	for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+		/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+		 * realizar al menos una busqueda
+		 */
 		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 		if(suscriptor->op_code == SUSCRIPCION_APPEARED){
 		sem_post(&nuevoMensajeApp);
 		}
 	}
+	sem_post(&nuevoMensajeApp);
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeAppeared;
 }
@@ -954,12 +986,16 @@ info_mensaje * recibirMensajeGet(int32_t socket_cliente){
 	mensajeGet->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeGet);
-	for(int i = 0; i< list_suscriptores->elements_count; i++){
+	for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+		/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+		 * realizar al menos una busqueda
+		 */
 		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 		if(suscriptor->op_code == SUSCRIPCION_GET){
 		sem_post(&nuevoMensajeGet);
 		}
 	}
+	sem_post(&nuevoMensajeGet);
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeGet;
 }
@@ -982,12 +1018,16 @@ info_mensaje * recibirMensajeLocalized(int32_t socket_cliente){
 	mensajeLocalized->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeLocalized);
-	for(int i = 0; i< list_suscriptores->elements_count; i++){
+	for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+		/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+		 * realizar al menos una busqueda
+		 */
 		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 		if(suscriptor->op_code == SUSCRIPCION_LOCALIZED){
 		sem_post(&nuevoMensajeLoc);
 		}
 	}
+	sem_post(&nuevoMensajeLoc);
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeLocalized;
 }
@@ -1011,12 +1051,16 @@ info_mensaje * recibirMensajeCatch(int32_t socket_cliente){
 	mensajeCatch->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeCatch);
-	for(int i = 0; i< list_suscriptores->elements_count; i++){
+	for(int i = 0; i< list_suscriptores->elements_count-1; i++){
+		/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+		 * realizar al menos una busqueda
+		 */
 		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 		if(suscriptor->op_code == SUSCRIPCION_CATCH){
 		sem_post(&nuevoMensajeCatch);
 		}
 	}
+	sem_post(&nuevoMensajeCatch);
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeCatch;
 }
@@ -1039,12 +1083,16 @@ info_mensaje * recibirMensajeCaught(int32_t socket_cliente){
 	mensajeCaught->suscriptoresQueRecibieron->elements_count=0;
 	pthread_mutex_lock(&mutex_list_mensaje);
 	list_add(list_mensajes, mensajeCaught);
-	for(int i = 0; i< list_suscriptores->elements_count; i++){
+	for(int i = 0; i< list_suscriptores->elements_count -1; i++){
+		/* "-1" para que por mas que no haya suscriptores pueda garantizar que cuando se suscriba un proceso va a
+		 * realizar al menos una busqueda
+		 */
 		t_suscriptor * suscriptor = list_get(list_suscriptores, i);
 		if(suscriptor->op_code == SUSCRIPCION_CAUGHT){
 		sem_post(&nuevoMensajeCaught);
 		}
 	}
+	sem_post(&nuevoMensajeCaught);
 	pthread_mutex_unlock(&mutex_list_mensaje);
 	return mensajeCaught;
 }
