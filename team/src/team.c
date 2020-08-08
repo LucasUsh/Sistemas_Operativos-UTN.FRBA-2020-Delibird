@@ -1546,12 +1546,13 @@ void hilo_suscriptor_localized(op_code* code){
 			enviar_handshake(PROCESS_ID, socket_broker);
 			if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) > 0){
 				if(operacion == ACK){
-					sem_post(&s_suscripcion_localized);
+					//sem_post(&s_suscripcion_localized);
 					recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
 					recv(socket_broker, &id_mensaje, sizeof(int32_t), MSG_WAITALL);
 
 
 					enviar_suscripcion(*code, socket_broker);
+					sem_post(&s_suscripcion_localized);
 					if(recv(socket_broker, &operacion, sizeof(int32_t), MSG_WAITALL) >0){
 						if(operacion == ACK){
 							recv(socket_broker, &tamanio_estructura, sizeof(int32_t), MSG_WAITALL);
